@@ -76,8 +76,7 @@ message Update {
 // paths contained in the Updates.
 //
 // It is valid to have a path be both in an update and match a delete.  The
-// deletion will only delete values that are older than this update. For
-// example, if the following
+// deletion will only delete values that are older than this update.
 //
 // Each notification should contain at most a single update for a given path.
 // If a nonconforming implementation does send multiple updates for a given path
