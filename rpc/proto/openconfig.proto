@@ -36,7 +36,7 @@ message Value {
 // absolute path name is the concatenation of the Notification prefix and the
 // Update path.  Updates are only sent by the target.  Path must always specify
 // a leaf node.  Value should be a scalar value (e.g., if Value is JSON encoded
-// then the value "123" is acceptable, but "{x:123}" is not).
+// then the value 123 is acceptable, but {"x":123} is not).
 //
 // In a SetRequest, an Update contains a path to a read-write node and an
 // optional value.  The absolute path name is the concatenation of the
@@ -216,7 +216,7 @@ service OpenConfig {
   // by sending a SyncRequest.
   //
   // Once: This mode is specified by setting once to true in the
-  // SubscriptionRequest.  The target must close the connection after sending
+  // SubscriptionRequest.  The target must close the stream after sending
   // the sync_response of 0.  The target should only send each value once.
   //
   // Poll: This mode is the equivalent of periodic Once requests but sent over a
@@ -226,7 +226,7 @@ service OpenConfig {
   // After the polling interval, the client sends a new SubscriptionRequest with
   // only the poll_interval set.  The target must respond by sending the current
   // values of all subscribed paths, once again followed with a sync_response of
-  // 0.  This process then repeats until the client closes the connection.
+  // 0.  This process then repeats until the client closes the request stream.
   rpc Subscribe(stream SubscribeRequest) returns (stream SubscribeResponse);
 
   // Get requests a single snapshot of the requested data.  A Get request may
