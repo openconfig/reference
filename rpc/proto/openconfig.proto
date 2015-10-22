@@ -262,6 +262,10 @@ message Error {
 // A SubscribeRequest is either a subscription request, a change to the
 // heartbeat rate, or a request for resynchronization of data.  It is always
 // sent from the client to the target.
+//
+// Proxy is a list of proxies to use to get to the target.  The first proxy
+// listed is the address of the next hop.  Targets ignore the proxy field (it
+// should not be set).
 message SubscribeRequest {
   oneof request {
     SubscriptionList subscribe = 1;
@@ -269,6 +273,7 @@ message SubscribeRequest {
     SyncRequest sync = 3;            // See description for SyncRequest
     AliasList aliases = 4;
   }
+  repeated string proxy = 5;
 }
 
 // A SubscribeResponse is always sent from the target to the client.
@@ -306,7 +311,8 @@ message SubscriptionList {
 // Subscription contains a path as well as the target side coalesce_interval for
 // aggregating values, typically counters.  If the target cannot support the
 // interval the subscription must be rejected.  The coalesce_interval is only
-// used for subscriptions in streaming mode.
+// used for subscriptions in streaming mode.  If the coalesce_interval is 0 then
+// the coalesce_interval is target specified.
 message Subscription {
   Path path = 1;
   uint64 coalesce_interval = 2; // nanoseconds between updates
