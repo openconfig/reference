@@ -306,6 +306,7 @@ message SubscriptionList {
   message Options {
     bool use_aliases = 1;  // client accepts target defined aliases.
   }
+  Options options = 3;
 }
 
 // Subscription contains a path as well as the target side coalesce_interval for
