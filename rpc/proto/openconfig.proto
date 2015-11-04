@@ -296,6 +296,9 @@ message SubscribeResponse {
 // If poll_interval is not set, then a SubscriptionList must only be sent once.
 // If poll_interval is set, the SubscriptionLists following the initial
 // SubscriptionList must only contain a poll_interval.
+//
+// If dscp is provided then marking is the dscp marking to use for this session.
+// A target may choose to ignore dscp markings.
 message SubscriptionList {
   oneof mode {
     bool once = 10;
@@ -304,7 +307,11 @@ message SubscriptionList {
   repeated Subscription subscription = 1;
   Path prefix = 2;
   message Options {
-    bool use_aliases = 1;  // client accepts target defined aliases.
+    bool use_aliases = 1;  // client accepts target defined aliases
+    message DSCPMarking {
+      uint32 marking = 1;  // dscp marking level to use
+    }
+    DSCPMarking dscp = 2;
   }
   Options options = 3;
 }
@@ -314,9 +321,28 @@ message SubscriptionList {
 // interval the subscription must be rejected.  The coalesce_interval is only
 // used for subscriptions in streaming mode.  If the coalesce_interval is 0 then
 // the coalesce_interval is target specified.
+
+// A Subscription contains subscription information for a single path.  The
+// path may be either a leaf node or a directory node in the tree.  When
+// subscribing for a directory node, all nodes below it are automatically
+// included in the subscription.
+//
+// The coalesce_interval, if not 0, is the number of nanoseconds between
+// updates. If 0, the interval is selected by the target. If the target cannot
+// support the supplied coalesce_interval, the Subscription must be rejected.
+//
+// The suppress_unchanged field, if true, indicates the target should not send
+// notifications for fields that are unchanged since.  The target may ignore
+// this field.
+//
+// The max_slient_interval field specifies how frequently an unchanged value
+// must be sent regardless of the suppress_unchanged field.  The target may
+// ingore this field.
 message Subscription {
   Path path = 1;
-  uint64 coalesce_interval = 2; // nanoseconds between updates
+  uint64 coalesce_interval = 2;    // nanoseconds between updates
+  bool suppress_unchanged = 3;
+  uint64 max_slient_interval = 4;  // maximum slient period in nanoseconds
 }
 
 // An AliasList represents a list of aliases.
