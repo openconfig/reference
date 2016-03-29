@@ -229,10 +229,8 @@ service OpenConfig {
   // 0.  This process then repeats until the client closes the request stream.
   rpc Subscribe(stream SubscribeRequest) returns (stream SubscribeResponse);
 
-  // Get requests a single snapshot of the requested data.  A Get request may
-  // contain a hint that the request will be repeated (i.e., polling).  A Get is
-  // the equivalent of a Subscribe with once set, with the exception that all
-  // the key value pairs will be returned in a single response.
+  // Get requests a single snapshot of specified data.  A Get request may
+  // contain a hint that the request will be repeated (i.e., polling).
   rpc Get(GetRequest) returns (GetResponse);
 
   // Set sets the paths contained in the SetRequest to the values If a path does
@@ -308,10 +306,7 @@ message SubscriptionList {
   Path prefix = 2;
   message Options {
     bool use_aliases = 1;  // client accepts target defined aliases
-    message DSCPMarking {
-      uint32 marking = 1;  // dscp marking level to use
-    }
-    DSCPMarking dscp = 2;
+    DSCPMarking dscp = 2;  // dscp marking level to use.
   }
   Options options = 3;
 }
@@ -367,6 +362,12 @@ message Alias {
   Path alias = 2;
 }
 
+// A DSCPMarking describes the DSCP marking to use.  It may be ignored by a
+// server.
+message DSCPMarking {
+  uint32 marking = 1;
+}
+
 // A Heartbeat requests a (possibly repeated) response from the remote side.
 message Heartbeat {
   // interval is the maximum amount of time, in nanoseconds, between subsequent
@@ -393,34 +394,48 @@ message SyncRequest {
    repeated Path path = 3;
 }
 
+// A GetRequest requests all the values identified by path be returns in a
+// single GetResponse message.
+//
+// If cache_interval is provided and is non-zero number of nanoseconds, it is
+// a hint of when this get request will be repeated in the future.
 message GetRequest {
   Path prefix = 1;          // If set, each path is realitve to prefix
-  repeated Path path = 2;   // List of paths to return information for
+  int64 cache_interval = 2;
+  repeated Path path = 3;   // List of paths to return information for
+  GetType type = 4;         // Limit what type of values are returned.
+}
 
-  // If cache_interval is provided and is non-zero number of nanoseconds, it is
-  // a hint of when this get request will be repeated in the future.
-  int64 cache_interval = 3;
- }
+// GetType defines the mode that Get should use (GET_DATA_COMMANDS in the
+// YANG schema).  Only ALL is required by all implementation.
+enum GetType {
+  ALL         = 0; // Return all data
+  CONFIG      = 1; // Only return values in Config containers
+  STATE       = 2; // Only return values in State containers
+  OPERATIONAL = 3; // Only values in State containers not represented in Config
+}
 
 message GetResponse {
   repeated Notification notification = 1;
 }
 
 // A SetRequest contains an optional prefix, a list of zero or more Paths to
-// delete and a list of zero or more Updates.  The delete and update paths are
-// relative to prefix.  Deletes should appear to happen prior to updates being
-// applied.  This supports delete, update, and replace:
+// delete, a list of zero or more paths to replace, and a list of zero of more
+// paths to update.  Deletes should appear to happen first, followed by
+// replacements, followed by updates.
 //
-//   delete - a path is listed in the delete field
-//   update - a path is listed in the update field
-//   replace - a path is listed in both the delete field and the update field.
+// If the path lists a node, rather than leaf, the value is presented in JSON.
+// When included in replace, it is as if the path was first deleted.  When
+// included in update, the value aguments the existing value, if any.
 //
-// The target must either apply all the deletes and updates or return an error.
-// The deletes and updates should appear to be atomically applied.
+// The target must either apply all the deletes, replacements, and updates or
+// return an error.  The deletes, replacements, and updates should appear to be
+// atomically applied.
 message SetRequest {
   Path prefix = 1;
   repeated Path delete = 2;
-  repeated Update update = 3;
+  repeated Update replace = 3;
+  repeated Update update = 4;
 }
 
 // A SetResponse contains responses to a SetRequest.  The optional prefix is
