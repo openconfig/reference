@@ -401,8 +401,8 @@ message SyncRequest {
 // a hint of when this get request will be repeated in the future.
 message GetRequest {
   Path prefix = 1;          // If set, each path is realitve to prefix
-  int64 cache_interval = 2;
-  repeated Path path = 3;   // List of paths to return information for
+  repeated Path path = 2;   // List of paths to return information for
+  int64 cache_interval = 3;
   GetType type = 4;         // Limit what type of values are returned.
 }
 
