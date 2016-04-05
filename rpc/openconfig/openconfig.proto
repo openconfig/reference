@@ -211,7 +211,7 @@ service OpenConfig {
   // A Subscription operates in one of three modes.
   //
   // Streaming:  This is the default mode.  The target sends continual updates
-  // of each value as specified by each subscription's coalesce_interval.  The
+  // of each value as specified by each subscription's sample_interval.  The
   // client may request the target to resend the current value of a set of paths
   // by sending a SyncRequest.
   //
@@ -311,20 +311,20 @@ message SubscriptionList {
   Options options = 3;
 }
 
-// Subscription contains a path as well as the target side coalesce_interval for
+// Subscription contains a path as well as the target side sample_interval for
 // aggregating values, typically counters.  If the target cannot support the
-// interval the subscription must be rejected.  The coalesce_interval is only
-// used for subscriptions in streaming mode.  If the coalesce_interval is 0 then
-// the coalesce_interval is target specified.
+// interval the subscription must be rejected.  The sample_interval is only
+// used for subscriptions in streaming mode.  If the sample_interval is 0 then
+// the sample_interval is target specified.
 
 // A Subscription contains subscription information for a single path.  The
 // path may be either a leaf node or a directory node in the tree.  When
 // subscribing for a directory node, all nodes below it are automatically
 // included in the subscription.
 //
-// The coalesce_interval, if not 0, is the number of nanoseconds between
+// The sample_interval, if not 0, is the number of nanoseconds between
 // updates. If 0, the interval is selected by the target. If the target cannot
-// support the supplied coalesce_interval, the Subscription must be rejected.
+// support the supplied sample_interval, the Subscription must be rejected.
 //
 // The suppress_unchanged field, if true, indicates the target should not send
 // notifications for fields that are unchanged since.  The target may ignore
@@ -335,7 +335,7 @@ message SubscriptionList {
 // ingore this field.
 message Subscription {
   Path path = 1;
-  uint64 coalesce_interval = 2;    // nanoseconds between updates
+  uint64 sample_interval = 2;      // nanoseconds between updates
   bool suppress_unchanged = 3;
   uint64 max_slient_interval = 4;  // maximum slient period in nanoseconds
 }
