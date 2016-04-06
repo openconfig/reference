@@ -311,20 +311,26 @@ message SubscriptionList {
   Options options = 3;
 }
 
-// Subscription contains a path as well as the target side sample_interval for
-// aggregating values, typically counters.  If the target cannot support the
-// interval the subscription must be rejected.  The sample_interval is only
-// used for subscriptions in streaming mode.  If the sample_interval is 0 then
-// the sample_interval is target specified.
-
-// A Subscription contains subscription information for a single path.  The
-// path may be either a leaf node or a directory node in the tree.  When
-// subscribing for a directory node, all nodes below it are automatically
-// included in the subscription.
+// Subscription contains a path as well as information on how two send
+// notifications.
 //
-// The sample_interval, if not 0, is the number of nanoseconds between
-// updates. If 0, the interval is selected by the target. If the target cannot
-// support the supplied sample_interval, the Subscription must be rejected.
+// If mode is ON_CHANGE, then the target must either be able to send
+// notifcations each time a value changes or reject the subscription.  This is
+// typically used for events.  The sample_interval is ignored when the mode in
+// ON_CHANGE.
+//
+// If mode is COALESCE, the target must coalesce notifcations based on the
+// provided sample_interval.  This is typically used for aggregating values
+// (i.e., counters).  The sample_interval, if not 0, is the number of
+// nanoseconds between updates.  If 0, the interval is selected by the target.
+// If the target cannot support the supplied sample_interval, the Subscription
+// must be rejected.  The sample_interval is only used for subscriptions in
+// streaming mode.
+//
+// A Subscription contains subscription information for a single path.  The path
+// may be either a leaf node or a directory node in the tree.  When subscribing
+// for a directory node, all nodes below it are automatically included in the
+// subscription.
 //
 // The suppress_unchanged field, if true, indicates the target should not send
 // notifications for fields that are unchanged since.  The target may ignore
@@ -336,8 +342,21 @@ message SubscriptionList {
 message Subscription {
   Path path = 1;
   uint64 sample_interval = 2;      // nanoseconds between updates
-  bool suppress_unchanged = 3;
+  bool suppress_unchanged = 3;     // do not send updates for unchanged values
   uint64 max_slient_interval = 4;  // maximum slient period in nanoseconds
+  SubscriptionMode mode = 5;       // 
+}
+
+// SubscriptionMode mode informs the target how notifications should be
+// delivered, as they change or coalesced.  When the mode is TARGET_DEFINED the
+// target chooses the mode the best suits the value.  When the mode is
+// ON_CHANGE, the target must send a notification each time the value changes.
+// When the mode is COALESCED, the target send notifications at some sampling
+// interval.
+enum SubscriptionMode {
+  TARGET_DEFINED = 0; // target determines mode
+  ON_CHANGE      = 1; // send notifcation on change (event mode)
+  COALESCED      = 2; // coalesce values (sampled mode)
 }
 
 // An AliasList represents a list of aliases.
