@@ -300,6 +300,16 @@ message SubscribeResponse {
 //
 // If qos is provided then marking is the qos marking to use for this session.
 // The target should use this qos marking, if supported.
+//
+// In the event of overlapping subscription, the most specific subscription for
+// a value is used.  For example, if the following two subscriptions were made:
+//
+//  /interfaces/interfaces/*/state
+//  /interfaces/interfaces/*/state/counters
+//
+// Then values in state outside of counters would be subject to the first
+// subscription.  Values inside of counters would be subject to the second
+// subscription.
 message SubscriptionList {
   oneof mode {
     bool once = 10;
@@ -317,6 +327,11 @@ message SubscriptionList {
 // Subscription contains a path as well as information on how two send
 // notifications.
 //
+// A Subscription contains subscription information for a single path.  The path
+// may be either a leaf node or a directory node in the tree.  When subscribing
+// for a directory node, all nodes below it are automatically included in the
+// subscription.
+//
 // If mode is ON_CHANGE, then the target must either be able to send
 // notifcations each time a value changes or reject the subscription.  This is
 // typically used for events.  The sample_interval is ignored when the mode in
@@ -328,20 +343,17 @@ message SubscriptionList {
 // nanoseconds between updates.  If 0, the interval is selected by the target.
 // If the target cannot support the supplied sample_interval, the Subscription
 // must be rejected.  The sample_interval is only used for subscriptions in
-// streaming mode.
-//
-// A Subscription contains subscription information for a single path.  The path
-// may be either a leaf node or a directory node in the tree.  When subscribing
-// for a directory node, all nodes below it are automatically included in the
-// subscription.
+// streaming mode.  The sample_interval is ignored if mode is not SAMPLE.
 //
 // The suppress_redundant field, if true, indicates the target should not send
-// notifications for fields that are unchanged since.  The target may ignore
-// this field.
+// notifications for fields that are unchanged since.  This value is ignored
+// if mode is not SAMPLE.
 //
 // The heartbeat_interval field specifies how frequently an unchanged value must
-// be sent regardless of the suppress_redundant field.  The target may ingore
-// this field.
+// be sent regardless of the suppress_redundant field.  A value of 0 indicates
+// there is no heartbeat_interval and values only need to be sent when changed.
+// The target must reject a subscription if it cannot support the requested
+// heartbeat_interval.  This value is ignored if mode is not SAMPLE.
 message Subscription {
   Path path = 1;
   uint64 sample_interval = 2;      // nanoseconds between updates
