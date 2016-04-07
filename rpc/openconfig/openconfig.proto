@@ -343,12 +343,6 @@ message Error {
 // heartbeat rate, or a request for resynchronization of data.  It is always
 // sent from the client to the target.
 //
-// Proxy is a list of proxies to use to get to the target.  The first proxy
-// listed is the the next hop.  Actual targets ignore the proxy field (it should
-// not be set when the request reaches the target).
-//
-// The target_name is an informational field describing the destination of the
-// subscribe request.  This is useful for proxies when reporting errors.
 message SubscribeRequest {
   oneof request {
     SubscriptionList subscribe = 1;
@@ -356,8 +350,19 @@ message SubscribeRequest {
     SyncRequest sync = 3;            // See description for SyncRequest
     AliasList aliases = 4;
   }
-  repeated Proxy proxy = 5;
-  string target_name = 6;            // optional informational name of target
+  Proxies proxy = 5;                 // See description in Proxies
+}
+
+// Proxies is a list of proxies to use to get to the target.  The first proxy
+// listed is the the next hop.  Actual targets ignore the proxy field (it should
+// not be set when the request reaches the target).
+//
+// The target_name is an optional informational field describing the ultimate
+// destination of the subscribe request.  This is useful for proxies when
+// reporting errors.
+message Proxies {
+  string target_name = 1;
+  repeated Proxy proxy = 2;
 }
 
 // A Proxy represents a proxy service to use when connecting to the device.
