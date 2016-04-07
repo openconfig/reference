@@ -322,8 +322,8 @@ message SubscriptionList {
 // typically used for events.  The sample_interval is ignored when the mode in
 // ON_CHANGE.
 //
-// If mode is REQUESTED_INTERVAL, the target must coalesce notifcations based on
-// the provided sample_interval.  This is typically used for aggregating values
+// If mode is SAMPLE, the target must coalesce notifcations based on the
+// provided sample_interval.  This is typically used for aggregating values
 // (i.e., counters).  The sample_interval, if not 0, is the number of
 // nanoseconds between updates.  If 0, the interval is selected by the target.
 // If the target cannot support the supplied sample_interval, the Subscription
@@ -354,12 +354,12 @@ message Subscription {
 // delivered, as they change or coalesced.  When the mode is TARGET_DEFINED the
 // target chooses the mode the best suits the value.  When the mode is
 // ON_CHANGE, the target must send a notification each time the value changes.
-// When the mode is REQUESTED_INTERVAL, the target send notifications at some
-// sampling interval.
+// When the mode is SAMPLE, the target send notifications at some sampling
+// interval.
 enum SubscriptionMode {
-  TARGET_DEFINED     = 0; // target determines mode
-  ON_CHANGE          = 1; // send notifcation on change (event mode)
-  REQUESTED_INTERVAL = 2; // coalesce values (sampled mode)
+  TARGET_DEFINED = 0; // target determines mode
+  ON_CHANGE      = 1; // send notifcation on change (event mode)
+  SAMPLE         = 2; // coalesce values (sampled mode)
 }
 
 // An AliasList represents a list of aliases.
