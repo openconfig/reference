@@ -366,11 +366,16 @@ message SubscribeRequest {
 // not be set when the request reaches the target).
 //
 // The target_name is an optional informational field describing the ultimate
-// destination of the subscribe request.  This is useful for proxies when
-// reporting errors.
+// destination of the subscribe request.  Proxies may find it useful to use this
+// information in logs and errors.
+//
+// The client_name is an optional informatinal field describing the client
+// making the subscribe request.  Proxies may find it useful to use this
+// information in logs and errors.
 message Proxies {
-  string target_name = 1;
-  repeated Proxy proxy = 2;
+  repeated Proxy proxy = 1;
+  string target_name = 2;
+  string client_name = 3;
 }
 
 // A Proxy represents a proxy service to use when connecting to the device.
