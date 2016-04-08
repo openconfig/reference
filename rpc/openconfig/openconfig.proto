@@ -38,17 +38,22 @@ service OpenConfig {
   // by sending a SyncRequest.
   //
   // Once: This mode is specified by setting once to true in the
-  // SubscriptionRequest.  The target must close the stream after sending
-  // the sync_response of 0.  The target should only send each value once.
+  // SubscriptionRequest.  The target must close the stream after sending the
+  // sync_response of 0.  The target should only send each value once.
   //
   // Poll: This mode is the equivalent of periodic Once requests but sent over a
-  // single stream.  Polling is specified by setting poll_interval in the
-  // SubscriptionRequest to the expected number of nanoseconds between polls.
-  // The target stops sending updates after sending the sync_response of 0.
-  // After the polling interval, the client sends a new SubscriptionRequest with
-  // only the poll_interval set.  The target must respond by sending the current
-  // values of all subscribed paths, once again followed with a sync_response of
-  // 0.  This process then repeats until the client closes the request stream.
+  // single stream.  This is more efficient than sending multiple Once requests
+  // as the target only need parse the subscription once.  It also has an
+  // advantage over Streaming as the client is in control of when the target
+  // should send data again.
+  //
+  // To poll, the client sends a SubscriptionRequest with poll_interval set to
+  // exepected length of time, in nanoseconds, until the next poll.  The target
+  // respods by sending each subscribed value once followed by a sync_resposne
+  // of 0.  For each following poll, the client sends a SubscriptionRequest on
+  // the same stream with only poll_interval set with the next expected
+  // interval.  The target again responses with each subscribed value once
+  // followed by a sync_response of 0.
   rpc Subscribe(stream SubscribeRequest) returns (stream SubscribeResponse);
 }
 
@@ -373,8 +378,12 @@ message Proxy {
 
 // SubscriptionList contains the list of individual subscriptions.  A
 // SubscriptionList is only valid if all of the contained subscriptions are
-// valid.  Setting once to false or poll_interval to 0 is the equivalent of the
-// mode not being set (i.e., streaming).
+// valid.
+//
+// If once is set to true, the request is of mode Once, as described above.  If
+// poll_interal is non-zero, the request is a Poll, as described above.  If
+// neither once nor poll_interval are set, the mode is Streaming, as described
+// above.
 //
 // If prefix is set then all subscriptions in the list and all notifications
 // generated are relative to prefix.
