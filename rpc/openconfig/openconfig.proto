@@ -54,6 +54,9 @@ service OpenConfig {
   // the same stream with only poll_interval set with the next expected
   // interval.  The target again responses with each subscribed value once
   // followed by a sync_response of 0.
+  //
+  // Polling mode is optional.  If a target does not support the polling mode,
+  // it must reject any request with the poll_interval set.
   rpc Subscribe(stream SubscribeRequest) returns (stream SubscribeResponse);
 }
 
