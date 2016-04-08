@@ -23,11 +23,12 @@ service OpenConfig {
 
   // Set is the primary function for sending configuration data to the device.
   // It sets the paths contained in the SetRequest to the specified values. If
-  // a path does not exist, or is read-only the SetResponse will return an
+  // any of the paths do not exist, or are read-only, the SetResponse will return an
   // error.  All paths in the SetRequest must be valid or the entire request
   // must be rejected.  If a path specifies a node, rather than the leaf, then
   // the value must be the values of the node's children encoded in JSON.
-  // Binary data in the tree must be base64 encoded.
+  // Binary data in the tree must be base64 encoded, but if a path specifies
+  // a leaf of binary type, it may be sent as binary.
   rpc Set(stream SetRequest) returns (stream SetResponse);
 
   // Subscribe subscribes for streaming updates.  Streaming updates are provided
@@ -49,12 +50,12 @@ service OpenConfig {
   // indicates that all requested data has been sent.  The target should only
   // send each value once.
   //
-  // Poll: This Poll mode provides a method to send periodic Once requests,
-  // over a single stream, similar to conventional polling.  In this mode, the
-  // client is able to control when data is sent by the target, in contrast to
-  // the Streaming mode.  With the declared subscription, the target need only
-  // parse the subscription once, and can expect periodic requests for the
-  // corresponding data.
+  // Poll: The Poll mode provides a method to send periodic requests over a
+  // single stream similar to conventional polling.  In this mode, the client
+  // is able to control when data is sent by the target, in contrast to the
+  // Streaming mode.  With a single declared subscription, the target need
+  // only parse the subscription once, and can expect periodic requests for
+  // the corresponding data.
   //
   // To poll, the client sends a SubscriptionRequest with poll_interval set to
   // the exepected length of time, in nanoseconds, until the next poll.  The target
