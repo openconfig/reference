@@ -28,7 +28,7 @@ service OpenConfig {
   // Subscribe subscribes for streaming updates.  Streaming updates are provided
   // as a series of Notifications, each of which update a portion of the tree.
   // The target must send the current values of all subscribed paths at the
-  // start of the stream, followed by a sync_response of 0.
+  // start of the stream, followed by a sync_response of 1.
   //
   // A Subscription operates in one of three modes.
   //
@@ -39,7 +39,7 @@ service OpenConfig {
   //
   // Once: This mode is specified by setting once to true in the
   // SubscriptionRequest.  The target must close the stream after sending the
-  // sync_response of 0.  The target should only send each value once.
+  // sync_response of 1.  The target should only send each value once.
   //
   // Poll: This mode is the equivalent of periodic Once requests but sent over a
   // single stream.  This is more efficient than sending multiple Once requests
@@ -53,7 +53,7 @@ service OpenConfig {
   // of 0.  For each following poll, the client sends a SubscriptionRequest on
   // the same stream with only poll_interval set with the next expected
   // interval.  The target again responses with each subscribed value once
-  // followed by a sync_response of 0.
+  // followed by a sync_response of 1.
   //
   // Polling mode is optional.  If a target does not support the polling mode,
   // it must reject any request with the poll_interval set.
@@ -505,7 +505,7 @@ message Alias {
 
 // A SyncRequest requests that all values identified by path be resent.  The
 // target should respond with a series of updates and then a sync_response with
-// the provided id, which should not be zero.
+// the provided id, which should greater than one.
 //
 // A target is suggested to keep a timestamp of when the SyncRequest starts,
 // followed by notifications, all of which are past the starting timestamp.
