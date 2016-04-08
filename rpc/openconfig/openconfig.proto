@@ -38,17 +38,25 @@ service OpenConfig {
   // by sending a SyncRequest.
   //
   // Once: This mode is specified by setting once to true in the
-  // SubscriptionRequest.  The target must close the stream after sending
-  // the sync_response of 0.  The target should only send each value once.
+  // SubscriptionRequest.  The target must close the stream after sending the
+  // sync_response of 0.  The target should only send each value once.
   //
   // Poll: This mode is the equivalent of periodic Once requests but sent over a
-  // single stream.  Polling is specified by setting poll_interval in the
-  // SubscriptionRequest to the expected number of nanoseconds between polls.
-  // The target stops sending updates after sending the sync_response of 0.
-  // After the polling interval, the client sends a new SubscriptionRequest with
-  // only the poll_interval set.  The target must respond by sending the current
-  // values of all subscribed paths, once again followed with a sync_response of
-  // 0.  This process then repeats until the client closes the request stream.
+  // single stream.  This is more efficient than sending multiple Once requests
+  // as the target only need parse the subscription once.  It also has an
+  // advantage over Streaming as the client is in control of when the target
+  // should send data again.
+  //
+  // To poll, the client sends a SubscriptionRequest with poll_interval set to
+  // exepected length of time, in nanoseconds, until the next poll.  The target
+  // respods by sending each subscribed value once followed by a sync_resposne
+  // of 0.  For each following poll, the client sends a SubscriptionRequest on
+  // the same stream with only poll_interval set with the next expected
+  // interval.  The target again responses with each subscribed value once
+  // followed by a sync_response of 0.
+  //
+  // Polling mode is optional.  If a target does not support the polling mode,
+  // it must reject any request with the poll_interval set.
   rpc Subscribe(stream SubscribeRequest) returns (stream SubscribeResponse);
 }
 
@@ -343,9 +351,6 @@ message Error {
 // heartbeat rate, or a request for resynchronization of data.  It is always
 // sent from the client to the target.
 //
-// Proxy is a list of proxies to use to get to the target.  The first proxy
-// listed is the address of the next hop.  Targets ignore the proxy field (it
-// should not be set).
 message SubscribeRequest {
   oneof request {
     SubscriptionList subscribe = 1;
@@ -353,13 +358,40 @@ message SubscribeRequest {
     SyncRequest sync = 3;            // See description for SyncRequest
     AliasList aliases = 4;
   }
-  repeated string proxy = 5;
+  Proxies proxy = 5;                 // See description in Proxies
+}
+
+// Proxies is a list of proxies to use to get to the target.  The first proxy
+// listed is the the next hop.  Actual targets ignore the proxy field (it should
+// not be set when the request reaches the target).
+//
+// The target_name is an optional informational field describing the ultimate
+// destination of the subscribe request.  Proxies may find it useful to use this
+// information in logs and errors.
+//
+// The client_name is an optional informatinal field describing the client
+// making the subscribe request.  Proxies may find it useful to use this
+// information in logs and errors.
+message Proxies {
+  repeated Proxy proxy = 1;
+  string target_name = 2;
+  string client_name = 3;
+}
+
+// A Proxy represents a proxy service to use when connecting to the device.
+message Proxy {
+  string address = 1;  // IP address of the proxy
+  string name = 2;     // optional informational name for the proxy
 }
 
 // SubscriptionList contains the list of individual subscriptions.  A
 // SubscriptionList is only valid if all of the contained subscriptions are
-// valid.  Setting once to false or poll_interval to 0 is the equivalent of the
-// mode not being set (i.e., streaming).
+// valid.
+//
+// If once is set to true, the request is of mode Once, as described above.  If
+// poll_interal is non-zero, the request is a Poll, as described above.  If
+// neither once nor poll_interval are set, the mode is Streaming, as described
+// above.
 //
 // If prefix is set then all subscriptions in the list and all notifications
 // generated are relative to prefix.
