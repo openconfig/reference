@@ -3,10 +3,14 @@ syntax = "proto3";
 import "google/protobuf/any.proto";
 
 // Package openconfig defines the gRPC service for getting and setting the
-// OpenConfig configuration and state of a network device.
+// configuration and state data of a network device based on OpenConfig models.
 //
-// This package and its contents have not been ratified by OpenConfig.  It is
-// a working proposal by Google.
+// This package and its contents is a work-in-progress.  It is meant as a
+// example implementation of the OpenConfig RPC reference specification
+// (available at github.com/openconfig/public/tree/master/release/models/rpc)
+// but also contains some additional capabilities not included in the base
+// RPC specification.
+//
 package openconfig;
 
 service OpenConfig {
@@ -14,15 +18,17 @@ service OpenConfig {
   // contain a hint that the request will be repeated (i.e., polling).
   rpc Get(GetRequest) returns (GetResponse);
 
-  // GetModels returns the current YANG models supported by the device.
+  // GetModels returns information about the YANG models supported by the device.
   rpc GetModels(GetModelsRequest) returns (GetModelsResponse);
 
-  // Set sets the paths contained in the SetRequest to the values If a path does
-  // not exist, or is read-only the SetResponse will return an error.  All paths
-  // in the SetRequest must be valid or the entire request must be rejected.  If
-  // a path specifies a node, rather than the leaf, then the value must be the
-  // values of the node's children encoded in JSON.  Binary data in the tree
-  // must be base64 encoded.
+  // Set is the primary function for sending configuration data to the device.
+  // It sets the paths contained in the SetRequest to the specified values. If
+  // any of the paths do not exist, or are read-only, the SetResponse will return an
+  // error.  All paths in the SetRequest must be valid or the entire request
+  // must be rejected.  If a path specifies a node, rather than the leaf, then
+  // the value must be the values of the node's children encoded in JSON.
+  // Binary data in the tree must be base64 encoded, but if a path specifies
+  // a leaf of binary type, it may be sent as binary.
   rpc Set(stream SetRequest) returns (stream SetResponse);
 
   // Subscribe subscribes for streaming updates.  Streaming updates are provided
@@ -30,26 +36,30 @@ service OpenConfig {
   // The target must send the current values of all subscribed paths at the
   // start of the stream, followed by a sync_response of 1.
   //
-  // A Subscription operates in one of three modes.
+  // A Subscription operates in one of three modes, all of which operate on
+  // the streaming channel.
   //
   // Streaming:  This is the default mode.  The target sends continual updates
   // of each value as specified by each subscription's sample_interval.  The
   // client may request the target to resend the current value of a set of paths
-  // by sending a SyncRequest.
+  // on-demand by sending a SyncRequest.
   //
-  // Once: This mode is specified by setting once to true in the
-  // SubscriptionRequest.  The target must close the stream after sending the
-  // sync_response of 1.  The target should only send each value once.
+  // Once: This mode is used to send a one-time request for data to the target
+  // device by setting once to true in the SubscriptionRequest.  The target
+  // must close the stream after sending the sync_response of 0, which
+  // indicates that all requested data has been sent.  The target should only
+  // send each value once.
   //
-  // Poll: This mode is the equivalent of periodic Once requests but sent over a
-  // single stream.  This is more efficient than sending multiple Once requests
-  // as the target only need parse the subscription once.  It also has an
-  // advantage over Streaming as the client is in control of when the target
-  // should send data again.
+  // Poll: The Poll mode provides a method to send periodic requests over a
+  // single stream similar to conventional polling.  In this mode, the client
+  // is able to control when data is sent by the target, in contrast to the
+  // Streaming mode.  With a single declared subscription, the target need
+  // only parse the subscription once, and can expect periodic requests for
+  // the corresponding data.
   //
   // To poll, the client sends a SubscriptionRequest with poll_interval set to
-  // exepected length of time, in nanoseconds, until the next poll.  The target
-  // respods by sending each subscribed value once followed by a sync_resposne
+  // the exepected length of time, in nanoseconds, until the next poll.  The target
+  // responds by sending each subscribed value once followed by a sync_resposne
   // of 0.  For each following poll, the client sends a SubscriptionRequest on
   // the same stream with only poll_interval set with the next expected
   // interval.  The target again responses with each subscribed value once
@@ -69,7 +79,7 @@ service OpenConfig {
 // Update paths are created by concatenating the prefix, if present, with the
 // paths contained in the Updates.
 //
-// It is valid to have a path be both in an update and match a delete.  The
+// It is valid to have a path be in both an update and a delete.  The
 // deletion will only delete values that are older than this update.
 //
 // Each notification should contain at most a single update for a given path.
@@ -77,7 +87,7 @@ service OpenConfig {
 // in a single notification, all but the final update should be ignored.
 //
 // The prefix should normally be the longest common prefix to all the individual
-// update and delete path.  This reduces the repetition of the common prefix in
+// update and delete paths.  This reduces the repetition of the common prefix in
 // each update and/or delete.  The individual updates and deletes also are a
 // Path (repeated list of elements), allowing a notification such as:
 //
@@ -113,11 +123,13 @@ service OpenConfig {
 //
 // Clients define aliases by sending a SubscriptionRequest with aliases set.
 //
-// A target should use a define alias when possible, but is not required to.  A
+// A target should use a defined alias when possible, but is not required to.  A
 // target may ignore client defined aliases.
 //
-// Clients should not define aliases that valid paths in the data tree.  The
-// target must not define aliases that valid paths in the dat tree.
+//
+// Clients should not define aliases that are valid paths in the data
+// tree.  The target must not define aliases that are valid paths in the
+// data tree.
 //
 // If a target sends a notification with alias set, but not prefix, then it is
 // indicating it will no longer use this alias.  The client may delete this
@@ -209,7 +221,7 @@ message Update {
    Value value = 2;
 }
 
-// A Path represents an open config path as a list of strings, one element
+// A Path represents an OpenConfig path as a list of strings, one path element
 // per string.
 message Path {
   repeated string element = 1;
@@ -267,6 +279,13 @@ message ModelData {
   string namespace = 2; // namespace of the model.
   string version = 3;   // version supported.
   bytes data = 4;       // byte data of the YANG text file.
+  enum Type {
+    MODULE = 0;       // data describes a YANG module
+    BUNDLE = 1;       // data describes a defined bundle
+    AUGMENTATION = 3; // data describes a YANG module augmentation
+    DEVIATION = 4;    // data describes a YANG module deviation
+  }
+  Type model_type = 5;
 }
 
 // A GetRequest requests all the values identified by path be returns in a
@@ -275,10 +294,10 @@ message ModelData {
 // If cache_interval is provided and is non-zero number of nanoseconds, it is
 // a hint of when this get request will be repeated in the future.
 message GetRequest {
-  Path prefix = 1;          // If set, each path is realitve to prefix
+  Path prefix = 1;          // If set, each path is relative to prefix
   repeated Path path = 2;   // List of paths to return information for
-  // Type defines the mode that Get should use (GET_DATA_COMMANDS in the
-  // YANG schema).  Only ALL is required by all implementation.
+  // Type defines the mode that Get should use (GET_TYPE in the
+  // RPC specification YANG schema).
   enum Type {
     ALL         = 0; // Return all data
     CONFIG      = 1; // Only return values in Config containers
@@ -333,6 +352,8 @@ message UpdateResponse {
 }
 
 // An Error contains information about why a particular request failed.
+// Examples of informational errors are included in the RPC specification
+// YANG modules.
 //
 // The canonical error codes are defined for each language.
 //
