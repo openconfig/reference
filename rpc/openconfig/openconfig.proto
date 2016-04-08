@@ -3,10 +3,13 @@ syntax = "proto3";
 import "google/protobuf/any.proto";
 
 // Package openconfig defines the gRPC service for getting and setting the
-// OpenConfig configuration and state of a network device.
+// configuration and state data of a network device based on OpenConfig models.
 //
-// This package and its contents have not been ratified by OpenConfig.  It is
-// a working proposal by Google.
+// This package and its contents is a work-in-progress.  It is meant as a
+// example implementation of the OpenConfig RPC reference specification
+// (available at github.com/openconfig/public) but also contains some additional
+// capabilities.
+//
 package openconfig;
 
 service OpenConfig {
@@ -17,7 +20,7 @@ service OpenConfig {
   // GetModels returns the current YANG models supported by the device.
   rpc GetModels(GetModelsRequest) returns (GetModelsResponse);
 
-  // Set sets the paths contained in the SetRequest to the values If a path does
+  // Set sets the paths contained in the SetRequest to the values. If a path does
   // not exist, or is read-only the SetResponse will return an error.  All paths
   // in the SetRequest must be valid or the entire request must be rejected.  If
   // a path specifies a node, rather than the leaf, then the value must be the
@@ -35,7 +38,7 @@ service OpenConfig {
   // Streaming:  This is the default mode.  The target sends continual updates
   // of each value as specified by each subscription's sample_interval.  The
   // client may request the target to resend the current value of a set of paths
-  // by sending a SyncRequest.
+  // on-demand by sending a SyncRequest.
   //
   // Once: This mode is specified by setting once to true in the
   // SubscriptionRequest.  The target must close the stream after sending
