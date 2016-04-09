@@ -1,6 +1,6 @@
 # openconfig.proto
 
-Package openconfig defines a gRPC service for interacting with network devices
+The openconfig package defines a [gRPC](http://www.grpc.io/) service for interacting with network devices
 based on OpenConfig models.
 
 This package and its contents are a *work-in-progress* and subject to change.  It is provided
