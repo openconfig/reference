@@ -46,6 +46,8 @@ service OpenConfig {
   // the value must be the values of the node's children encoded in JSON.
   // Binary data in the tree must be base64 encoded, but if a path specifies
   // a leaf of binary type, it may be sent as binary.
+  // See SetRequest for further explaination on the atomicity and idempotency of a
+  // Set operation.
   rpc Set(stream SetRequest) returns (stream SetResponse);
 
   // Subscribe subscribes for streaming updates.  Streaming updates are provided
@@ -308,6 +310,20 @@ message GetResponse {
 // The target must either apply all the deletes, replacements, and updates or
 // return an error.  The deletes, replacements, and updates should appear to be
 // atomically applied.
+//
+// Deleting a non-existant, but schema valid, path is a noop.  Replacing or
+// updating a non-existant, but schema valid, path will create the path.
+//
+// A delete operation on a path is the only way to remove an object. A replace
+// or update operation with no value set or set to null or [] will only result
+// in the object at the specified path being reset to schema, if provided, or
+// system defaults, if not provided.
+// 
+// Example:
+// Applying a full configuration replace with a replace element path of "/" and
+// replace element value containing the full JSON of the device configuration
+// with no changes from current configuration should not result in any state
+// changes on the system other than version numbering or timestamp changes.
 message SetRequest {
   Path prefix = 1;
   repeated Path delete = 2;
