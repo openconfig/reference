@@ -309,12 +309,12 @@ message GetResponse {
 //
 // The target must either apply all the deletes, replacements, and updates or
 // return an error.  The deletes, replacements, and updates should appear to be
-// atomically applied.  
+// atomically applied.
 //
 // Non-existing paths are valid for all operations.  Deletes to a non-existing
 // path are no operation. Updates and replaces to a non-existing path with create a
 // node with values set to values contained in the Update.  Any unspecified
-// values will be set to system defaults. 
+// values will be set to system defaults.
 //
 // Example:
 // A SetRequest consisting of a single replace Update, which has a Path of "/"
@@ -592,4 +592,3 @@ message UDPWrapper {
 
   repeated Notification notification = 4;
 }
-
