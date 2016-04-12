@@ -46,13 +46,8 @@ service OpenConfig {
   // the value must be the values of the node's children encoded in JSON.
   // Binary data in the tree must be base64 encoded, but if a path specifies
   // a leaf of binary type, it may be sent as binary.
-<<<<<<< HEAD
   // See SetRequest for further explaination on the atomicity and idempotency
   // of a Set operation.
-=======
-  // See SetRequest for further explaination on the atomicity and idempotency of a
-  // Set operation.
->>>>>>> 29e79481ecb902ddc8bfa1ffe1a25b05289987f5
   rpc Set(stream SetRequest) returns (stream SetResponse);
 
   // Subscribe subscribes for streaming updates.  Streaming updates are provided
@@ -325,16 +320,9 @@ message GetResponse {
 // system defaults, if not provided.
 // 
 // Example:
-<<<<<<< HEAD
 // A SetRequest consisting of a single replace Update, which has a Path of "/"
 // and a Value of the full current configuration of a target, in JSON, should
 // not result in any state changes on the system.
-=======
-// Applying a full configuration replace with a replace element path of "/" and
-// replace element value containing the full JSON of the device configuration
-// with no changes from current configuration should not result in any state
-// changes on the system other than version numbering or timestamp changes.
->>>>>>> 29e79481ecb902ddc8bfa1ffe1a25b05289987f5
 message SetRequest {
   Path prefix = 1;
   repeated Path delete = 2;
