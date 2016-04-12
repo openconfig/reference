@@ -305,20 +305,17 @@ message GetResponse {
 //
 // If the path lists a node, rather than leaf, the value is presented in JSON.
 // When included in replace, it is as if the path was first deleted.  When
-// included in update, the value aguments the existing value, if any.
+// included in update, the value augments the existing value, if any.
 //
 // The target must either apply all the deletes, replacements, and updates or
 // return an error.  The deletes, replacements, and updates should appear to be
-// atomically applied.
+// atomically applied.  
 //
-// Deleting a non-existant, but schema valid, path is a noop.  Replacing or
-// updating a non-existant, but schema valid, path will create the path.
+// Non-existing paths are valid for all operations.  Deletes to a non-existing
+// path are no operation. Updates and replaces to a non-existing path with create a
+// node with values set to values contained in the Update.  Any unspecified
+// values will be set to system defaults. 
 //
-// A delete operation on a path is the only way to remove an object. A replace
-// or update operation with no value set or set to null or [] will only result
-// in the object at the specified path being reset to schema, if provided, or
-// system defaults, if not provided.
-// 
 // Example:
 // A SetRequest consisting of a single replace Update, which has a Path of "/"
 // and a Value of the full current configuration of a target, in JSON, should
