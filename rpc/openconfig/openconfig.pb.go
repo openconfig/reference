@@ -6,34 +6,45 @@
 Package openconfig is a generated protocol buffer package.
 
 Package openconfig defines the gRPC service for getting and setting the
-OpenConfig configuration and state of a network device.
+configuration and state data of a network device based on OpenConfig models.
 
-This package and its contents have not been ratified by OpenConfig.  It is
-a working proposal by Google.
+This package and its contents is a work-in-progress.  It is meant as a
+example implementation of the OpenConfig RPC reference specification
+(available at github.com/openconfig/public/tree/master/release/models/rpc)
+but also contains some additional capabilities not included in the base
+RPC specification.
+
 
 It is generated from these files:
 	openconfig.proto
 
 It has these top-level messages:
+	Notification
+	Update
 	Path
 	Value
-	Update
-	Notification
-	UDPWrapper
-	Error
-	SubscribeRequest
-	SubscribeResponse
-	SubscriptionList
-	Subscription
-	AliasList
-	Alias
-	Heartbeat
-	SyncRequest
+	GetModelsRequest
+	ModelQuery
+	GetModelsResponse
+	ModelData
 	GetRequest
 	GetResponse
 	SetRequest
 	SetResponse
 	UpdateResponse
+	Error
+	SubscribeRequest
+	SubscriptionList
+	Subscription
+	QOSMarking
+	AliasList
+	Alias
+	PollRequest
+	Proxies
+	Proxy
+	SubscribeResponse
+	Heartbeat
+	UDPWrapper
 */
 package openconfig
 
@@ -41,11 +52,6 @@ import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
 import google_protobuf "google/protobuf"
-
-import (
-	context "golang.org/x/net/context"
-	grpc "google.golang.org/grpc"
-)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -78,85 +84,139 @@ func (x Type) String() string {
 }
 func (Type) EnumDescriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
 
-// A Path represents an open config path as a list of strings, one element
-// per string.
-type Path struct {
-	Element []string `protobuf:"bytes,1,rep,name=element" json:"element,omitempty"`
+// SubscriptionMode mode informs the target how notifications should be
+// delivered, as they change or coalesced.  When the mode is TARGET_DEFINED the
+// target chooses the mode the best suits the value.  When the mode is
+// ON_CHANGE, the target must send a notification each time the value changes.
+// When the mode is SAMPLE, the target send notifications at some sampling
+// interval.
+type SubscriptionMode int32
+
+const (
+	SubscriptionMode_TARGET_DEFINED SubscriptionMode = 0
+	SubscriptionMode_ON_CHANGE      SubscriptionMode = 1
+	SubscriptionMode_SAMPLE         SubscriptionMode = 2
+)
+
+var SubscriptionMode_name = map[int32]string{
+	0: "TARGET_DEFINED",
+	1: "ON_CHANGE",
+	2: "SAMPLE",
+}
+var SubscriptionMode_value = map[string]int32{
+	"TARGET_DEFINED": 0,
+	"ON_CHANGE":      1,
+	"SAMPLE":         2,
 }
 
-func (m *Path) Reset()                    { *m = Path{} }
-func (m *Path) String() string            { return proto.CompactTextString(m) }
-func (*Path) ProtoMessage()               {}
-func (*Path) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
+func (x SubscriptionMode) String() string {
+	return proto.EnumName(SubscriptionMode_name, int32(x))
+}
+func (SubscriptionMode) EnumDescriptor() ([]byte, []int) { return fileDescriptor0, []int{1} }
 
-// A Value is either raw data or a JSON encoded value.  An enumerated value is
-// of type JSON, with the numeric value in the value field and the name of the
-// enumerated value in the name field.
-type Value struct {
-	Value []byte `protobuf:"bytes,1,opt,name=value,proto3" json:"value,omitempty"`
-	Type  Type   `protobuf:"varint,2,opt,name=type,enum=openconfig.Type" json:"type,omitempty"`
-	Name  string `protobuf:"bytes,3,opt,name=name" json:"name,omitempty"`
+// Type selects to return only the summary model information or
+// the full YANG model as bytes.  The caller is responsible for extracting the
+// YANG model from the bytes.
+type GetModelsRequest_Type int32
+
+const (
+	GetModelsRequest_SUMMARY GetModelsRequest_Type = 0
+	GetModelsRequest_DETAIL  GetModelsRequest_Type = 1
+)
+
+var GetModelsRequest_Type_name = map[int32]string{
+	0: "SUMMARY",
+	1: "DETAIL",
+}
+var GetModelsRequest_Type_value = map[string]int32{
+	"SUMMARY": 0,
+	"DETAIL":  1,
 }
 
-func (m *Value) Reset()                    { *m = Value{} }
-func (m *Value) String() string            { return proto.CompactTextString(m) }
-func (*Value) ProtoMessage()               {}
-func (*Value) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1} }
+func (x GetModelsRequest_Type) String() string {
+	return proto.EnumName(GetModelsRequest_Type_name, int32(x))
+}
+func (GetModelsRequest_Type) EnumDescriptor() ([]byte, []int) { return fileDescriptor0, []int{4, 0} }
 
-// An Update maps a path to a value.
-//
-// In a Notification, an Update represents a new or updated value for path.  The
-// absolute path name is the concatenation of the Notification prefix and the
-// Update path.  Updates are only sent by the target.  Path must always specify
-// a leaf node.  Value should be a scalar value (e.g., if Value is JSON encoded
-// then the value 123 is acceptable, but {"x":123} is not).
-//
-// In a SetRequest, an Update contains a path to a read-write node and an
-// optional value.  The absolute path name is the concatenation of the
-// SetRequest prefix and the Update path The path may reference either a
-// directory or leaf node.  If value is not present then path, and all its
-// subelements, should be removed.  If value set and path references a directory
-// node, the value is the JSON encoded tree of values below that node,
-// otherwise, if the value is a scalar and may be encoded in JSON are as raw
-// BYTES.  the value
-//
-// For an example of updating a directory node, consider a tree that has the
-// following values:
-//
-//   /a/b/c: 1
-//   /a/b/d: 2
-//   /a/b/e: 3
-//
-// And an Update of
-//
-//   Path: /a/b
-//   Value: "{c: 4, f: 5}"
-//
-// The result is that /a/b/d and /a/b/e are removed, /a/b/c now has the value of
-// 4, and /a/b/f is added with the value of 5.
-type Update struct {
-	Path  *Path  `protobuf:"bytes,1,opt,name=path" json:"path,omitempty"`
-	Value *Value `protobuf:"bytes,2,opt,name=value" json:"value,omitempty"`
+type ModelData_Type int32
+
+const (
+	ModelData_MODULE       ModelData_Type = 0
+	ModelData_BUNDLE       ModelData_Type = 1
+	ModelData_AUGMENTATION ModelData_Type = 3
+	ModelData_DEVIATION    ModelData_Type = 4
+)
+
+var ModelData_Type_name = map[int32]string{
+	0: "MODULE",
+	1: "BUNDLE",
+	3: "AUGMENTATION",
+	4: "DEVIATION",
+}
+var ModelData_Type_value = map[string]int32{
+	"MODULE":       0,
+	"BUNDLE":       1,
+	"AUGMENTATION": 3,
+	"DEVIATION":    4,
 }
 
-func (m *Update) Reset()                    { *m = Update{} }
-func (m *Update) String() string            { return proto.CompactTextString(m) }
-func (*Update) ProtoMessage()               {}
-func (*Update) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{2} }
+func (x ModelData_Type) String() string {
+	return proto.EnumName(ModelData_Type_name, int32(x))
+}
+func (ModelData_Type) EnumDescriptor() ([]byte, []int) { return fileDescriptor0, []int{7, 0} }
 
-func (m *Update) GetPath() *Path {
-	if m != nil {
-		return m.Path
-	}
-	return nil
+// Type defines the mode that Get should use (GET_TYPE in the
+// RPC specification YANG schema).
+type GetRequest_Type int32
+
+const (
+	GetRequest_ALL         GetRequest_Type = 0
+	GetRequest_CONFIG      GetRequest_Type = 1
+	GetRequest_STATE       GetRequest_Type = 2
+	GetRequest_OPERATIONAL GetRequest_Type = 3
+)
+
+var GetRequest_Type_name = map[int32]string{
+	0: "ALL",
+	1: "CONFIG",
+	2: "STATE",
+	3: "OPERATIONAL",
+}
+var GetRequest_Type_value = map[string]int32{
+	"ALL":         0,
+	"CONFIG":      1,
+	"STATE":       2,
+	"OPERATIONAL": 3,
 }
 
-func (m *Update) GetValue() *Value {
-	if m != nil {
-		return m.Value
-	}
-	return nil
+func (x GetRequest_Type) String() string {
+	return proto.EnumName(GetRequest_Type_name, int32(x))
 }
+func (GetRequest_Type) EnumDescriptor() ([]byte, []int) { return fileDescriptor0, []int{8, 0} }
+
+type SubscriptionList_Mode int32
+
+const (
+	SubscriptionList_STREAM SubscriptionList_Mode = 0
+	SubscriptionList_ONCE   SubscriptionList_Mode = 1
+	SubscriptionList_POLL   SubscriptionList_Mode = 2
+)
+
+var SubscriptionList_Mode_name = map[int32]string{
+	0: "STREAM",
+	1: "ONCE",
+	2: "POLL",
+}
+var SubscriptionList_Mode_value = map[string]int32{
+	"STREAM": 0,
+	"ONCE":   1,
+	"POLL":   2,
+}
+
+func (x SubscriptionList_Mode) String() string {
+	return proto.EnumName(SubscriptionList_Mode_name, int32(x))
+}
+func (SubscriptionList_Mode) EnumDescriptor() ([]byte, []int) { return fileDescriptor0, []int{15, 0} }
 
 // A Notification is a list of updates to apply.  Deletes are a list of paths to
 // delete as long as their data is older than timestamp.  Deleting nodes deletes
@@ -167,7 +227,7 @@ func (m *Update) GetValue() *Value {
 // Update paths are created by concatenating the prefix, if present, with the
 // paths contained in the Updates.
 //
-// It is valid to have a path be both in an update and match a delete.  The
+// It is valid to have a path be in both an update and a delete.  The
 // deletion will only delete values that are older than this update.
 //
 // Each notification should contain at most a single update for a given path.
@@ -175,7 +235,7 @@ func (m *Update) GetValue() *Value {
 // in a single notification, all but the final update should be ignored.
 //
 // The prefix should normally be the longest common prefix to all the individual
-// update and delete path.  This reduces the repetition of the common prefix in
+// update and delete paths.  This reduces the repetition of the common prefix in
 // each update and/or delete.  The individual updates and deletes also are a
 // Path (repeated list of elements), allowing a notification such as:
 //
@@ -211,11 +271,13 @@ func (m *Update) GetValue() *Value {
 //
 // Clients define aliases by sending a SubscriptionRequest with aliases set.
 //
-// A target should use a define alias when possible, but is not required to.  A
+// A target should use a defined alias when possible, but is not required to.  A
 // target may ignore client defined aliases.
 //
-// Clients should not define aliases that valid paths in the data tree.  The
-// target must not define aliases that valid paths in the dat tree.
+//
+// Clients should not define aliases that are valid paths in the data
+// tree.  The target must not define aliases that are valid paths in the
+// data tree.
 //
 // If a target sends a notification with alias set, but not prefix, then it is
 // indicating it will no longer use this alias.  The client may delete this
@@ -274,7 +336,7 @@ type Notification struct {
 func (m *Notification) Reset()                    { *m = Notification{} }
 func (m *Notification) String() string            { return proto.CompactTextString(m) }
 func (*Notification) ProtoMessage()               {}
-func (*Notification) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{3} }
+func (*Notification) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
 
 func (m *Notification) GetPrefix() *Path {
 	if m != nil {
@@ -297,46 +359,323 @@ func (m *Notification) GetDelete() []*Path {
 	return nil
 }
 
-// UDPWrapper adds metadata necessary for encapsulating a list of notifications
-// into a UDP packet.  It adds the ability to identify the agent that originated
-// the Notifications, detect packet loss, and identify latency introduced by
-// the target wrapping notifications.
+// An Update maps a path to a value.
 //
-// The target should keep the total size of a serialized UDPWrapper message
-// small enough to not cause IP packet fragmentation.
-type UDPWrapper struct {
-	// ID Identifies the device (e.g., Loopback IP address, linecard, ...)
-	// TODO(borman): Add examples.  Perhaps Agent/module/submodule for juniper.
-	Id *Path `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
-	// Optional Epoch time of when the message is queued for transmit.
-	// Useful to quantify delay between message generation and transmission.
-	TransmitTimestamp uint64 `protobuf:"varint,2,opt,name=transmit_timestamp,json=transmitTimestamp" json:"transmit_timestamp,omitempty"`
-	// The sequence_number must start at 1 and increment by 1 for each new packet
-	// sent.  A client may use this to determine if a packet was lost.
-	SequenceNumber uint64          `protobuf:"varint,3,opt,name=sequence_number,json=sequenceNumber" json:"sequence_number,omitempty"`
-	Notification   []*Notification `protobuf:"bytes,4,rep,name=notification" json:"notification,omitempty"`
+// In a Notification, an Update represents a new or updated value for path.  The
+// absolute path name is the concatenation of the Notification prefix and the
+// Update path.  Updates are only sent by the target.  Path must always specify
+// a leaf node.  Value should be a scalar value (e.g., if Value is JSON encoded
+// then the value 123 is acceptable, but {"x":123} is not).
+//
+// In a SetRequest, an Update contains a path to a read-write node and an
+// optional value.  The absolute path name is the concatenation of the
+// SetRequest prefix and the Update path The path may reference either a
+// directory or leaf node.  If value is not present then path, and all its
+// subelements, should be removed.  If value set and path references a directory
+// node, the value is the JSON encoded tree of values below that node,
+// otherwise, if the value is a scalar and may be encoded in JSON are as raw
+// BYTES.  the value
+//
+// For an example of updating a directory node, consider a tree that has the
+// following values:
+//
+//   /a/b/c: 1
+//   /a/b/d: 2
+//   /a/b/e: 3
+//
+// And an Update of
+//
+//   Path: /a/b
+//   Value: "{c: 4, f: 5}"
+//
+// The result is that /a/b/d and /a/b/e are removed, /a/b/c now has the value of
+// 4, and /a/b/f is added with the value of 5.
+type Update struct {
+	Path  *Path  `protobuf:"bytes,1,opt,name=path" json:"path,omitempty"`
+	Value *Value `protobuf:"bytes,2,opt,name=value" json:"value,omitempty"`
 }
 
-func (m *UDPWrapper) Reset()                    { *m = UDPWrapper{} }
-func (m *UDPWrapper) String() string            { return proto.CompactTextString(m) }
-func (*UDPWrapper) ProtoMessage()               {}
-func (*UDPWrapper) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{4} }
+func (m *Update) Reset()                    { *m = Update{} }
+func (m *Update) String() string            { return proto.CompactTextString(m) }
+func (*Update) ProtoMessage()               {}
+func (*Update) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1} }
 
-func (m *UDPWrapper) GetId() *Path {
+func (m *Update) GetPath() *Path {
 	if m != nil {
-		return m.Id
+		return m.Path
 	}
 	return nil
 }
 
-func (m *UDPWrapper) GetNotification() []*Notification {
+func (m *Update) GetValue() *Value {
+	if m != nil {
+		return m.Value
+	}
+	return nil
+}
+
+// A Path represents an OpenConfig path as a list of strings, one path element
+// per string.
+type Path struct {
+	Element []string `protobuf:"bytes,1,rep,name=element" json:"element,omitempty"`
+}
+
+func (m *Path) Reset()                    { *m = Path{} }
+func (m *Path) String() string            { return proto.CompactTextString(m) }
+func (*Path) ProtoMessage()               {}
+func (*Path) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{2} }
+
+// A Value is either raw data or a JSON encoded value.  An enumerated value is
+// of type JSON, with the numeric value in the value field and the name of the
+// enumerated value in the name field.
+type Value struct {
+	Value []byte `protobuf:"bytes,1,opt,name=value,proto3" json:"value,omitempty"`
+	Type  Type   `protobuf:"varint,2,opt,name=type,enum=openconfig.Type" json:"type,omitempty"`
+	Name  string `protobuf:"bytes,3,opt,name=name" json:"name,omitempty"`
+}
+
+func (m *Value) Reset()                    { *m = Value{} }
+func (m *Value) String() string            { return proto.CompactTextString(m) }
+func (*Value) ProtoMessage()               {}
+func (*Value) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{3} }
+
+// GetModelsRequest contains a list of models to return.  If no queries are
+// specified, all currently support models will be returned.  ModelReturnType
+// specifies the format of the model to return.  By default, only summaries will
+// be returned.
+type GetModelsRequest struct {
+	RequestType GetModelsRequest_Type `protobuf:"varint,1,opt,name=request_type,json=requestType,enum=openconfig.GetModelsRequest_Type" json:"request_type,omitempty"`
+	Query       *ModelQuery           `protobuf:"bytes,2,opt,name=query" json:"query,omitempty"`
+}
+
+func (m *GetModelsRequest) Reset()                    { *m = GetModelsRequest{} }
+func (m *GetModelsRequest) String() string            { return proto.CompactTextString(m) }
+func (*GetModelsRequest) ProtoMessage()               {}
+func (*GetModelsRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{4} }
+
+func (m *GetModelsRequest) GetQuery() *ModelQuery {
+	if m != nil {
+		return m.Query
+	}
+	return nil
+}
+
+// ModelQuery contains a name and/or namespace regex pattern to match against
+// supported models on the system.
+type ModelQuery struct {
+	Name      string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	Namespace string `protobuf:"bytes,2,opt,name=namespace" json:"namespace,omitempty"`
+	Version   string `protobuf:"bytes,3,opt,name=version" json:"version,omitempty"`
+}
+
+func (m *ModelQuery) Reset()                    { *m = ModelQuery{} }
+func (m *ModelQuery) String() string            { return proto.CompactTextString(m) }
+func (*ModelQuery) ProtoMessage()               {}
+func (*ModelQuery) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{5} }
+
+// GetModelsResponse returns a list of models supported by the system.
+type GetModelsResponse struct {
+	// List of models supported by the system.
+	Models []*ModelData `protobuf:"bytes,1,rep,name=models" json:"models,omitempty"`
+}
+
+func (m *GetModelsResponse) Reset()                    { *m = GetModelsResponse{} }
+func (m *GetModelsResponse) String() string            { return proto.CompactTextString(m) }
+func (*GetModelsResponse) ProtoMessage()               {}
+func (*GetModelsResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{6} }
+
+func (m *GetModelsResponse) GetModels() []*ModelData {
+	if m != nil {
+		return m.Models
+	}
+	return nil
+}
+
+// ModelData contains the summary information for the model as well as the
+// actual model data if requested.
+type ModelData struct {
+	Name      string         `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	Namespace string         `protobuf:"bytes,2,opt,name=namespace" json:"namespace,omitempty"`
+	Version   string         `protobuf:"bytes,3,opt,name=version" json:"version,omitempty"`
+	Data      []byte         `protobuf:"bytes,4,opt,name=data,proto3" json:"data,omitempty"`
+	ModelType ModelData_Type `protobuf:"varint,5,opt,name=model_type,json=modelType,enum=openconfig.ModelData_Type" json:"model_type,omitempty"`
+}
+
+func (m *ModelData) Reset()                    { *m = ModelData{} }
+func (m *ModelData) String() string            { return proto.CompactTextString(m) }
+func (*ModelData) ProtoMessage()               {}
+func (*ModelData) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{7} }
+
+// A GetRequest requests all the values identified by path be returns in a
+// single GetResponse message.
+//
+// If cache_interval is provided and is non-zero number of nanoseconds, it is
+// a hint of when this get request will be repeated in the future.
+type GetRequest struct {
+	Prefix        *Path           `protobuf:"bytes,1,opt,name=prefix" json:"prefix,omitempty"`
+	Path          []*Path         `protobuf:"bytes,2,rep,name=path" json:"path,omitempty"`
+	Type          GetRequest_Type `protobuf:"varint,3,opt,name=type,enum=openconfig.GetRequest_Type" json:"type,omitempty"`
+	CacheInterval int64           `protobuf:"varint,4,opt,name=cache_interval,json=cacheInterval" json:"cache_interval,omitempty"`
+}
+
+func (m *GetRequest) Reset()                    { *m = GetRequest{} }
+func (m *GetRequest) String() string            { return proto.CompactTextString(m) }
+func (*GetRequest) ProtoMessage()               {}
+func (*GetRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{8} }
+
+func (m *GetRequest) GetPrefix() *Path {
+	if m != nil {
+		return m.Prefix
+	}
+	return nil
+}
+
+func (m *GetRequest) GetPath() []*Path {
+	if m != nil {
+		return m.Path
+	}
+	return nil
+}
+
+type GetResponse struct {
+	Notification []*Notification `protobuf:"bytes,1,rep,name=notification" json:"notification,omitempty"`
+}
+
+func (m *GetResponse) Reset()                    { *m = GetResponse{} }
+func (m *GetResponse) String() string            { return proto.CompactTextString(m) }
+func (*GetResponse) ProtoMessage()               {}
+func (*GetResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{9} }
+
+func (m *GetResponse) GetNotification() []*Notification {
 	if m != nil {
 		return m.Notification
 	}
 	return nil
 }
 
+// A SetRequest contains an optional prefix, a list of zero or more Paths to
+// delete, a list of zero or more paths to replace, and a list of zero of more
+// paths to update.  Deletes should appear to happen first, followed by
+// replacements, followed by updates.
+//
+// If the path lists a node, rather than leaf, the value is presented in JSON.
+// When included in replace, it is as if the path was first deleted.  When
+// included in update, the value augments the existing value, if any.
+//
+// The target must either apply all the deletes, replacements, and updates or
+// return an error.  The deletes, replacements, and updates should appear to be
+// atomically applied.
+//
+// Non-existing but otherwise valid paths are valid for all operations.  Deletes
+// to a non-existing path are a no-op. Updates and replaces to a non-existing
+// path with create a path with its values set to values contained in the
+// Update.  Any unspecified values will be set to system defaults.
+//
+// Example:
+// A SetRequest consisting of a single replace Update, which has a Path of "/"
+// and a Value of the full current configuration of a target, in JSON, should
+// not result in any state changes on the system.
+type SetRequest struct {
+	Prefix  *Path     `protobuf:"bytes,1,opt,name=prefix" json:"prefix,omitempty"`
+	Delete  []*Path   `protobuf:"bytes,2,rep,name=delete" json:"delete,omitempty"`
+	Replace []*Update `protobuf:"bytes,3,rep,name=replace" json:"replace,omitempty"`
+	Update  []*Update `protobuf:"bytes,4,rep,name=update" json:"update,omitempty"`
+}
+
+func (m *SetRequest) Reset()                    { *m = SetRequest{} }
+func (m *SetRequest) String() string            { return proto.CompactTextString(m) }
+func (*SetRequest) ProtoMessage()               {}
+func (*SetRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{10} }
+
+func (m *SetRequest) GetPrefix() *Path {
+	if m != nil {
+		return m.Prefix
+	}
+	return nil
+}
+
+func (m *SetRequest) GetDelete() []*Path {
+	if m != nil {
+		return m.Delete
+	}
+	return nil
+}
+
+func (m *SetRequest) GetReplace() []*Update {
+	if m != nil {
+		return m.Replace
+	}
+	return nil
+}
+
+func (m *SetRequest) GetUpdate() []*Update {
+	if m != nil {
+		return m.Update
+	}
+	return nil
+}
+
+// A SetResponse contains responses to a SetRequest.  The optional prefix is
+// applied to all paths in response.  Each path provided by a SetRequest needs a
+// response, but there need not be a 1:1 correspondence between SetRequests and
+// SetResponses (e.g., the target may issue a single response to multiple
+// requests, or multiple responses to a single request).
+type SetResponse struct {
+	Prefix   *Path             `protobuf:"bytes,1,opt,name=prefix" json:"prefix,omitempty"`
+	Response []*UpdateResponse `protobuf:"bytes,2,rep,name=response" json:"response,omitempty"`
+}
+
+func (m *SetResponse) Reset()                    { *m = SetResponse{} }
+func (m *SetResponse) String() string            { return proto.CompactTextString(m) }
+func (*SetResponse) ProtoMessage()               {}
+func (*SetResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{11} }
+
+func (m *SetResponse) GetPrefix() *Path {
+	if m != nil {
+		return m.Prefix
+	}
+	return nil
+}
+
+func (m *SetResponse) GetResponse() []*UpdateResponse {
+	if m != nil {
+		return m.Response
+	}
+	return nil
+}
+
+// An UpdateResponse contains the response for a single path Update.
+type UpdateResponse struct {
+	// The timestamp is the time, in nanoseconds since the epoch, that a Set was
+	// accepted (i.e., the request was valid).  It does not imply the value was
+	// actually propagated to an underlying datastore.
+	Timestamp int64  `protobuf:"varint,1,opt,name=timestamp" json:"timestamp,omitempty"`
+	Path      *Path  `protobuf:"bytes,2,opt,name=path" json:"path,omitempty"`
+	Error     *Error `protobuf:"bytes,3,opt,name=error" json:"error,omitempty"`
+}
+
+func (m *UpdateResponse) Reset()                    { *m = UpdateResponse{} }
+func (m *UpdateResponse) String() string            { return proto.CompactTextString(m) }
+func (*UpdateResponse) ProtoMessage()               {}
+func (*UpdateResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{12} }
+
+func (m *UpdateResponse) GetPath() *Path {
+	if m != nil {
+		return m.Path
+	}
+	return nil
+}
+
+func (m *UpdateResponse) GetError() *Error {
+	if m != nil {
+		return m.Error
+	}
+	return nil
+}
+
 // An Error contains information about why a particular request failed.
+// Examples of informational errors are included in the RPC specification
+// YANG modules.
 //
 // The canonical error codes are defined for each language.
 //
@@ -354,7 +693,7 @@ type Error struct {
 func (m *Error) Reset()                    { *m = Error{} }
 func (m *Error) String() string            { return proto.CompactTextString(m) }
 func (*Error) ProtoMessage()               {}
-func (*Error) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{5} }
+func (*Error) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{13} }
 
 func (m *Error) GetData() *google_protobuf.Any {
 	if m != nil {
@@ -364,26 +703,22 @@ func (m *Error) GetData() *google_protobuf.Any {
 }
 
 // A SubscribeRequest is either a subscription request, a change to the
-// heartbeat rate, or a request for resynchronization of data.  It is always
-// sent from the client to the target.
-//
-// Proxy is a list of proxies to use to get to the target.  The first proxy
-// listed is the address of the next hop.  Targets ignore the proxy field (it
-// should not be set).
+// heartbeat rate, initiating a poll, or defining an alias. It is always sent
+// from the client to the target.
 type SubscribeRequest struct {
 	// Types that are valid to be assigned to Request:
 	//	*SubscribeRequest_Subscribe
 	//	*SubscribeRequest_Heartbeat
-	//	*SubscribeRequest_Sync
+	//	*SubscribeRequest_Poll
 	//	*SubscribeRequest_Aliases
 	Request isSubscribeRequest_Request `protobuf_oneof:"request"`
-	Proxy   []string                   `protobuf:"bytes,5,rep,name=proxy" json:"proxy,omitempty"`
+	Proxy   *Proxies                   `protobuf:"bytes,5,opt,name=proxy" json:"proxy,omitempty"`
 }
 
 func (m *SubscribeRequest) Reset()                    { *m = SubscribeRequest{} }
 func (m *SubscribeRequest) String() string            { return proto.CompactTextString(m) }
 func (*SubscribeRequest) ProtoMessage()               {}
-func (*SubscribeRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{6} }
+func (*SubscribeRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{14} }
 
 type isSubscribeRequest_Request interface {
 	isSubscribeRequest_Request()
@@ -395,8 +730,8 @@ type SubscribeRequest_Subscribe struct {
 type SubscribeRequest_Heartbeat struct {
 	Heartbeat *Heartbeat `protobuf:"bytes,2,opt,name=heartbeat,oneof"`
 }
-type SubscribeRequest_Sync struct {
-	Sync *SyncRequest `protobuf:"bytes,3,opt,name=sync,oneof"`
+type SubscribeRequest_Poll struct {
+	Poll *PollRequest `protobuf:"bytes,3,opt,name=poll,oneof"`
 }
 type SubscribeRequest_Aliases struct {
 	Aliases *AliasList `protobuf:"bytes,4,opt,name=aliases,oneof"`
@@ -404,7 +739,7 @@ type SubscribeRequest_Aliases struct {
 
 func (*SubscribeRequest_Subscribe) isSubscribeRequest_Request() {}
 func (*SubscribeRequest_Heartbeat) isSubscribeRequest_Request() {}
-func (*SubscribeRequest_Sync) isSubscribeRequest_Request()      {}
+func (*SubscribeRequest_Poll) isSubscribeRequest_Request()      {}
 func (*SubscribeRequest_Aliases) isSubscribeRequest_Request()   {}
 
 func (m *SubscribeRequest) GetRequest() isSubscribeRequest_Request {
@@ -428,9 +763,9 @@ func (m *SubscribeRequest) GetHeartbeat() *Heartbeat {
 	return nil
 }
 
-func (m *SubscribeRequest) GetSync() *SyncRequest {
-	if x, ok := m.GetRequest().(*SubscribeRequest_Sync); ok {
-		return x.Sync
+func (m *SubscribeRequest) GetPoll() *PollRequest {
+	if x, ok := m.GetRequest().(*SubscribeRequest_Poll); ok {
+		return x.Poll
 	}
 	return nil
 }
@@ -442,12 +777,19 @@ func (m *SubscribeRequest) GetAliases() *AliasList {
 	return nil
 }
 
+func (m *SubscribeRequest) GetProxy() *Proxies {
+	if m != nil {
+		return m.Proxy
+	}
+	return nil
+}
+
 // XXX_OneofFuncs is for the internal use of the proto package.
 func (*SubscribeRequest) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
 	return _SubscribeRequest_OneofMarshaler, _SubscribeRequest_OneofUnmarshaler, _SubscribeRequest_OneofSizer, []interface{}{
 		(*SubscribeRequest_Subscribe)(nil),
 		(*SubscribeRequest_Heartbeat)(nil),
-		(*SubscribeRequest_Sync)(nil),
+		(*SubscribeRequest_Poll)(nil),
 		(*SubscribeRequest_Aliases)(nil),
 	}
 }
@@ -466,9 +808,9 @@ func _SubscribeRequest_OneofMarshaler(msg proto.Message, b *proto.Buffer) error 
 		if err := b.EncodeMessage(x.Heartbeat); err != nil {
 			return err
 		}
-	case *SubscribeRequest_Sync:
+	case *SubscribeRequest_Poll:
 		b.EncodeVarint(3<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.Sync); err != nil {
+		if err := b.EncodeMessage(x.Poll); err != nil {
 			return err
 		}
 	case *SubscribeRequest_Aliases:
@@ -502,13 +844,13 @@ func _SubscribeRequest_OneofUnmarshaler(msg proto.Message, tag, wire int, b *pro
 		err := b.DecodeMessage(msg)
 		m.Request = &SubscribeRequest_Heartbeat{msg}
 		return true, err
-	case 3: // request.sync
+	case 3: // request.poll
 		if wire != proto.WireBytes {
 			return true, proto.ErrInternalBadWireType
 		}
-		msg := new(SyncRequest)
+		msg := new(PollRequest)
 		err := b.DecodeMessage(msg)
-		m.Request = &SubscribeRequest_Sync{msg}
+		m.Request = &SubscribeRequest_Poll{msg}
 		return true, err
 	case 4: // request.aliases
 		if wire != proto.WireBytes {
@@ -537,8 +879,8 @@ func _SubscribeRequest_OneofSizer(msg proto.Message) (n int) {
 		n += proto.SizeVarint(2<<3 | proto.WireBytes)
 		n += proto.SizeVarint(uint64(s))
 		n += s
-	case *SubscribeRequest_Sync:
-		s := proto.Size(x.Sync)
+	case *SubscribeRequest_Poll:
+		s := proto.Size(x.Poll)
 		n += proto.SizeVarint(3<<3 | proto.WireBytes)
 		n += proto.SizeVarint(uint64(s))
 		n += s
@@ -554,7 +896,261 @@ func _SubscribeRequest_OneofSizer(msg proto.Message) (n int) {
 	return n
 }
 
+// SubscriptionList contains the list of individual subscriptions.  A
+// SubscriptionList is only valid if all of the contained subscriptions are
+// valid.
+//
+// A SubscriptionList operates in one of three modes, all of which operate on
+// the streaming channel.
+//
+// STREAM:  This is the default mode.  The target must send notifcations for all
+// subscribed values.  After each subscribed value as been sent at least once,
+// the target must send a sync_response.  The target continues to send update
+// notifications for the subscribed values as indicated in the subscription.
+//
+// ONCE: This mode is used to send a one-time request for data to the target
+// device by setting once to true in the SubscriptionRequest.  The target sends
+// each subscribed value once, followed by a sync_response (indicating all
+// values were sent) and then closes the stream.
+//
+// POLL: This mode provides a method to send periodic requests over a single
+// stream similar to conventional polling.  In this mode, the client is able to
+// control when data is sent by the target, in contrast to the STREAM mode.
+// With a single declared subscription, the target need only parse the
+// subscription once, and can expect periodic requests for the corresponding
+// data.
+//
+// After sending a SubscriptioList with mode set to POLL, polls are initiated by
+// sending a PollRequest.  The target sends no notifications to the client until
+// the first PollRequest is received.  The target responds by sending each
+// subscribed value once, followed by a sync_response.  This process repeates
+// for subsequent polls.
+//
+// Polling mode is optional.  If a target does not support the polling mode, it
+// must reject a polling subscription request.  If a client sends a new poll
+// before the previous poll completes, the target should close the stream with
+// an error.
+//
+// If prefix is set then all subscriptions in the list and all notifications
+// generated are relative to prefix.
+//
+// If qos is provided then marking is the qos marking to use for this session.
+// The target should use this qos marking, if supported.
+//
+// In the event of overlapping subscription, the most specific subscription for
+// a value is used.  For example, if the following two subscriptions were made:
+//
+//  /interfaces/interfaces/*/state
+//  /interfaces/interfaces/*/state/counters
+//
+// Then values in state outside of counters would be subject to the first
+// subscription.  Values inside of counters would be subject to the second
+// subscription.
+type SubscriptionList struct {
+	Prefix       *Path                 `protobuf:"bytes,1,opt,name=prefix" json:"prefix,omitempty"`
+	Subscription []*Subscription       `protobuf:"bytes,2,rep,name=subscription" json:"subscription,omitempty"`
+	UseAliases   bool                  `protobuf:"varint,3,opt,name=use_aliases,json=useAliases" json:"use_aliases,omitempty"`
+	Qos          *QOSMarking           `protobuf:"bytes,4,opt,name=qos" json:"qos,omitempty"`
+	Mode         SubscriptionList_Mode `protobuf:"varint,5,opt,name=mode,enum=openconfig.SubscriptionList_Mode" json:"mode,omitempty"`
+}
+
+func (m *SubscriptionList) Reset()                    { *m = SubscriptionList{} }
+func (m *SubscriptionList) String() string            { return proto.CompactTextString(m) }
+func (*SubscriptionList) ProtoMessage()               {}
+func (*SubscriptionList) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{15} }
+
+func (m *SubscriptionList) GetPrefix() *Path {
+	if m != nil {
+		return m.Prefix
+	}
+	return nil
+}
+
+func (m *SubscriptionList) GetSubscription() []*Subscription {
+	if m != nil {
+		return m.Subscription
+	}
+	return nil
+}
+
+func (m *SubscriptionList) GetQos() *QOSMarking {
+	if m != nil {
+		return m.Qos
+	}
+	return nil
+}
+
+// Subscription contains a path as well as information on how two send
+// notifications.
+//
+// A Subscription contains subscription information for a single path.  The path
+// may be either a leaf node or a directory node in the tree.  When subscribing
+// for a directory node, all nodes below it are automatically included in the
+// subscription.
+//
+// If mode is ON_CHANGE, then the target must either be able to send
+// notifcations each time a value changes or reject the subscription.  This is
+// typically used for events.  The sample_interval is ignored when the mode in
+// ON_CHANGE.
+//
+// If mode is SAMPLE, the target must coalesce notifcations based on the
+// provided sample_interval.  This is typically used for aggregating values
+// (i.e., counters).  The sample_interval, if not 0, is the number of
+// nanoseconds between updates.  If 0, the interval is selected by the target.
+// If the target cannot support the supplied sample_interval, the Subscription
+// must be rejected.  The sample_interval is only used for subscriptions in
+// streaming mode.  The sample_interval is ignored if mode is not SAMPLE.
+//
+// (Setting mode to SAMPLE and sample_interval to 0 is functionally the
+// same as setting mode to TARGET_DEFINED.)
+//
+// The suppress_redundant field, if true, indicates the target should not send
+// notifications for fields that are unchanged since.  This value is ignored
+// if mode is not SAMPLE.
+//
+// The heartbeat_interval field specifies how frequently an unchanged value must
+// be sent regardless of the suppress_redundant field.  A value of 0 indicates
+// there is no heartbeat_interval and values only need to be sent when changed.
+// The target must reject a subscription if it cannot support the requested
+// heartbeat_interval.  This value is ignored if mode is not SAMPLE.
+type Subscription struct {
+	Path              *Path            `protobuf:"bytes,1,opt,name=path" json:"path,omitempty"`
+	Mode              SubscriptionMode `protobuf:"varint,2,opt,name=mode,enum=openconfig.SubscriptionMode" json:"mode,omitempty"`
+	SampleInterval    uint64           `protobuf:"varint,3,opt,name=sample_interval,json=sampleInterval" json:"sample_interval,omitempty"`
+	SuppressRedundant bool             `protobuf:"varint,4,opt,name=suppress_redundant,json=suppressRedundant" json:"suppress_redundant,omitempty"`
+	HeartbeatInterval uint64           `protobuf:"varint,5,opt,name=heartbeat_interval,json=heartbeatInterval" json:"heartbeat_interval,omitempty"`
+}
+
+func (m *Subscription) Reset()                    { *m = Subscription{} }
+func (m *Subscription) String() string            { return proto.CompactTextString(m) }
+func (*Subscription) ProtoMessage()               {}
+func (*Subscription) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{16} }
+
+func (m *Subscription) GetPath() *Path {
+	if m != nil {
+		return m.Path
+	}
+	return nil
+}
+
+// A QOSMarking describes the QOS marking to use, if supported by the server.
+type QOSMarking struct {
+	Marking uint32 `protobuf:"varint,1,opt,name=marking" json:"marking,omitempty"`
+}
+
+func (m *QOSMarking) Reset()                    { *m = QOSMarking{} }
+func (m *QOSMarking) String() string            { return proto.CompactTextString(m) }
+func (*QOSMarking) ProtoMessage()               {}
+func (*QOSMarking) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{17} }
+
+// An AliasList represents a list of aliases.
+type AliasList struct {
+	Alias []*Alias `protobuf:"bytes,1,rep,name=alias" json:"alias,omitempty"`
+}
+
+func (m *AliasList) Reset()                    { *m = AliasList{} }
+func (m *AliasList) String() string            { return proto.CompactTextString(m) }
+func (*AliasList) ProtoMessage()               {}
+func (*AliasList) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{18} }
+
+func (m *AliasList) GetAlias() []*Alias {
+	if m != nil {
+		return m.Alias
+	}
+	return nil
+}
+
+// An Alias specifies a preferred client defined alias for a specified path.  An
+// Alias is only sent from the client to the target.  An alias is typically one
+// element and is much shorter than the provided path.  A target should
+// substitute alias for path in Notifications.  Targets may ignore Alias
+// messages.
+//
+// The path must be fully expanded and not use an alias.
+//
+// If alias is set and path is not then the alias must no longer be used by the
+// target, once received.  A client may still see Notifications using the alias
+// that were generated prior to the target receiving the request to stop using
+// the alias.
+type Alias struct {
+	Path  *Path `protobuf:"bytes,1,opt,name=path" json:"path,omitempty"`
+	Alias *Path `protobuf:"bytes,2,opt,name=alias" json:"alias,omitempty"`
+}
+
+func (m *Alias) Reset()                    { *m = Alias{} }
+func (m *Alias) String() string            { return proto.CompactTextString(m) }
+func (*Alias) ProtoMessage()               {}
+func (*Alias) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{19} }
+
+func (m *Alias) GetPath() *Path {
+	if m != nil {
+		return m.Path
+	}
+	return nil
+}
+
+func (m *Alias) GetAlias() *Path {
+	if m != nil {
+		return m.Alias
+	}
+	return nil
+}
+
+// A PollRequest requests that all values in the subscription be resent.
+type PollRequest struct {
+}
+
+func (m *PollRequest) Reset()                    { *m = PollRequest{} }
+func (m *PollRequest) String() string            { return proto.CompactTextString(m) }
+func (*PollRequest) ProtoMessage()               {}
+func (*PollRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{20} }
+
+// Proxies is a list of proxies to use to get to the target.  The first proxy
+// listed is the the next hop.  Actual targets ignore the proxy field (it should
+// not be set when the request reaches the target).
+//
+// The target_name is an optional informational field describing the ultimate
+// destination of the subscribe request.  Proxies may find it useful to use this
+// information in logs and errors.
+//
+// The client_name is an optional informatinal field describing the client
+// making the subscribe request.  Proxies may find it useful to use this
+// information in logs and errors.
+type Proxies struct {
+	Proxy      []*Proxy `protobuf:"bytes,1,rep,name=proxy" json:"proxy,omitempty"`
+	TargetName string   `protobuf:"bytes,2,opt,name=target_name,json=targetName" json:"target_name,omitempty"`
+	ClientName string   `protobuf:"bytes,3,opt,name=client_name,json=clientName" json:"client_name,omitempty"`
+}
+
+func (m *Proxies) Reset()                    { *m = Proxies{} }
+func (m *Proxies) String() string            { return proto.CompactTextString(m) }
+func (*Proxies) ProtoMessage()               {}
+func (*Proxies) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{21} }
+
+func (m *Proxies) GetProxy() []*Proxy {
+	if m != nil {
+		return m.Proxy
+	}
+	return nil
+}
+
+// A Proxy represents a proxy service to use when connecting to the device.
+type Proxy struct {
+	Address string `protobuf:"bytes,1,opt,name=address" json:"address,omitempty"`
+	Name    string `protobuf:"bytes,2,opt,name=name" json:"name,omitempty"`
+}
+
+func (m *Proxy) Reset()                    { *m = Proxy{} }
+func (m *Proxy) String() string            { return proto.CompactTextString(m) }
+func (*Proxy) ProtoMessage()               {}
+func (*Proxy) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{22} }
+
 // A SubscribeResponse is always sent from the target to the client.
+//
+// Notifications are sent as described above in SubscribeList.
+//
+// A sync_response is sent when the target finishes sending all the subscribed
+// values at least once.
 type SubscribeResponse struct {
 	// Types that are valid to be assigned to Response:
 	//	*SubscribeResponse_Update
@@ -566,7 +1162,7 @@ type SubscribeResponse struct {
 func (m *SubscribeResponse) Reset()                    { *m = SubscribeResponse{} }
 func (m *SubscribeResponse) String() string            { return proto.CompactTextString(m) }
 func (*SubscribeResponse) ProtoMessage()               {}
-func (*SubscribeResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{7} }
+func (*SubscribeResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{23} }
 
 type isSubscribeResponse_Response interface {
 	isSubscribeResponse_Response()
@@ -579,7 +1175,7 @@ type SubscribeResponse_Heartbeat struct {
 	Heartbeat *Heartbeat `protobuf:"bytes,2,opt,name=heartbeat,oneof"`
 }
 type SubscribeResponse_SyncResponse struct {
-	SyncResponse uint64 `protobuf:"varint,3,opt,name=sync_response,json=syncResponse,oneof"`
+	SyncResponse bool `protobuf:"varint,3,opt,name=sync_response,json=syncResponse,oneof"`
 }
 
 func (*SubscribeResponse_Update) isSubscribeResponse_Response()       {}
@@ -607,11 +1203,11 @@ func (m *SubscribeResponse) GetHeartbeat() *Heartbeat {
 	return nil
 }
 
-func (m *SubscribeResponse) GetSyncResponse() uint64 {
+func (m *SubscribeResponse) GetSyncResponse() bool {
 	if x, ok := m.GetResponse().(*SubscribeResponse_SyncResponse); ok {
 		return x.SyncResponse
 	}
-	return 0
+	return false
 }
 
 // XXX_OneofFuncs is for the internal use of the proto package.
@@ -638,8 +1234,12 @@ func _SubscribeResponse_OneofMarshaler(msg proto.Message, b *proto.Buffer) error
 			return err
 		}
 	case *SubscribeResponse_SyncResponse:
+		t := uint64(0)
+		if x.SyncResponse {
+			t = 1
+		}
 		b.EncodeVarint(3<<3 | proto.WireVarint)
-		b.EncodeVarint(uint64(x.SyncResponse))
+		b.EncodeVarint(t)
 	case nil:
 	default:
 		return fmt.Errorf("SubscribeResponse.Response has unexpected type %T", x)
@@ -671,7 +1271,7 @@ func _SubscribeResponse_OneofUnmarshaler(msg proto.Message, tag, wire int, b *pr
 			return true, proto.ErrInternalBadWireType
 		}
 		x, err := b.DecodeVarint()
-		m.Response = &SubscribeResponse_SyncResponse{x}
+		m.Response = &SubscribeResponse_SyncResponse{x != 0}
 		return true, err
 	default:
 		return false, nil
@@ -694,246 +1294,12 @@ func _SubscribeResponse_OneofSizer(msg proto.Message) (n int) {
 		n += s
 	case *SubscribeResponse_SyncResponse:
 		n += proto.SizeVarint(3<<3 | proto.WireVarint)
-		n += proto.SizeVarint(uint64(x.SyncResponse))
-	case nil:
-	default:
-		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
-	}
-	return n
-}
-
-// SubscriptionList contains the list of individual subscriptions.  A
-// SubscriptionList is only valid if all of the contained subscriptions are
-// valid.  Setting once to false or poll_interval to 0 is the equivalent of the
-// mode not being set (i.e., streaming).
-//
-// If prefix is set then all subscriptions in the list and all notifications
-// generated are relative to prefix.
-//
-// If poll_interval is not set, then a SubscriptionList must only be sent once.
-// If poll_interval is set, the SubscriptionLists following the initial
-// SubscriptionList must only contain a poll_interval.
-type SubscriptionList struct {
-	// Types that are valid to be assigned to Mode:
-	//	*SubscriptionList_Once
-	//	*SubscriptionList_PollInterval
-	Mode         isSubscriptionList_Mode   `protobuf_oneof:"mode"`
-	Subscription []*Subscription           `protobuf:"bytes,1,rep,name=subscription" json:"subscription,omitempty"`
-	Prefix       *Path                     `protobuf:"bytes,2,opt,name=prefix" json:"prefix,omitempty"`
-	Options      *SubscriptionList_Options `protobuf:"bytes,3,opt,name=options" json:"options,omitempty"`
-}
-
-func (m *SubscriptionList) Reset()                    { *m = SubscriptionList{} }
-func (m *SubscriptionList) String() string            { return proto.CompactTextString(m) }
-func (*SubscriptionList) ProtoMessage()               {}
-func (*SubscriptionList) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{8} }
-
-type isSubscriptionList_Mode interface {
-	isSubscriptionList_Mode()
-}
-
-type SubscriptionList_Once struct {
-	Once bool `protobuf:"varint,10,opt,name=once,oneof"`
-}
-type SubscriptionList_PollInterval struct {
-	PollInterval uint64 `protobuf:"varint,11,opt,name=poll_interval,json=pollInterval,oneof"`
-}
-
-func (*SubscriptionList_Once) isSubscriptionList_Mode()         {}
-func (*SubscriptionList_PollInterval) isSubscriptionList_Mode() {}
-
-func (m *SubscriptionList) GetMode() isSubscriptionList_Mode {
-	if m != nil {
-		return m.Mode
-	}
-	return nil
-}
-
-func (m *SubscriptionList) GetOnce() bool {
-	if x, ok := m.GetMode().(*SubscriptionList_Once); ok {
-		return x.Once
-	}
-	return false
-}
-
-func (m *SubscriptionList) GetPollInterval() uint64 {
-	if x, ok := m.GetMode().(*SubscriptionList_PollInterval); ok {
-		return x.PollInterval
-	}
-	return 0
-}
-
-func (m *SubscriptionList) GetSubscription() []*Subscription {
-	if m != nil {
-		return m.Subscription
-	}
-	return nil
-}
-
-func (m *SubscriptionList) GetPrefix() *Path {
-	if m != nil {
-		return m.Prefix
-	}
-	return nil
-}
-
-func (m *SubscriptionList) GetOptions() *SubscriptionList_Options {
-	if m != nil {
-		return m.Options
-	}
-	return nil
-}
-
-// XXX_OneofFuncs is for the internal use of the proto package.
-func (*SubscriptionList) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
-	return _SubscriptionList_OneofMarshaler, _SubscriptionList_OneofUnmarshaler, _SubscriptionList_OneofSizer, []interface{}{
-		(*SubscriptionList_Once)(nil),
-		(*SubscriptionList_PollInterval)(nil),
-	}
-}
-
-func _SubscriptionList_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
-	m := msg.(*SubscriptionList)
-	// mode
-	switch x := m.Mode.(type) {
-	case *SubscriptionList_Once:
-		t := uint64(0)
-		if x.Once {
-			t = 1
-		}
-		b.EncodeVarint(10<<3 | proto.WireVarint)
-		b.EncodeVarint(t)
-	case *SubscriptionList_PollInterval:
-		b.EncodeVarint(11<<3 | proto.WireVarint)
-		b.EncodeVarint(uint64(x.PollInterval))
-	case nil:
-	default:
-		return fmt.Errorf("SubscriptionList.Mode has unexpected type %T", x)
-	}
-	return nil
-}
-
-func _SubscriptionList_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
-	m := msg.(*SubscriptionList)
-	switch tag {
-	case 10: // mode.once
-		if wire != proto.WireVarint {
-			return true, proto.ErrInternalBadWireType
-		}
-		x, err := b.DecodeVarint()
-		m.Mode = &SubscriptionList_Once{x != 0}
-		return true, err
-	case 11: // mode.poll_interval
-		if wire != proto.WireVarint {
-			return true, proto.ErrInternalBadWireType
-		}
-		x, err := b.DecodeVarint()
-		m.Mode = &SubscriptionList_PollInterval{x}
-		return true, err
-	default:
-		return false, nil
-	}
-}
-
-func _SubscriptionList_OneofSizer(msg proto.Message) (n int) {
-	m := msg.(*SubscriptionList)
-	// mode
-	switch x := m.Mode.(type) {
-	case *SubscriptionList_Once:
-		n += proto.SizeVarint(10<<3 | proto.WireVarint)
 		n += 1
-	case *SubscriptionList_PollInterval:
-		n += proto.SizeVarint(11<<3 | proto.WireVarint)
-		n += proto.SizeVarint(uint64(x.PollInterval))
 	case nil:
 	default:
 		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
 	}
 	return n
-}
-
-type SubscriptionList_Options struct {
-	UseAliases bool `protobuf:"varint,1,opt,name=use_aliases,json=useAliases" json:"use_aliases,omitempty"`
-}
-
-func (m *SubscriptionList_Options) Reset()                    { *m = SubscriptionList_Options{} }
-func (m *SubscriptionList_Options) String() string            { return proto.CompactTextString(m) }
-func (*SubscriptionList_Options) ProtoMessage()               {}
-func (*SubscriptionList_Options) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{8, 0} }
-
-// Subscription contains a path as well as the target side coalesce_interval for
-// aggregating values, typically counters.  If the target cannot support the
-// interval the subscription must be rejected.  The coalesce_interval is only
-// used for subscriptions in streaming mode.  If the coalesce_interval is 0 then
-// the coalesce_interval is target specified.
-type Subscription struct {
-	Path             *Path  `protobuf:"bytes,1,opt,name=path" json:"path,omitempty"`
-	CoalesceInterval uint64 `protobuf:"varint,2,opt,name=coalesce_interval,json=coalesceInterval" json:"coalesce_interval,omitempty"`
-}
-
-func (m *Subscription) Reset()                    { *m = Subscription{} }
-func (m *Subscription) String() string            { return proto.CompactTextString(m) }
-func (*Subscription) ProtoMessage()               {}
-func (*Subscription) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{9} }
-
-func (m *Subscription) GetPath() *Path {
-	if m != nil {
-		return m.Path
-	}
-	return nil
-}
-
-// An AliasList represents a list of aliases.
-type AliasList struct {
-	Alias []*Alias `protobuf:"bytes,1,rep,name=alias" json:"alias,omitempty"`
-}
-
-func (m *AliasList) Reset()                    { *m = AliasList{} }
-func (m *AliasList) String() string            { return proto.CompactTextString(m) }
-func (*AliasList) ProtoMessage()               {}
-func (*AliasList) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{10} }
-
-func (m *AliasList) GetAlias() []*Alias {
-	if m != nil {
-		return m.Alias
-	}
-	return nil
-}
-
-// An Alias specifies a preferred client defined alias for a specified path.  An
-// Alias is only sent from the client to the target.  An alias is typically one
-// element and is much shorter than the provided path.  A target should
-// substitute alias for path in Notifications.  Targets may ignore Alias
-// messages.
-//
-// The path must be fully expanded and not use an alias.
-//
-// If alias is set and path is not then the alias must no longer be used by the
-// target, once received.  A client may still see Notifications using the alias
-// that were generated prior to the target receiving the request to stop using
-// the alias.
-type Alias struct {
-	Path  *Path `protobuf:"bytes,1,opt,name=path" json:"path,omitempty"`
-	Alias *Path `protobuf:"bytes,2,opt,name=alias" json:"alias,omitempty"`
-}
-
-func (m *Alias) Reset()                    { *m = Alias{} }
-func (m *Alias) String() string            { return proto.CompactTextString(m) }
-func (*Alias) ProtoMessage()               {}
-func (*Alias) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{11} }
-
-func (m *Alias) GetPath() *Path {
-	if m != nil {
-		return m.Path
-	}
-	return nil
-}
-
-func (m *Alias) GetAlias() *Path {
-	if m != nil {
-		return m.Alias
-	}
-	return nil
 }
 
 // A Heartbeat requests a (possibly repeated) response from the remote side.
@@ -948,535 +1314,174 @@ type Heartbeat struct {
 func (m *Heartbeat) Reset()                    { *m = Heartbeat{} }
 func (m *Heartbeat) String() string            { return proto.CompactTextString(m) }
 func (*Heartbeat) ProtoMessage()               {}
-func (*Heartbeat) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{12} }
+func (*Heartbeat) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{24} }
 
-// A SyncRequest requests that all values identified by path be resent.  The
-// target should respond with a series of updates and then a sync_response with
-// the provided id, which should not be zero.
+// UDPWrapper adds metadata necessary for encapsulating a list of notifications
+// into a UDP packet.  It adds the ability to identify the agent that originated
+// the Notifications, detect packet loss, and identify latency introduced by
+// the target wrapping notifications.
 //
-// A target is suggested to keep a timestamp of when the SyncRequest starts,
-// followed by notifications, all of which are past the starting timestamp.
-// Before sending the sync_response, a delete for each of the paths should be
-// made with the starting timestamp.  This will assure the client removes all
-// stale data that was not part of the update.
-//
-// If prefix is set, each path is relative to prefix.
-type SyncRequest struct {
-	Id     uint64  `protobuf:"varint,1,opt,name=id" json:"id,omitempty"`
-	Prefix *Path   `protobuf:"bytes,2,opt,name=prefix" json:"prefix,omitempty"`
-	Path   []*Path `protobuf:"bytes,3,rep,name=path" json:"path,omitempty"`
+// The target should keep the total size of a serialized UDPWrapper message
+// small enough to not cause IP packet fragmentation.
+type UDPWrapper struct {
+	// ID Identifies the device (e.g., Loopback IP address, linecard, ...)
+	// TODO(borman): Add examples.  Perhaps Agent/module/submodule for juniper.
+	Id *Path `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
+	// Optional Epoch time of when the message is queued for transmit.
+	// Useful to quantify delay between message generation and transmission.
+	TransmitTimestamp uint64 `protobuf:"varint,2,opt,name=transmit_timestamp,json=transmitTimestamp" json:"transmit_timestamp,omitempty"`
+	// The sequence_number must start at 1 and increment by 1 for each new packet
+	// sent.  A client may use this to determine if a packet was lost.
+	SequenceNumber uint64          `protobuf:"varint,3,opt,name=sequence_number,json=sequenceNumber" json:"sequence_number,omitempty"`
+	Notification   []*Notification `protobuf:"bytes,4,rep,name=notification" json:"notification,omitempty"`
 }
 
-func (m *SyncRequest) Reset()                    { *m = SyncRequest{} }
-func (m *SyncRequest) String() string            { return proto.CompactTextString(m) }
-func (*SyncRequest) ProtoMessage()               {}
-func (*SyncRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{13} }
+func (m *UDPWrapper) Reset()                    { *m = UDPWrapper{} }
+func (m *UDPWrapper) String() string            { return proto.CompactTextString(m) }
+func (*UDPWrapper) ProtoMessage()               {}
+func (*UDPWrapper) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{25} }
 
-func (m *SyncRequest) GetPrefix() *Path {
+func (m *UDPWrapper) GetId() *Path {
 	if m != nil {
-		return m.Prefix
+		return m.Id
 	}
 	return nil
 }
 
-func (m *SyncRequest) GetPath() []*Path {
-	if m != nil {
-		return m.Path
-	}
-	return nil
-}
-
-type GetRequest struct {
-	Prefix *Path   `protobuf:"bytes,1,opt,name=prefix" json:"prefix,omitempty"`
-	Path   []*Path `protobuf:"bytes,2,rep,name=path" json:"path,omitempty"`
-	// If cache_interval is provided and is non-zero number of nanoseconds, it is
-	// a hint of when this get request will be repeated in the future.
-	CacheInterval int64 `protobuf:"varint,3,opt,name=cache_interval,json=cacheInterval" json:"cache_interval,omitempty"`
-}
-
-func (m *GetRequest) Reset()                    { *m = GetRequest{} }
-func (m *GetRequest) String() string            { return proto.CompactTextString(m) }
-func (*GetRequest) ProtoMessage()               {}
-func (*GetRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{14} }
-
-func (m *GetRequest) GetPrefix() *Path {
-	if m != nil {
-		return m.Prefix
-	}
-	return nil
-}
-
-func (m *GetRequest) GetPath() []*Path {
-	if m != nil {
-		return m.Path
-	}
-	return nil
-}
-
-type GetResponse struct {
-	Notification []*Notification `protobuf:"bytes,1,rep,name=notification" json:"notification,omitempty"`
-}
-
-func (m *GetResponse) Reset()                    { *m = GetResponse{} }
-func (m *GetResponse) String() string            { return proto.CompactTextString(m) }
-func (*GetResponse) ProtoMessage()               {}
-func (*GetResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{15} }
-
-func (m *GetResponse) GetNotification() []*Notification {
+func (m *UDPWrapper) GetNotification() []*Notification {
 	if m != nil {
 		return m.Notification
 	}
 	return nil
 }
 
-// A SetRequest contains an optional prefix, a list of zero or more Paths to
-// delete and a list of zero or more Updates.  The delete and update paths are
-// relative to prefix.  Deletes should appear to happen prior to updates being
-// applied.  This supports delete, update, and replace:
-//
-//   delete - a path is listed in the delete field
-//   update - a path is listed in the update field
-//   replace - a path is listed in both the delete field and the update field.
-//
-// The target must either apply all the deletes and updates or return an error.
-// The deletes and updates should appear to be atomically applied.
-type SetRequest struct {
-	Prefix *Path     `protobuf:"bytes,1,opt,name=prefix" json:"prefix,omitempty"`
-	Delete []*Path   `protobuf:"bytes,2,rep,name=delete" json:"delete,omitempty"`
-	Update []*Update `protobuf:"bytes,3,rep,name=update" json:"update,omitempty"`
-}
-
-func (m *SetRequest) Reset()                    { *m = SetRequest{} }
-func (m *SetRequest) String() string            { return proto.CompactTextString(m) }
-func (*SetRequest) ProtoMessage()               {}
-func (*SetRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{16} }
-
-func (m *SetRequest) GetPrefix() *Path {
-	if m != nil {
-		return m.Prefix
-	}
-	return nil
-}
-
-func (m *SetRequest) GetDelete() []*Path {
-	if m != nil {
-		return m.Delete
-	}
-	return nil
-}
-
-func (m *SetRequest) GetUpdate() []*Update {
-	if m != nil {
-		return m.Update
-	}
-	return nil
-}
-
-// A SetResponse contains responses to a SetRequest.  The optional prefix is
-// applied to all paths in response.  Each path provided by a SetRequest needs a
-// response, but there need not be a 1:1 correspondence between SetRequests and
-// SetResponses (e.g., the target may issue a single response to multiple
-// requests, or multiple responses to a single request).
-type SetResponse struct {
-	Prefix   *Path             `protobuf:"bytes,1,opt,name=prefix" json:"prefix,omitempty"`
-	Response []*UpdateResponse `protobuf:"bytes,2,rep,name=response" json:"response,omitempty"`
-}
-
-func (m *SetResponse) Reset()                    { *m = SetResponse{} }
-func (m *SetResponse) String() string            { return proto.CompactTextString(m) }
-func (*SetResponse) ProtoMessage()               {}
-func (*SetResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{17} }
-
-func (m *SetResponse) GetPrefix() *Path {
-	if m != nil {
-		return m.Prefix
-	}
-	return nil
-}
-
-func (m *SetResponse) GetResponse() []*UpdateResponse {
-	if m != nil {
-		return m.Response
-	}
-	return nil
-}
-
-// An UpdateResponse contains the response for a single path Update.
-type UpdateResponse struct {
-	Path  *Path  `protobuf:"bytes,1,opt,name=path" json:"path,omitempty"`
-	Error *Error `protobuf:"bytes,2,opt,name=error" json:"error,omitempty"`
-	// The timestamp is the time, in nanoseconds since the epoch, that a Set was
-	// accepted (i.e., the request was valid).  It does not imply the value was
-	// actually propagated to an underlying datastore.
-	Timestamp int64 `protobuf:"varint,3,opt,name=timestamp" json:"timestamp,omitempty"`
-}
-
-func (m *UpdateResponse) Reset()                    { *m = UpdateResponse{} }
-func (m *UpdateResponse) String() string            { return proto.CompactTextString(m) }
-func (*UpdateResponse) ProtoMessage()               {}
-func (*UpdateResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{18} }
-
-func (m *UpdateResponse) GetPath() *Path {
-	if m != nil {
-		return m.Path
-	}
-	return nil
-}
-
-func (m *UpdateResponse) GetError() *Error {
-	if m != nil {
-		return m.Error
-	}
-	return nil
-}
-
 func init() {
+	proto.RegisterType((*Notification)(nil), "openconfig.Notification")
+	proto.RegisterType((*Update)(nil), "openconfig.Update")
 	proto.RegisterType((*Path)(nil), "openconfig.Path")
 	proto.RegisterType((*Value)(nil), "openconfig.Value")
-	proto.RegisterType((*Update)(nil), "openconfig.Update")
-	proto.RegisterType((*Notification)(nil), "openconfig.Notification")
-	proto.RegisterType((*UDPWrapper)(nil), "openconfig.UDPWrapper")
-	proto.RegisterType((*Error)(nil), "openconfig.Error")
-	proto.RegisterType((*SubscribeRequest)(nil), "openconfig.SubscribeRequest")
-	proto.RegisterType((*SubscribeResponse)(nil), "openconfig.SubscribeResponse")
-	proto.RegisterType((*SubscriptionList)(nil), "openconfig.SubscriptionList")
-	proto.RegisterType((*SubscriptionList_Options)(nil), "openconfig.SubscriptionList.Options")
-	proto.RegisterType((*Subscription)(nil), "openconfig.Subscription")
-	proto.RegisterType((*AliasList)(nil), "openconfig.AliasList")
-	proto.RegisterType((*Alias)(nil), "openconfig.Alias")
-	proto.RegisterType((*Heartbeat)(nil), "openconfig.Heartbeat")
-	proto.RegisterType((*SyncRequest)(nil), "openconfig.SyncRequest")
+	proto.RegisterType((*GetModelsRequest)(nil), "openconfig.GetModelsRequest")
+	proto.RegisterType((*ModelQuery)(nil), "openconfig.ModelQuery")
+	proto.RegisterType((*GetModelsResponse)(nil), "openconfig.GetModelsResponse")
+	proto.RegisterType((*ModelData)(nil), "openconfig.ModelData")
 	proto.RegisterType((*GetRequest)(nil), "openconfig.GetRequest")
 	proto.RegisterType((*GetResponse)(nil), "openconfig.GetResponse")
 	proto.RegisterType((*SetRequest)(nil), "openconfig.SetRequest")
 	proto.RegisterType((*SetResponse)(nil), "openconfig.SetResponse")
 	proto.RegisterType((*UpdateResponse)(nil), "openconfig.UpdateResponse")
+	proto.RegisterType((*Error)(nil), "openconfig.Error")
+	proto.RegisterType((*SubscribeRequest)(nil), "openconfig.SubscribeRequest")
+	proto.RegisterType((*SubscriptionList)(nil), "openconfig.SubscriptionList")
+	proto.RegisterType((*Subscription)(nil), "openconfig.Subscription")
+	proto.RegisterType((*QOSMarking)(nil), "openconfig.QOSMarking")
+	proto.RegisterType((*AliasList)(nil), "openconfig.AliasList")
+	proto.RegisterType((*Alias)(nil), "openconfig.Alias")
+	proto.RegisterType((*PollRequest)(nil), "openconfig.PollRequest")
+	proto.RegisterType((*Proxies)(nil), "openconfig.Proxies")
+	proto.RegisterType((*Proxy)(nil), "openconfig.Proxy")
+	proto.RegisterType((*SubscribeResponse)(nil), "openconfig.SubscribeResponse")
+	proto.RegisterType((*Heartbeat)(nil), "openconfig.Heartbeat")
+	proto.RegisterType((*UDPWrapper)(nil), "openconfig.UDPWrapper")
 	proto.RegisterEnum("openconfig.Type", Type_name, Type_value)
-}
-
-// Reference imports to suppress errors if they are not otherwise used.
-var _ context.Context
-var _ grpc.ClientConn
-
-// Client API for OpenConfig service
-
-type OpenConfigClient interface {
-	// Subscribe subscribes for streaming updates.  Streaming updates are provided
-	// as a series of Notifications, each of which update a portion of the tree.
-	// The target must send the current values of all subscribed paths at the
-	// start of the stream, followed by a sync_response of 0.
-	//
-	// A Subscription operates in one of three modes.
-	//
-	// Streaming:  This is the default mode.  The target sends continual updates
-	// of each value as specified by each subscription's coalesce_interval.  The
-	// client may request the target to resend the current value of a set of paths
-	// by sending a SyncRequest.
-	//
-	// Once: This mode is specified by setting once to true in the
-	// SubscriptionRequest.  The target must close the stream after sending
-	// the sync_response of 0.  The target should only send each value once.
-	//
-	// Poll: This mode is the equivalent of periodic Once requests but sent over a
-	// single stream.  Polling is specified by setting poll_interval in the
-	// SubscriptionRequest to the expected number of nanoseconds between polls.
-	// The target stops sending updates after sending the sync_response of 0.
-	// After the polling interval, the client sends a new SubscriptionRequest with
-	// only the poll_interval set.  The target must respond by sending the current
-	// values of all subscribed paths, once again followed with a sync_response of
-	// 0.  This process then repeats until the client closes the request stream.
-	Subscribe(ctx context.Context, opts ...grpc.CallOption) (OpenConfig_SubscribeClient, error)
-	// Get requests a single snapshot of the requested data.  A Get request may
-	// contain a hint that the request will be repeated (i.e., polling).  A Get is
-	// the equivalent of a Subscribe with once set, with the exception that all
-	// the key value pairs will be returned in a single response.
-	Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetResponse, error)
-	// Set sets the paths contained in the SetRequest to the values If a path does
-	// not exist, or is read-only the SetResponse will return an error.  All paths
-	// in the SetRequest must be valid or the entire request must be rejected.  If
-	// a path specifies a node, rather than the leaf, then the value must be the
-	// values of the node's children encoded in JSON.  Binary data in the tree
-	// must be base64 encoded.
-	Set(ctx context.Context, opts ...grpc.CallOption) (OpenConfig_SetClient, error)
-}
-
-type openConfigClient struct {
-	cc *grpc.ClientConn
-}
-
-func NewOpenConfigClient(cc *grpc.ClientConn) OpenConfigClient {
-	return &openConfigClient{cc}
-}
-
-func (c *openConfigClient) Subscribe(ctx context.Context, opts ...grpc.CallOption) (OpenConfig_SubscribeClient, error) {
-	stream, err := grpc.NewClientStream(ctx, &_OpenConfig_serviceDesc.Streams[0], c.cc, "/openconfig.OpenConfig/Subscribe", opts...)
-	if err != nil {
-		return nil, err
-	}
-	x := &openConfigSubscribeClient{stream}
-	return x, nil
-}
-
-type OpenConfig_SubscribeClient interface {
-	Send(*SubscribeRequest) error
-	Recv() (*SubscribeResponse, error)
-	grpc.ClientStream
-}
-
-type openConfigSubscribeClient struct {
-	grpc.ClientStream
-}
-
-func (x *openConfigSubscribeClient) Send(m *SubscribeRequest) error {
-	return x.ClientStream.SendMsg(m)
-}
-
-func (x *openConfigSubscribeClient) Recv() (*SubscribeResponse, error) {
-	m := new(SubscribeResponse)
-	if err := x.ClientStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
-func (c *openConfigClient) Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetResponse, error) {
-	out := new(GetResponse)
-	err := grpc.Invoke(ctx, "/openconfig.OpenConfig/Get", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *openConfigClient) Set(ctx context.Context, opts ...grpc.CallOption) (OpenConfig_SetClient, error) {
-	stream, err := grpc.NewClientStream(ctx, &_OpenConfig_serviceDesc.Streams[1], c.cc, "/openconfig.OpenConfig/Set", opts...)
-	if err != nil {
-		return nil, err
-	}
-	x := &openConfigSetClient{stream}
-	return x, nil
-}
-
-type OpenConfig_SetClient interface {
-	Send(*SetRequest) error
-	Recv() (*SetResponse, error)
-	grpc.ClientStream
-}
-
-type openConfigSetClient struct {
-	grpc.ClientStream
-}
-
-func (x *openConfigSetClient) Send(m *SetRequest) error {
-	return x.ClientStream.SendMsg(m)
-}
-
-func (x *openConfigSetClient) Recv() (*SetResponse, error) {
-	m := new(SetResponse)
-	if err := x.ClientStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
-// Server API for OpenConfig service
-
-type OpenConfigServer interface {
-	// Subscribe subscribes for streaming updates.  Streaming updates are provided
-	// as a series of Notifications, each of which update a portion of the tree.
-	// The target must send the current values of all subscribed paths at the
-	// start of the stream, followed by a sync_response of 0.
-	//
-	// A Subscription operates in one of three modes.
-	//
-	// Streaming:  This is the default mode.  The target sends continual updates
-	// of each value as specified by each subscription's coalesce_interval.  The
-	// client may request the target to resend the current value of a set of paths
-	// by sending a SyncRequest.
-	//
-	// Once: This mode is specified by setting once to true in the
-	// SubscriptionRequest.  The target must close the stream after sending
-	// the sync_response of 0.  The target should only send each value once.
-	//
-	// Poll: This mode is the equivalent of periodic Once requests but sent over a
-	// single stream.  Polling is specified by setting poll_interval in the
-	// SubscriptionRequest to the expected number of nanoseconds between polls.
-	// The target stops sending updates after sending the sync_response of 0.
-	// After the polling interval, the client sends a new SubscriptionRequest with
-	// only the poll_interval set.  The target must respond by sending the current
-	// values of all subscribed paths, once again followed with a sync_response of
-	// 0.  This process then repeats until the client closes the request stream.
-	Subscribe(OpenConfig_SubscribeServer) error
-	// Get requests a single snapshot of the requested data.  A Get request may
-	// contain a hint that the request will be repeated (i.e., polling).  A Get is
-	// the equivalent of a Subscribe with once set, with the exception that all
-	// the key value pairs will be returned in a single response.
-	Get(context.Context, *GetRequest) (*GetResponse, error)
-	// Set sets the paths contained in the SetRequest to the values If a path does
-	// not exist, or is read-only the SetResponse will return an error.  All paths
-	// in the SetRequest must be valid or the entire request must be rejected.  If
-	// a path specifies a node, rather than the leaf, then the value must be the
-	// values of the node's children encoded in JSON.  Binary data in the tree
-	// must be base64 encoded.
-	Set(OpenConfig_SetServer) error
-}
-
-func RegisterOpenConfigServer(s *grpc.Server, srv OpenConfigServer) {
-	s.RegisterService(&_OpenConfig_serviceDesc, srv)
-}
-
-func _OpenConfig_Subscribe_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(OpenConfigServer).Subscribe(&openConfigSubscribeServer{stream})
-}
-
-type OpenConfig_SubscribeServer interface {
-	Send(*SubscribeResponse) error
-	Recv() (*SubscribeRequest, error)
-	grpc.ServerStream
-}
-
-type openConfigSubscribeServer struct {
-	grpc.ServerStream
-}
-
-func (x *openConfigSubscribeServer) Send(m *SubscribeResponse) error {
-	return x.ServerStream.SendMsg(m)
-}
-
-func (x *openConfigSubscribeServer) Recv() (*SubscribeRequest, error) {
-	m := new(SubscribeRequest)
-	if err := x.ServerStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
-func _OpenConfig_Get_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
-	in := new(GetRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	out, err := srv.(OpenConfigServer).Get(ctx, in)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func _OpenConfig_Set_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(OpenConfigServer).Set(&openConfigSetServer{stream})
-}
-
-type OpenConfig_SetServer interface {
-	Send(*SetResponse) error
-	Recv() (*SetRequest, error)
-	grpc.ServerStream
-}
-
-type openConfigSetServer struct {
-	grpc.ServerStream
-}
-
-func (x *openConfigSetServer) Send(m *SetResponse) error {
-	return x.ServerStream.SendMsg(m)
-}
-
-func (x *openConfigSetServer) Recv() (*SetRequest, error) {
-	m := new(SetRequest)
-	if err := x.ServerStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
-var _OpenConfig_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "openconfig.OpenConfig",
-	HandlerType: (*OpenConfigServer)(nil),
-	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "Get",
-			Handler:    _OpenConfig_Get_Handler,
-		},
-	},
-	Streams: []grpc.StreamDesc{
-		{
-			StreamName:    "Subscribe",
-			Handler:       _OpenConfig_Subscribe_Handler,
-			ServerStreams: true,
-			ClientStreams: true,
-		},
-		{
-			StreamName:    "Set",
-			Handler:       _OpenConfig_Set_Handler,
-			ServerStreams: true,
-			ClientStreams: true,
-		},
-	},
+	proto.RegisterEnum("openconfig.SubscriptionMode", SubscriptionMode_name, SubscriptionMode_value)
+	proto.RegisterEnum("openconfig.GetModelsRequest_Type", GetModelsRequest_Type_name, GetModelsRequest_Type_value)
+	proto.RegisterEnum("openconfig.ModelData_Type", ModelData_Type_name, ModelData_Type_value)
+	proto.RegisterEnum("openconfig.GetRequest_Type", GetRequest_Type_name, GetRequest_Type_value)
+	proto.RegisterEnum("openconfig.SubscriptionList_Mode", SubscriptionList_Mode_name, SubscriptionList_Mode_value)
 }
 
 var fileDescriptor0 = []byte{
-	// 998 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x9c, 0x56, 0xcb, 0x6e, 0x23, 0x45,
-	0x17, 0x9e, 0xb6, 0xdb, 0x97, 0x3e, 0x76, 0xfc, 0xdb, 0xa5, 0xf9, 0x19, 0x63, 0x06, 0x11, 0xb5,
-	0x06, 0x12, 0x05, 0xe1, 0x01, 0x73, 0x59, 0x20, 0x84, 0x94, 0xc0, 0x88, 0x01, 0x46, 0xc9, 0xa8,
-	0x9c, 0x30, 0x62, 0x65, 0x95, 0x9d, 0x4a, 0xd2, 0x92, 0xdd, 0xdd, 0x74, 0xb5, 0xd1, 0x78, 0xc1,
-	0x8a, 0x1d, 0xe2, 0x4d, 0x58, 0xf1, 0x0a, 0x88, 0x35, 0xcf, 0xc4, 0xa9, 0x5b, 0x77, 0x39, 0x89,
-	0x83, 0x67, 0x76, 0x5d, 0xe7, 0x7e, 0xbe, 0xf3, 0xf5, 0xa9, 0x82, 0x6e, 0x92, 0xf2, 0x78, 0x96,
-	0xc4, 0x17, 0xd1, 0xe5, 0x30, 0xcd, 0x92, 0x3c, 0x21, 0x50, 0x4a, 0x06, 0x6f, 0x5e, 0x26, 0xc9,
-	0xe5, 0x9c, 0x3f, 0x56, 0x9a, 0xe9, 0xf2, 0xe2, 0x31, 0x8b, 0x57, 0xda, 0x2c, 0xdc, 0x05, 0xff,
-	0x39, 0xcb, 0xaf, 0x48, 0x1f, 0x1a, 0x7c, 0xce, 0x17, 0x3c, 0xce, 0xfb, 0xde, 0x6e, 0x75, 0x3f,
-	0xa0, 0xf6, 0x18, 0xbe, 0x80, 0xda, 0x0f, 0x6c, 0xbe, 0xe4, 0xe4, 0x3e, 0xd4, 0x7e, 0x96, 0x1f,
-	0x68, 0xe0, 0xed, 0xb7, 0xa9, 0x3e, 0x90, 0x47, 0xe0, 0xe7, 0xab, 0x94, 0xf7, 0x2b, 0x28, 0xec,
-	0x8c, 0xba, 0x43, 0xa7, 0x90, 0x53, 0x94, 0x53, 0xa5, 0x25, 0x04, 0xfc, 0x98, 0x2d, 0x78, 0xbf,
-	0x8a, 0x56, 0x01, 0x55, 0xdf, 0x18, 0xb8, 0x7e, 0x96, 0x9e, 0xb3, 0x5c, 0xc5, 0x48, 0xb1, 0x08,
-	0x15, 0xb8, 0xb5, 0x1e, 0x43, 0x16, 0x47, 0x95, 0x96, 0xec, 0xd9, 0xfc, 0x15, 0x65, 0xd6, 0x73,
-	0xcd, 0x54, 0x85, 0xa6, 0xa4, 0xf0, 0x2f, 0x0f, 0xda, 0xc7, 0x49, 0x1e, 0x5d, 0x44, 0x33, 0x96,
-	0x47, 0x49, 0x4c, 0x1e, 0x42, 0x90, 0x47, 0x0b, 0x2e, 0x72, 0xb6, 0x48, 0x55, 0x92, 0x2a, 0x2d,
-	0x05, 0x64, 0x1f, 0xea, 0x69, 0xc6, 0x2f, 0xa2, 0x97, 0x26, 0xf0, 0xcd, 0xfc, 0x46, 0x2f, 0x11,
-	0x60, 0xf3, 0x88, 0x09, 0xd3, 0x86, 0x3e, 0x90, 0x03, 0xa8, 0x2f, 0x55, 0x1f, 0x7d, 0x1f, 0x91,
-	0x6b, 0x8d, 0x88, 0xeb, 0xaf, 0x3b, 0xa4, 0xc6, 0x42, 0xe6, 0x3a, 0x47, 0x60, 0xd1, 0xb6, 0xa6,
-	0x6c, 0x6f, 0xc9, 0xa5, 0xf5, 0xe1, 0xdf, 0x1e, 0xc0, 0xd9, 0xd7, 0xcf, 0x5f, 0x64, 0x2c, 0x4d,
-	0x79, 0x46, 0x76, 0xa1, 0x12, 0x9d, 0x6f, 0x04, 0x08, 0x75, 0xe4, 0x03, 0x20, 0x79, 0xc6, 0x62,
-	0xb1, 0x88, 0xf2, 0x49, 0xd9, 0xad, 0x6c, 0xc9, 0xa7, 0x3d, 0xab, 0x39, 0x2d, 0xba, 0xde, 0x83,
-	0xff, 0x09, 0xfe, 0xd3, 0x12, 0xe3, 0xf0, 0x49, 0xbc, 0x5c, 0x4c, 0x79, 0xa6, 0xba, 0xf2, 0x69,
-	0xc7, 0x8a, 0x8f, 0x95, 0x94, 0x7c, 0x01, 0xed, 0xd8, 0x01, 0xd3, 0x34, 0xd9, 0x77, 0x6b, 0x70,
-	0xc1, 0xa6, 0x6b, 0xd6, 0xe1, 0x04, 0x6a, 0x4f, 0xb2, 0x2c, 0xc9, 0x24, 0x03, 0x66, 0xc9, 0xb9,
-	0x26, 0xcf, 0x0e, 0x55, 0xdf, 0x92, 0x74, 0x58, 0x8e, 0x60, 0x97, 0x7a, 0xa6, 0x48, 0x3a, 0x73,
-	0x44, 0x9c, 0x7c, 0xc4, 0x8b, 0xa9, 0x92, 0x5a, 0xa3, 0xfb, 0x43, 0x4d, 0xe0, 0xa1, 0x25, 0xf0,
-	0xf0, 0x30, 0x5e, 0x51, 0x65, 0x11, 0xfe, 0x56, 0x81, 0xee, 0x78, 0x39, 0x15, 0xb3, 0x2c, 0x9a,
-	0x72, 0x2a, 0x4b, 0x17, 0x39, 0xd6, 0x1c, 0x08, 0x2b, 0x33, 0xa0, 0x3d, 0x74, 0x0b, 0x36, 0x0e,
-	0xa9, 0x2c, 0xf1, 0x59, 0x24, 0xf2, 0xa7, 0xf7, 0x68, 0xe9, 0x40, 0x3e, 0x85, 0xe0, 0x8a, 0xb3,
-	0x2c, 0x9f, 0x72, 0x96, 0x1b, 0x4e, 0xfc, 0xdf, 0xf5, 0x7e, 0x6a, 0x95, 0xd2, 0xad, 0xb0, 0xc4,
-	0x01, 0xf8, 0x62, 0x15, 0xcf, 0x4c, 0xcd, 0x0f, 0xd6, 0xf2, 0xa1, 0xdc, 0xd4, 0x86, 0x3e, 0xca,
-	0x8c, 0x7c, 0x04, 0x0d, 0xc5, 0x1f, 0x2e, 0x10, 0xd2, 0x1b, 0x39, 0x0e, 0xa5, 0xca, 0x94, 0x66,
-	0xed, 0x24, 0xff, 0x10, 0x81, 0x97, 0x2b, 0x45, 0x1e, 0xe4, 0x9f, 0x3a, 0x1c, 0x05, 0xd0, 0xc8,
-	0x74, 0xec, 0xf0, 0x4f, 0x0f, 0x7a, 0x0e, 0x18, 0x22, 0x4d, 0x62, 0xc1, 0xc9, 0xa8, 0x20, 0xa8,
-	0x86, 0x62, 0xe3, 0xec, 0x30, 0x97, 0x25, 0xea, 0x6b, 0x62, 0xf0, 0x2e, 0xec, 0xc8, 0xe6, 0x26,
-	0x99, 0xc9, 0xad, 0x39, 0x85, 0x36, 0x6d, 0xa1, 0x20, 0xd0, 0xd2, 0x23, 0x80, 0xa6, 0xb5, 0x08,
-	0xff, 0x28, 0x07, 0x58, 0xcc, 0x03, 0x3b, 0xf5, 0x13, 0xa4, 0x60, 0x1f, 0xd0, 0xbd, 0x29, 0x21,
-	0x93, 0x27, 0x19, 0x3d, 0x4d, 0xe6, 0xf3, 0x49, 0x14, 0xe7, 0x3c, 0xc3, 0x7f, 0xbd, 0xdf, 0xb2,
-	0xd1, 0xa5, 0xf8, 0x5b, 0x23, 0x95, 0x8c, 0x15, 0x4e, 0x40, 0xb5, 0xd0, 0xae, 0x75, 0xed, 0x26,
-	0xa4, 0x6b, 0xd6, 0xaf, 0xb0, 0x0e, 0xbe, 0x84, 0x46, 0xa2, 0x7c, 0x84, 0x99, 0xf9, 0xa3, 0xbb,
-	0x38, 0x36, 0x3c, 0xd1, 0xb6, 0xd4, 0x3a, 0x0d, 0x0e, 0xa0, 0x61, 0x64, 0xe4, 0x1d, 0x68, 0x2d,
-	0x05, 0x9f, 0x58, 0x42, 0xc8, 0x39, 0x35, 0x29, 0xa0, 0xe8, 0x50, 0x4b, 0x8e, 0xea, 0xe0, 0x2f,
-	0xf0, 0x97, 0x09, 0x19, 0xb4, 0xdd, 0xc0, 0x5b, 0xae, 0xce, 0xf7, 0xa1, 0x37, 0x4b, 0xd8, 0x9c,
-	0x0b, 0xfc, 0xd9, 0x0b, 0xf0, 0xf4, 0x6a, 0xe8, 0x5a, 0x85, 0x85, 0x2f, 0xfc, 0x04, 0x82, 0x82,
-	0x7d, 0x72, 0xe9, 0xea, 0x95, 0xa7, 0x41, 0xec, 0xdd, 0xe0, 0xa8, 0xd9, 0x82, 0xe1, 0x19, 0xd4,
-	0xd4, 0x79, 0xcb, 0x8a, 0xde, 0xb3, 0x71, 0x37, 0x81, 0x6c, 0xc2, 0xee, 0x41, 0x50, 0x50, 0x8d,
-	0x0c, 0xa0, 0x59, 0x54, 0xef, 0xa9, 0xea, 0x8b, 0x73, 0xb8, 0x80, 0x96, 0xf3, 0x97, 0x91, 0x4e,
-	0xb1, 0x2f, 0x7d, 0xb5, 0x1d, 0xb7, 0x9f, 0xaa, 0xad, 0xbf, 0xba, 0x61, 0x41, 0x2b, 0x6d, 0xf8,
-	0x2b, 0xae, 0xe7, 0x6f, 0x78, 0x6e, 0xd3, 0x95, 0xe1, 0xbd, 0x2d, 0xc3, 0x57, 0xee, 0x0a, 0x8f,
-	0x4c, 0xef, 0xcc, 0xd8, 0xec, 0xca, 0x99, 0x56, 0x55, 0x5d, 0x5b, 0x3b, 0x4a, 0x5a, 0x8c, 0xea,
-	0x7b, 0x68, 0xa9, 0x22, 0xcc, 0x8f, 0x7e, 0x7d, 0x55, 0x7b, 0xaf, 0xb4, 0xaa, 0x7f, 0xc7, 0x96,
-	0xc6, 0xaf, 0xd3, 0x52, 0x79, 0xa9, 0x55, 0xee, 0xbe, 0xd4, 0x9c, 0xab, 0xb2, 0xfa, 0x5f, 0x57,
-	0x65, 0x98, 0xe0, 0x40, 0x9d, 0xde, 0xb6, 0x2f, 0xe7, 0xb3, 0x72, 0xb9, 0x98, 0x82, 0x06, 0xb7,
-	0xa4, 0x31, 0x16, 0xb4, 0x5c, 0x44, 0xbf, 0x40, 0x67, 0x5d, 0xb7, 0xfd, 0xbb, 0x84, 0xcb, 0x2b,
-	0xee, 0xb6, 0x77, 0x89, 0xba, 0xfb, 0xa8, 0xd6, 0xaf, 0x3f, 0x43, 0xaa, 0xd7, 0x9e, 0x21, 0x07,
-	0x6f, 0x81, 0x2f, 0x1f, 0x4c, 0xa4, 0x09, 0xfe, 0x77, 0xe3, 0x93, 0xe3, 0xee, 0x3d, 0x12, 0x40,
-	0xed, 0xe8, 0xc7, 0xd3, 0x27, 0xe3, 0xae, 0x37, 0xfa, 0x07, 0x67, 0x73, 0x82, 0x61, 0xbf, 0x52,
-	0x61, 0xc9, 0x33, 0x08, 0x8a, 0x35, 0x4f, 0x6e, 0xbb, 0xd9, 0x8a, 0xab, 0x70, 0xf0, 0xf6, 0x06,
-	0xad, 0x6e, 0x71, 0xdf, 0xfb, 0xd0, 0x43, 0xc0, 0xaa, 0xc8, 0x22, 0xf2, 0x86, 0x6b, 0x59, 0x72,
-	0x7b, 0xf0, 0xe0, 0x86, 0xdc, 0xc0, 0xf3, 0x39, 0x54, 0xc7, 0xd7, 0xfd, 0xc6, 0x1b, 0xfc, 0x9c,
-	0x51, 0xca, 0x9c, 0xd3, 0xba, 0xba, 0xca, 0x3f, 0xfe, 0x37, 0x00, 0x00, 0xff, 0xff, 0x3d, 0xb2,
-	0x32, 0x28, 0xb9, 0x0a, 0x00, 0x00,
+	// 1471 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0xac, 0x57, 0x4b, 0x73, 0xdb, 0xd4,
+	0x17, 0xaf, 0x2c, 0x39, 0x89, 0x8e, 0x9d, 0xd4, 0xb9, 0xff, 0xfe, 0x5b, 0x93, 0x96, 0x69, 0xaa,
+	0xa1, 0x6d, 0xe8, 0x40, 0x5a, 0x02, 0x85, 0x81, 0xe9, 0x0c, 0xa3, 0xc4, 0x6e, 0x12, 0xf0, 0x23,
+	0xbd, 0xb6, 0x5b, 0xba, 0xf2, 0x28, 0xf6, 0x4d, 0xaa, 0xc1, 0x96, 0x54, 0x49, 0xee, 0xd4, 0x0b,
+	0xbe, 0x07, 0x3b, 0x36, 0xcc, 0xb0, 0x66, 0xcb, 0x92, 0xe1, 0xbb, 0xb0, 0xe2, 0x3b, 0x70, 0xee,
+	0x43, 0x0f, 0x27, 0x76, 0xdb, 0x74, 0x58, 0x59, 0xf7, 0xbc, 0xcf, 0xb9, 0xe7, 0xfc, 0xee, 0x31,
+	0x54, 0xfc, 0x80, 0x79, 0x03, 0xdf, 0x3b, 0x71, 0x4f, 0xb7, 0x83, 0xd0, 0x8f, 0x7d, 0x02, 0x19,
+	0x65, 0xe3, 0x83, 0x53, 0xdf, 0x3f, 0x1d, 0xb1, 0xfb, 0x82, 0x73, 0x3c, 0x39, 0xb9, 0xef, 0x78,
+	0x53, 0x29, 0x66, 0xfd, 0xa9, 0x41, 0xb9, 0xe5, 0xc7, 0xee, 0x89, 0x3b, 0x70, 0x62, 0xd7, 0xf7,
+	0xc8, 0x0d, 0x30, 0x63, 0x77, 0xcc, 0xa2, 0xd8, 0x19, 0x07, 0x55, 0x6d, 0x53, 0xdb, 0xd2, 0x69,
+	0x46, 0x20, 0x5b, 0xb0, 0x14, 0x84, 0xec, 0xc4, 0x7d, 0x5d, 0x2d, 0x20, 0xab, 0xb4, 0x53, 0xd9,
+	0xce, 0x39, 0x3e, 0x72, 0xe2, 0x17, 0x54, 0xf1, 0xc9, 0x15, 0x28, 0x3a, 0x23, 0xd7, 0x89, 0xaa,
+	0x3a, 0x0a, 0x9a, 0x54, 0x1e, 0xc8, 0x3d, 0x58, 0x9a, 0x04, 0x43, 0x27, 0x66, 0x55, 0x63, 0x53,
+	0x47, 0x7d, 0x92, 0xd7, 0xef, 0x09, 0x0e, 0x55, 0x12, 0xdc, 0xd7, 0x90, 0x8d, 0x18, 0xca, 0x16,
+	0x85, 0xec, 0x1c, 0x5f, 0x92, 0x6f, 0x3d, 0x83, 0x25, 0xa9, 0x4b, 0x3e, 0x02, 0x23, 0x40, 0x8e,
+	0x08, 0x7c, 0x9e, 0x86, 0xe0, 0x92, 0xbb, 0x50, 0x7c, 0xe5, 0x8c, 0x26, 0x4c, 0x25, 0xb1, 0x9e,
+	0x17, 0x7b, 0xca, 0x19, 0x54, 0xf2, 0xad, 0x4d, 0x30, 0xb8, 0x1a, 0xa9, 0xc2, 0x32, 0x7a, 0x1a,
+	0x33, 0x2f, 0x46, 0xcb, 0x3a, 0xa6, 0x93, 0x1c, 0xd1, 0x75, 0x51, 0x68, 0xf0, 0x7c, 0xa5, 0x4d,
+	0xee, 0xba, 0xac, 0x0c, 0xf0, 0x78, 0xe2, 0x69, 0x20, 0x1d, 0xad, 0xcd, 0xc6, 0xd3, 0x45, 0x3a,
+	0x15, 0x5c, 0x42, 0xc0, 0xf0, 0x9c, 0x31, 0x53, 0xa5, 0x12, 0xdf, 0xd6, 0x6f, 0x1a, 0x54, 0xf6,
+	0x59, 0xdc, 0xf4, 0x31, 0xc7, 0x88, 0xb2, 0x97, 0x13, 0xbc, 0x01, 0x52, 0x83, 0x72, 0x28, 0x3f,
+	0xfb, 0xc2, 0xac, 0x26, 0xcc, 0xde, 0xca, 0x9b, 0x3d, 0xab, 0x23, 0xfd, 0x94, 0x94, 0x1a, 0x3f,
+	0x90, 0x4f, 0xa0, 0x88, 0x87, 0x70, 0xaa, 0xd2, 0xbf, 0x9a, 0x57, 0x17, 0xba, 0x4f, 0x38, 0x97,
+	0x4a, 0x21, 0xeb, 0x26, 0x18, 0x42, 0xab, 0x04, 0xcb, 0x9d, 0x5e, 0xb3, 0x69, 0xd3, 0xe7, 0x95,
+	0x4b, 0x04, 0x60, 0xa9, 0x56, 0xef, 0xda, 0x87, 0x8d, 0x8a, 0x66, 0xfd, 0x00, 0x90, 0x69, 0xa5,
+	0xb9, 0x68, 0x59, 0x2e, 0xbc, 0xa7, 0xf8, 0x6f, 0x14, 0x38, 0x03, 0x59, 0x0a, 0x93, 0x66, 0x04,
+	0x5e, 0xdc, 0x57, 0x2c, 0x8c, 0xb0, 0xf9, 0x54, 0x01, 0x92, 0xa3, 0xb5, 0x0b, 0xeb, 0xb9, 0x74,
+	0xa2, 0xc0, 0xf7, 0x22, 0x46, 0x3e, 0x85, 0xa5, 0xb1, 0xa0, 0x88, 0xab, 0x28, 0xed, 0xfc, 0xff,
+	0x5c, 0xf8, 0x35, 0x27, 0x76, 0xa8, 0x12, 0xb2, 0xfe, 0xd6, 0xc0, 0x4c, 0xa9, 0xff, 0x65, 0x74,
+	0xdc, 0x16, 0xf6, 0x9c, 0x83, 0x9d, 0xcc, 0x2f, 0x5c, 0x7c, 0x93, 0xaf, 0x01, 0x84, 0x5f, 0x79,
+	0x3d, 0x45, 0x71, 0x3d, 0x1b, 0x73, 0x03, 0x94, 0xf7, 0x62, 0x0a, 0x69, 0xfe, 0x69, 0x7d, 0xab,
+	0xea, 0x8c, 0xa5, 0x6d, 0xb6, 0x6b, 0xbd, 0x46, 0x5d, 0x96, 0x79, 0xb7, 0xd7, 0xaa, 0xe1, 0xb7,
+	0x46, 0x2a, 0x50, 0xb6, 0x7b, 0xfb, 0xcd, 0x7a, 0xab, 0x6b, 0x77, 0x0f, 0xdb, 0xad, 0x8a, 0x4e,
+	0x56, 0xc1, 0xac, 0xd5, 0x9f, 0x1e, 0xca, 0xa3, 0x61, 0xfd, 0xa3, 0x01, 0x60, 0xb9, 0x92, 0x5e,
+	0xc9, 0x46, 0x55, 0x7b, 0xcb, 0xa8, 0x26, 0x43, 0x53, 0x58, 0x30, 0x66, 0x72, 0x68, 0xee, 0xab,
+	0x56, 0xd6, 0x45, 0x52, 0xd7, 0xcf, 0xf4, 0xdc, 0x4c, 0xb7, 0xc9, 0xae, 0xbe, 0x0d, 0x6b, 0x03,
+	0x67, 0xf0, 0x82, 0xf5, 0x5d, 0x2f, 0x66, 0x21, 0xce, 0x83, 0xa8, 0x94, 0x4e, 0x57, 0x05, 0xf5,
+	0x50, 0x11, 0xad, 0xaf, 0x54, 0xde, 0xcb, 0xa0, 0xdb, 0x8d, 0x86, 0x4c, 0x7a, 0xaf, 0xdd, 0x7a,
+	0x7c, 0xb8, 0x8f, 0x49, 0x9b, 0x50, 0xec, 0x60, 0xbe, 0xf5, 0x4a, 0x81, 0x5c, 0x86, 0x52, 0xfb,
+	0xa8, 0x4e, 0x45, 0xb6, 0x76, 0xa3, 0xa2, 0x5b, 0xdf, 0x43, 0x49, 0x38, 0x56, 0x7d, 0xf1, 0x08,
+	0xca, 0x5e, 0x0e, 0xc8, 0x54, 0x77, 0x54, 0xf3, 0x71, 0xe6, 0x81, 0x8e, 0xce, 0x48, 0x5b, 0x7f,
+	0x60, 0xf1, 0x3a, 0xef, 0x53, 0xbc, 0x0c, 0xa5, 0x0a, 0x6f, 0x46, 0x29, 0x1c, 0xbb, 0xe5, 0x90,
+	0x05, 0x23, 0xde, 0x65, 0xfa, 0x42, 0xf0, 0x4b, 0x44, 0x2e, 0x82, 0x94, 0x96, 0x0f, 0xa5, 0x4e,
+	0xae, 0x12, 0xef, 0x1e, 0xfc, 0x97, 0xb0, 0x12, 0x2a, 0x2d, 0x15, 0xfe, 0xc6, 0x1c, 0x37, 0x4a,
+	0x82, 0xa6, 0xb2, 0xd6, 0x4f, 0xb0, 0x36, 0xcb, 0x7b, 0xcb, 0xb3, 0x91, 0x75, 0xd8, 0x5b, 0x60,
+	0x99, 0x85, 0xa1, 0x1f, 0x8a, 0x16, 0x3b, 0x03, 0xcb, 0x75, 0xce, 0xa0, 0x92, 0x6f, 0xf5, 0xa1,
+	0x28, 0xce, 0x7c, 0x04, 0x07, 0x38, 0x40, 0xc2, 0xe1, 0x2a, 0x15, 0xdf, 0x7c, 0x60, 0xd1, 0x6d,
+	0xe4, 0x9c, 0x26, 0xc3, 0x9c, 0x1c, 0xb1, 0x2e, 0x72, 0x60, 0xa5, 0xf9, 0x2b, 0xdb, 0xf2, 0x55,
+	0xdc, 0x4e, 0x5e, 0xc5, 0x6d, 0xdb, 0x9b, 0xca, 0x31, 0xb6, 0x7e, 0x29, 0x40, 0xa5, 0x33, 0x39,
+	0x8e, 0x06, 0xa1, 0x7b, 0xcc, 0x92, 0x9e, 0x78, 0x04, 0x66, 0x94, 0xd0, 0x54, 0x65, 0x6f, 0xe4,
+	0x43, 0x54, 0x0a, 0x01, 0xef, 0xa7, 0x86, 0x1b, 0xc5, 0x07, 0x97, 0x68, 0xa6, 0x40, 0x1e, 0x82,
+	0xf9, 0x82, 0x39, 0x61, 0x7c, 0xcc, 0x9c, 0x58, 0xd5, 0x61, 0x06, 0xb9, 0x0e, 0x12, 0x26, 0x57,
+	0x4b, 0x25, 0x11, 0xed, 0x8c, 0xc0, 0x1f, 0x8d, 0x54, 0xcc, 0xd7, 0x66, 0x2a, 0x87, 0x74, 0x15,
+	0x1b, 0xea, 0x08, 0x31, 0xf2, 0x19, 0x2c, 0x8b, 0x87, 0x96, 0x45, 0x62, 0xd8, 0xce, 0xf8, 0xb0,
+	0x39, 0x4b, 0x85, 0x96, 0xc8, 0x91, 0x8f, 0xa1, 0x88, 0x15, 0x78, 0x3d, 0x15, 0x68, 0x55, 0xda,
+	0xf9, 0xdf, 0x8c, 0x0b, 0x64, 0xb8, 0x2c, 0xa2, 0x52, 0x62, 0xd7, 0xe4, 0x1d, 0x2c, 0x1c, 0x5a,
+	0xbf, 0x66, 0x15, 0x4a, 0x13, 0xbe, 0x40, 0xe3, 0xe1, 0xb0, 0x46, 0x39, 0x6d, 0xd5, 0x7c, 0xd5,
+	0x45, 0xe5, 0xa4, 0x33, 0xd2, 0xe4, 0x26, 0x94, 0x26, 0x11, 0xeb, 0x27, 0x99, 0xf2, 0xda, 0xac,
+	0x50, 0x40, 0x92, 0xad, 0x72, 0xda, 0x02, 0xfd, 0xa5, 0x9f, 0x94, 0x60, 0xe6, 0x7d, 0x7b, 0xd2,
+	0xee, 0x34, 0x9d, 0xf0, 0x47, 0xd7, 0x3b, 0xa5, 0x5c, 0x04, 0xaf, 0xc5, 0xe0, 0x10, 0xac, 0xa0,
+	0xfa, 0xd6, 0x9b, 0xee, 0x53, 0x60, 0x37, 0x15, 0xe2, 0xd6, 0x1d, 0x30, 0xf8, 0x89, 0x63, 0x55,
+	0xa7, 0x4b, 0xeb, 0x76, 0x13, 0x71, 0x6b, 0x05, 0x8c, 0x76, 0x6b, 0x8f, 0x43, 0x35, 0x7e, 0x1d,
+	0xb5, 0x11, 0xcb, 0x0a, 0x1c, 0x93, 0xcb, 0x79, 0x3b, 0xef, 0xb8, 0xa0, 0x3c, 0x50, 0x51, 0xc9,
+	0xb5, 0x61, 0x61, 0x97, 0x65, 0x01, 0xe1, 0xec, 0x5c, 0x8e, 0x70, 0xd2, 0x46, 0x39, 0xb4, 0xe5,
+	0x65, 0x31, 0xe8, 0x9a, 0x24, 0x27, 0x70, 0x8b, 0x0d, 0x45, 0xa2, 0x49, 0x80, 0xd7, 0x10, 0x45,
+	0xfd, 0x90, 0x0d, 0x27, 0xde, 0xd0, 0xc1, 0xad, 0xc6, 0x10, 0x25, 0x5c, 0x4f, 0x38, 0x34, 0x61,
+	0x70, 0xf1, 0xb4, 0x19, 0x33, 0xd3, 0x45, 0x61, 0x7a, 0x3d, 0xe5, 0xa4, 0x60, 0x7e, 0x07, 0x20,
+	0xab, 0xb0, 0x18, 0x45, 0xf9, 0xa9, 0x26, 0x34, 0x39, 0x5a, 0x5f, 0x80, 0x99, 0x36, 0x23, 0x9f,
+	0x7b, 0xb9, 0x2a, 0x4a, 0xc8, 0x5e, 0x3f, 0xd7, 0xb2, 0x6a, 0x7b, 0xb4, 0x7a, 0x50, 0x14, 0xe7,
+	0x77, 0xac, 0xe2, 0x9d, 0xc4, 0xee, 0x22, 0xd8, 0x51, 0x66, 0x57, 0xa1, 0x94, 0x9b, 0x25, 0x2b,
+	0x86, 0x65, 0xd5, 0xf7, 0x3c, 0x32, 0x39, 0x1b, 0x73, 0x22, 0xe3, 0x32, 0x53, 0x35, 0x19, 0xbc,
+	0x23, 0x63, 0x27, 0x3c, 0x65, 0x71, 0x5f, 0xac, 0x17, 0x12, 0x78, 0x40, 0x92, 0x5a, 0x7c, 0xc9,
+	0x40, 0x81, 0xc1, 0xc8, 0xc5, 0x8d, 0xb1, 0x9f, 0xdb, 0xf4, 0x40, 0x92, 0xb8, 0x80, 0xf5, 0x10,
+	0x8a, 0xc2, 0x22, 0x2f, 0x9a, 0x33, 0x1c, 0xf2, 0x5b, 0x50, 0x5b, 0x4a, 0x72, 0x4c, 0x97, 0x97,
+	0x42, 0x6e, 0x4d, 0xfc, 0x5d, 0x83, 0xf5, 0x1c, 0x52, 0x29, 0x34, 0xde, 0x49, 0x1f, 0x0f, 0x59,
+	0xa1, 0x85, 0xaf, 0x20, 0x02, 0x41, 0xb2, 0x6e, 0xbf, 0x27, 0x40, 0xdd, 0x86, 0xd5, 0x68, 0xea,
+	0x0d, 0xfa, 0xe9, 0x3b, 0x22, 0xa6, 0x11, 0x65, 0xca, 0x9c, 0x9c, 0x44, 0xb4, 0x0b, 0xd9, 0x4b,
+	0x63, 0xdd, 0x05, 0x33, 0x35, 0x46, 0x36, 0x60, 0x25, 0x6d, 0x2b, 0x4d, 0xb4, 0x55, 0x7a, 0xb6,
+	0xfe, 0xc2, 0x47, 0xb9, 0x57, 0x3b, 0x7a, 0x16, 0x3a, 0x41, 0xc0, 0x42, 0xb2, 0x09, 0x05, 0x77,
+	0xb8, 0xf0, 0xce, 0x91, 0xc7, 0xbb, 0x35, 0x0e, 0x1d, 0x2f, 0x1a, 0xbb, 0xb8, 0x20, 0xa7, 0xcf,
+	0x51, 0x41, 0x76, 0x6b, 0xc2, 0xe9, 0xa6, 0xcf, 0x12, 0x1f, 0x1a, 0x7e, 0xe9, 0xde, 0x80, 0xf5,
+	0xbd, 0xc9, 0xf8, 0x98, 0x85, 0xe9, 0xd0, 0x28, 0x72, 0x4b, 0x50, 0xcf, 0xed, 0x16, 0xc6, 0x45,
+	0x76, 0x8b, 0x7b, 0xd7, 0xd5, 0x86, 0x83, 0xb0, 0xf0, 0x5d, 0x07, 0x57, 0xb5, 0x4b, 0x7c, 0xad,
+	0xd9, 0x7d, 0xde, 0xad, 0x77, 0x2a, 0xda, 0x3d, 0x7b, 0x16, 0x47, 0x05, 0xaa, 0x10, 0x58, 0xeb,
+	0xda, 0x74, 0xbf, 0xde, 0xed, 0xd7, 0xea, 0x8f, 0x0f, 0x5b, 0xf5, 0x1a, 0xaa, 0xe0, 0xb2, 0xd7,
+	0x6e, 0xf5, 0xf7, 0x0e, 0xec, 0xd6, 0x3e, 0x87, 0x18, 0x0e, 0x3c, 0x76, 0xf3, 0x08, 0x37, 0xc3,
+	0xc2, 0xce, 0xcf, 0x05, 0x80, 0x36, 0x46, 0xb2, 0x27, 0x22, 0xc1, 0x47, 0x5d, 0xc7, 0xbd, 0x88,
+	0x5c, 0x9d, 0xbf, 0xa1, 0x6d, 0x5c, 0x3b, 0x47, 0x57, 0x4d, 0x73, 0x00, 0x66, 0xba, 0x6d, 0x93,
+	0x1b, 0x6f, 0xfa, 0x4f, 0xb1, 0xf1, 0xe1, 0x02, 0xae, 0xb2, 0xf4, 0x0d, 0xe8, 0x9d, 0xb3, 0x11,
+	0x74, 0x16, 0x44, 0x90, 0x5b, 0x5c, 0xb6, 0xb4, 0x07, 0x1a, 0x69, 0x80, 0x99, 0xf6, 0x33, 0x99,
+	0x87, 0x7c, 0xe9, 0x83, 0x3c, 0x1b, 0xc5, 0xb9, 0x21, 0xe0, 0xd6, 0x8e, 0x97, 0xc4, 0xe3, 0xfe,
+	0xf9, 0xbf, 0x01, 0x00, 0x00, 0xff, 0xff, 0xe9, 0x4f, 0x22, 0x5b, 0x20, 0x0f, 0x00, 0x00,
 }
