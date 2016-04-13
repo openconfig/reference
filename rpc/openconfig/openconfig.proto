@@ -40,14 +40,14 @@ service OpenConfig {
 
   // Set is the primary function for sending configuration data to the device.
   // It sets the paths contained in the SetRequest to the specified values. If
-  // any of the paths do not exist, or are read-only, the SetResponse will return an
-  // error.  All paths in the SetRequest must be valid or the entire request
-  // must be rejected.  If a path specifies a node, rather than the leaf, then
-  // the value must be the values of the node's children encoded in JSON.
-  // Binary data in the tree must be base64 encoded, but if a path specifies
-  // a leaf of binary type, it may be sent as binary.
-  // See SetRequest for further explaination on the atomicity and idempotency
-  // of a Set operation.
+  // any of the paths do not exist, or are read-only, the SetResponse will
+  // return an error. All paths in the SetRequest must be valid or the entire
+  // request must be rejected. If a path specifies a node, rather than the
+  // leaf, then the value must be the values of the node's children encoded in
+  // JSON. Binary data in the tree must be base64 encoded, but if a path
+  // specifies a leaf of binary type, it may be sent as binary. See SetRequest
+  // for further explaination on the atomicity and idempotency of a Set
+  // operation.
   rpc Set(stream SetRequest) returns (stream SetResponse);
 
   // Subscribe subscribes for streaming updates.  Streaming updates are provided
@@ -311,10 +311,10 @@ message GetResponse {
 // return an error.  The deletes, replacements, and updates should appear to be
 // atomically applied.
 //
-// Non-existing paths are valid for all operations.  Deletes to a non-existing
-// path are no operation. Updates and replaces to a non-existing path with create a
-// node with values set to values contained in the Update.  Any unspecified
-// values will be set to system defaults.
+// Non-existing but otherwise valid paths are valid for all operations.  Deletes
+// to a non-existing path are a no-op. Updates and replaces to a non-existing
+// path with create a path with its values set to values contained in the
+// Update.  Any unspecified values will be set to system defaults.
 //
 // Example:
 // A SetRequest consisting of a single replace Update, which has a Path of "/"
