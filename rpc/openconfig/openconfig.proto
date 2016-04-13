@@ -313,7 +313,7 @@ message GetResponse {
 //
 // Non-existing but otherwise valid paths are valid for all operations.  Deletes
 // to a non-existing path are a no-op. Updates and replaces to a non-existing
-// path with create a path with its values set to values contained in the
+// path will create a path with its values set to values contained in the
 // Update.  Any unspecified values will be set to system defaults.
 //
 // Example:
