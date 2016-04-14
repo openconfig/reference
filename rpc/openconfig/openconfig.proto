@@ -42,9 +42,9 @@ service OpenConfig {
   // It sets the paths contained in the SetRequest to the specified values. If
   // any of the paths do not exist, or are read-only, the SetResponse will
   // return an error. All paths in the SetRequest must be valid or the entire
-  // request must be rejected. If a path specifies a node, rather than the
-  // leaf, then the value must be the values of the node's children encoded in
-  // JSON. Binary data in the tree must be base64 encoded, but if a path
+  // request must be rejected. If a path specifies an internal node, rather than
+  // the leaf, then the value must be the values of the node's children encoded
+  // in JSON. Binary data in the tree must be base64 encoded, but if a path
   // specifies a leaf of binary type, it may be sent as binary. See SetRequest
   // for further explaination on the atomicity and idempotency of a Set
   // operation.
@@ -317,7 +317,7 @@ message GetResponse {
 // Update.  Any unspecified values will be set to system defaults.
 //
 // Example:
-// A SetRequest consisting of a single replace Update, which has a Path of "/"
+// A SetRequest consisting of a single replace, which has a Path of "/"
 // and a Value of the full current configuration of a target, in JSON, should
 // not result in any state changes on the system.
 message SetRequest {
