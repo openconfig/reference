@@ -40,7 +40,7 @@ service OpenConfig {
 
   // Set is the primary function for sending configuration data to the device.
   // It sets the paths contained in the SetRequest to the specified values. If
-  // any of the paths do not exist, or are read-only, the SetResponse will
+  // any of the paths are invalid, or are read-only, the SetResponse will
   // return an error. All paths in the SetRequest must be valid or the entire
   // request must be rejected. If a path specifies an internal node, rather than
   // the leaf, then the value must be the values of the node's children encoded
@@ -48,7 +48,7 @@ service OpenConfig {
   // specifies a leaf of binary type, it may be sent as binary. See SetRequest
   // for further explaination on the atomicity and idempotency of a Set
   // operation.
-  rpc Set(stream SetRequest) returns (stream SetResponse);
+  rpc Set(SetRequest) returns (SetResponse);
 
   // Subscribe subscribes for streaming updates.  Streaming updates are provided
   // as a series of Notifications, each of which update a portion of the tree.
@@ -329,9 +329,7 @@ message SetRequest {
 
 // A SetResponse contains responses to a SetRequest.  The optional prefix is
 // applied to all paths in response.  Each path provided by a SetRequest needs a
-// response, but there need not be a 1:1 correspondence between SetRequests and
-// SetResponses (e.g., the target may issue a single response to multiple
-// requests, or multiple responses to a single request).
+// response.
 message SetResponse {
   Path prefix = 1;
   repeated UpdateResponse response = 2;
@@ -339,12 +337,19 @@ message SetResponse {
 
 // An UpdateResponse contains the response for a single path Update.
 message UpdateResponse {
+  enum Operation {
+    NOT_SPECIFIED = 0;
+    DELETE = 1;
+    REPLACE = 2;
+    UPDATE = 3;
+  }
   // The timestamp is the time, in nanoseconds since the epoch, that a Set was
   // accepted (i.e., the request was valid).  It does not imply the value was
   // actually propagated to an underlying datastore.
   int64 timestamp = 1;
   Path path = 2;       // path provided in SetRequest.
   Error error = 3;     // optional error, if set, timestamp is optional
+  Operation op = 4;    // optional operation applied to the path.
 }
 
 // An Error contains information about why a particular request failed.
