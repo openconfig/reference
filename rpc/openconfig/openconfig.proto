@@ -349,7 +349,9 @@ message UpdateResponse {
   // actually propagated to an underlying datastore.
   int64 timestamp = 1;
   Path path = 2;      // path provided in SetRequest.
-  Error message = 3;  // message contains an informational or error message.
+  // message contains an informational or an error message.  Required for
+  // unsuccessful SetRequest operations.
+  Error message = 3;
   Operation op = 4;   // optional operation applied to the path.
 }
 
