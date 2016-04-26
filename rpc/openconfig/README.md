@@ -1,4 +1,12 @@
-# proto
+# openconfig.proto
 
-openconfig.proto is a working proposal for an RPC service definition
-and is still under discussion in the OpenConfig group.  It is subject to change.
+The openconfig package defines a [gRPC](http://www.grpc.io/) service for interacting with network devices
+based on OpenConfig models.
+
+This package and its contents are a *work-in-progress* and subject to change.  It is provided
+as an example implementation of the
+[OpenConfig RPC reference specification](available at github.com/openconfig/public/tree/master/release/models/rpc)
+but also contains some additional capabilities not included in the base
+RPC specification.
+
+*Note: this is not an official Google product*
