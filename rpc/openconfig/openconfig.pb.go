@@ -937,7 +937,7 @@ func _SubscribeRequest_OneofSizer(msg proto.Message) (n int) {
 // A SubscriptionList operates in one of three modes, all of which operate on
 // the streaming channel.
 //
-// STREAM:  This is the default mode.  The target must send notifcations for all
+// STREAM:  This is the default mode.  The target must send notifications for all
 // subscribed values.  After each subscribed value as been sent at least once,
 // the target must send a sync_response.  The target continues to send update
 // notifications for the subscribed values as indicated in the subscription.
@@ -954,10 +954,10 @@ func _SubscribeRequest_OneofSizer(msg proto.Message) (n int) {
 // subscription once, and can expect periodic requests for the corresponding
 // data.
 //
-// After sending a SubscriptioList with mode set to POLL, polls are initiated by
+// After sending a SubscriptionList with mode set to POLL, polls are initiated by
 // sending a PollRequest.  The target sends no notifications to the client until
 // the first PollRequest is received.  The target responds by sending each
-// subscribed value once, followed by a sync_response.  This process repeates
+// subscribed value once, followed by a sync_response.  This process repeats
 // for subsequent polls.
 //
 // Polling mode is optional.  If a target does not support the polling mode, it
@@ -1027,7 +1027,7 @@ func (m *SubscriptionList) GetQos() *QOSMarking {
 // typically used for events.  The sample_interval is ignored when the mode in
 // ON_CHANGE.
 //
-// If mode is SAMPLE, the target must coalesce notifcations based on the
+// If mode is SAMPLE, the target must coalesce notifications based on the
 // provided sample_interval.  This is typically used for aggregating values
 // (i.e., counters).  The sample_interval, if not 0, is the number of
 // nanoseconds between updates.  If 0, the interval is selected by the target.
@@ -1147,7 +1147,7 @@ func (*PollRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int
 // destination of the subscribe request.  Proxies may find it useful to use this
 // information in logs and errors.
 //
-// The client_name is an optional informatinal field describing the client
+// The client_name is an optional informational field describing the client
 // making the subscribe request.  Proxies may find it useful to use this
 // information in logs and errors.
 type Proxies struct {
@@ -1184,7 +1184,8 @@ func (*Proxy) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{22} }
 // Notifications are sent as described above in SubscribeList.
 //
 // A sync_response is sent when the target finishes sending all the subscribed
-// values at least once.
+// values at least once. sync_response must be set to true for the client to
+// consider the stream synced.
 type SubscribeResponse struct {
 	// Types that are valid to be assigned to Response:
 	//	*SubscribeResponse_Update
