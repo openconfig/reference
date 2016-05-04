@@ -13,8 +13,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-
-
 syntax = "proto3";
 
 import "google/protobuf/any.proto";
@@ -62,6 +60,11 @@ service OpenConfig {
 // performed after updates are applied.  Delete paths are created by
 // concatenating the prefix, if present, with the individual paths.
 //
+// Timestamps are always represented as nanoseconds since UNIX epoch,
+// Jan 1 1970 00:00:00 UTC. Agents which are incapable of generating nanosecond
+// resolution are expected to round the timestamp to thier highest supported
+// resolution.
+//
 // Update paths are created by concatenating the prefix, if present, with the
 // paths contained in the Updates.
 //
@@ -107,7 +110,7 @@ service OpenConfig {
 // even if the client does specify the use_aliases option in the initial
 // SubscriptionLlist message.
 //
-// Clients define aliases by sending a SubscriptionRequest with aliases set.
+// Clients define aliases by sending a SubscriptionRequest with aliases set.``
 //
 // A target should use a defined alias when possible, but is not required to.  A
 // target may ignore client defined aliases.
