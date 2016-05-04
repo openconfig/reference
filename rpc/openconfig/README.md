@@ -10,3 +10,14 @@ but also contains some additional capabilities not included in the base
 RPC specification.
 
 *Note: this is not an official Google product*
+
+# Howto Generate the OpenConfig proto
+
+* Install the protoc compiler and any language specific generators.
+ * [How to install](https://developers.google.com/protocol-buffers/docs/gotutorial)
+
+* Compile the proto.
+```
+cd $GOPATH/src/github.com/openconfig/reference/rpc
+protoc --go_out=plugins=grpc:. *.proto
+```

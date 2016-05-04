@@ -63,7 +63,7 @@ service OpenConfig {
 //
 // Timestamps are always represented as nanoseconds since UNIX epoch,
 // Jan 1 1970 00:00:00 UTC. Targets which are incapable of generating nanosecond
-// resolution are expected to round the timestamp to thier highest supported
+// resolution are expected to round the timestamp to the highest supported
 // resolution.
 //
 // Update paths are created by concatenating the prefix, if present, with the
