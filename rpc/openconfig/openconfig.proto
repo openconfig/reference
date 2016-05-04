@@ -110,9 +110,9 @@ service OpenConfig {
 // even if the client does specify the use_aliases option in the initial
 // SubscriptionLlist message.
 //
-// Clients define aliases by sending a SubscriptionRequest with aliases set.``
+// Clients define aliases by sending a SubscriptionRequest with aliases set.
 //
-// A target should use a defined alias when possible, but is not required to.  A
+// A target should use a defined alias when possible, but is not required to. A
 // target may ignore client defined aliases.
 //
 //
