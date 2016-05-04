@@ -593,7 +593,7 @@ message Heartbeat {
 // small enough to not cause IP packet fragmentation.
 message UDPWrapper {
   // ID Identifies the target (e.g., Loopback IP address, linecard, ...)
-  // TODO(borman): Add examples.  Perhaps agent/module/submodule for juniper.
+  // TODO(borman): Add examples.  Perhaps agent/module/submodule for vendor.
   Path id = 1;
 
   // Optional Epoch time of when the message is queued for transmit.
