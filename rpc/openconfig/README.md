@@ -14,26 +14,26 @@ RPC specification.
 # Howto Generate the OpenConfig proto
 * [Protocol buffer overview](https://developers.google.com/protocol-buffers)s
 * Install the protoc compiler and any language specific generators.
- * Go based installation instructions
-  * [How to install](https://developers.google.com/protocol-buffers/docs/gotutorial)
-  * Compile the proto.
+  * Go based installation instructions
+    * [How to install](https://developers.google.com/protocol-buffers/docs/gotutorial)
+    * Compile the proto.
 ```
 cd $GOPATH/src/github.com/openconfig/reference/rpc
 protoc --go_out=plugins=grpc:. *.proto
 ```
- * C++ based installation instructions
-  * [How to install](https://developers.google.com/protocol-buffers/docs/cpptutorial#compiling-your-protocol-buffers)
-  * [Install gRPC plugin](https://github.com/grpc/grpc/blob/release-0_13/INSTALL.md)
-  * Compile the proto.
+  * C++ based installation instructions
+    * [How to install](https://developers.google.com/protocol-buffers/docs/cpptutorial#compiling-your-protocol-buffers)
+    * [Install gRPC plugin](https://github.com/grpc/grpc/blob/release-0_13/INSTALL.md)
+    * Compile the proto.
 ```
 cd $GOPATH/src/github.com/openconfig/reference/rpc
 protoc -I ./ --grpc_out=. --plugin=protoc-gen-grpc=`which grpc_cpp_plugin` ./openconfig.proto
 protoc -I ./ --cpp_out=. ./openconfig.proto
 ```
- * Python based installation instructions
-  * [How to install](https://developers.google.com/protocol-buffers/docs/cpptutorial#compiling-your-protocol-buffers)
-  * [Install gRPC plugin](https://github.com/grpc/grpc/blob/release-0_13/INSTALL.md)
-  * Compile the proto.
+  * Python based installation instructions
+    * [How to install](https://developers.google.com/protocol-buffers/docs/cpptutorial#compiling-your-protocol-buffers)
+    * [Install gRPC plugin](https://github.com/grpc/grpc/blob/release-0_13/INSTALL.md)
+    * Compile the proto.
 ```
 protoc -I. --python_out=. --grpc_out=. --plugin=protoc-gen-grpc=`which grpc_python_plugin` openconfig.proto
 ```
