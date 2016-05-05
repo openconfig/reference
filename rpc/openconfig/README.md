@@ -15,14 +15,14 @@ RPC specification.
 * [Protocol buffer overview](https://developers.google.com/protocol-buffers)
 * Install the protoc compiler and any language specific generators.
  * Go based installation instructions
-  * [How to install](https://developers.google.com/protocol-buffers/docs/gotutorial)
+  * [How to install protoc for Go](https://developers.google.com/protocol-buffers/docs/gotutorial)
   * Compile the proto.
   ```
   cd $GOPATH/src/github.com/openconfig/reference/rpc
   protoc --go_out=plugins=grpc:. *.proto
   ```
  * C++ based installation instructions
-  * [How to install](https://developers.google.com/protocol-buffers/docs/cpptutorial#compiling-your-protocol-buffers)
+  * [How to install protoc for most languages](https://developers.google.com/protocol-buffers/docs/cpptutorial#compiling-your-protocol-buffers)
   * [Install gRPC plugin](https://github.com/grpc/grpc/blob/release-0_13/INSTALL.md)
   * Compile the proto.
   ```
@@ -31,7 +31,7 @@ RPC specification.
   protoc -I ./ --cpp_out=. ./openconfig.proto
   ```
  * Python based installation instructions
-  * [How to install](https://developers.google.com/protocol-buffers/docs/cpptutorial#compiling-your-protocol-buffers)
+  * [How to install protoc for most languages](https://developers.google.com/protocol-buffers/docs/cpptutorial#compiling-your-protocol-buffers)
   * [Install gRPC plugin](https://github.com/grpc/grpc/blob/release-0_13/INSTALL.md)
   * Compile the proto.
   ```
