@@ -18,7 +18,7 @@ RPC specification.
  ```
  git clone https://github.com/google/protobuf
  ```
-* Install the protoc compiler and any language specific generators.
+* Install any language specific generators and compile the proto.
  * Go based installation instructions
   * [How to compile proto for Go](https://developers.google.com/protocol-buffers/docs/gotutorial#compiling-your-protocol-buffers)
   * Compile the proto.
