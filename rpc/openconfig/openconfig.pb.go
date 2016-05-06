@@ -6,7 +6,7 @@
 Package openconfig is a generated protocol buffer package.
 
 Package openconfig defines the gRPC service for getting and setting the
-configuration and state data of a network device based on OpenConfig models.
+configuration and state data of a network target based on OpenConfig models.
 
 This package and its contents is a work-in-progress.  It is meant as a
 example implementation of the OpenConfig RPC reference specification
@@ -256,6 +256,11 @@ func (SubscriptionList_Mode) EnumDescriptor() ([]byte, []int) { return fileDescr
 // performed after updates are applied.  Delete paths are created by
 // concatenating the prefix, if present, with the individual paths.
 //
+// Timestamps are always represented as nanoseconds since UNIX epoch,
+// Jan 1 1970 00:00:00 UTC. Targets which are incapable of generating nanosecond
+// resolution are expected to round the timestamp to thier highest supported
+// resolution.
+//
 // Update paths are created by concatenating the prefix, if present, with the
 // paths contained in the Updates.
 //
@@ -303,7 +308,7 @@ func (SubscriptionList_Mode) EnumDescriptor() ([]byte, []int) { return fileDescr
 //
 // Clients define aliases by sending a SubscriptionRequest with aliases set.
 //
-// A target should use a defined alias when possible, but is not required to.  A
+// A target should use a defined alias when possible, but is not required to. A
 // target may ignore client defined aliases.
 //
 //
@@ -649,7 +654,7 @@ func (m *SetRequest) GetUpdate() []*Update {
 
 // A SetResponse contains responses to a SetRequest.  The optional prefix is
 // applied to all paths in response.  Each operation and path in a SetRequest
-// requires a response.  The server may return additional informational messages
+// requires a response.  The target may return additional informational messages
 // in the response such as path not found for a delete or update.
 type SetResponse struct {
 	Prefix   *Path             `protobuf:"bytes,1,opt,name=prefix" json:"prefix,omitempty"`
@@ -937,15 +942,16 @@ func _SubscribeRequest_OneofSizer(msg proto.Message) (n int) {
 // A SubscriptionList operates in one of three modes, all of which operate on
 // the streaming channel.
 //
-// STREAM:  This is the default mode.  The target must send notifications for all
-// subscribed values.  After each subscribed value as been sent at least once,
-// the target must send a sync_response.  The target continues to send update
-// notifications for the subscribed values as indicated in the subscription.
+// STREAM:  This is the default mode.  The target must send notifications for
+// all subscribed values.  After each subscribed value as been sent at least
+// once, the target must send a sync_response.  The target continues to send
+// update notifications for the subscribed values as indicated in the
+// subscription.
 //
 // ONCE: This mode is used to send a one-time request for data to the target
-// device by setting once to true in the SubscriptionRequest.  The target sends
-// each subscribed value once, followed by a sync_response (indicating all
-// values were sent) and then closes the stream.
+// by setting once to true in the SubscriptionRequest.  The target sends each
+// subscribed value once, followed by a sync_response (indicating all values
+// were sent) and then closes the stream.
 //
 // POLL: This mode provides a method to send periodic requests over a single
 // stream similar to conventional polling.  In this mode, the client is able to
@@ -954,9 +960,9 @@ func _SubscribeRequest_OneofSizer(msg proto.Message) (n int) {
 // subscription once, and can expect periodic requests for the corresponding
 // data.
 //
-// After sending a SubscriptionList with mode set to POLL, polls are initiated by
-// sending a PollRequest.  The target sends no notifications to the client until
-// the first PollRequest is received.  The target responds by sending each
+// After sending a SubscriptionList with mode set to POLL, polls are initiated
+// by sending a PollRequest.  The target sends no notifications to the client
+// until the first PollRequest is received.  The target responds by sending each
 // subscribed value once, followed by a sync_response.  This process repeats
 // for subsequent polls.
 //
@@ -1067,7 +1073,7 @@ func (m *Subscription) GetPath() *Path {
 	return nil
 }
 
-// A QOSMarking describes the QOS marking to use, if supported by the server.
+// A QOSMarking describes the QOS marking to use, if supported by the target.
 type QOSMarking struct {
 	Marking uint32 `protobuf:"varint,1,opt,name=marking" json:"marking,omitempty"`
 }
@@ -1168,7 +1174,7 @@ func (m *Proxies) GetProxy() []*Proxy {
 	return nil
 }
 
-// A Proxy represents a proxy service to use when connecting to the device.
+// A Proxy represents a proxy service to use when connecting to the target.
 type Proxy struct {
 	Address string `protobuf:"bytes,1,opt,name=address" json:"address,omitempty"`
 	Name    string `protobuf:"bytes,2,opt,name=name" json:"name,omitempty"`
@@ -1352,15 +1358,15 @@ func (*Heartbeat) ProtoMessage()               {}
 func (*Heartbeat) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{24} }
 
 // UDPWrapper adds metadata necessary for encapsulating a list of notifications
-// into a UDP packet.  It adds the ability to identify the agent that originated
-// the Notifications, detect packet loss, and identify latency introduced by
-// the target wrapping notifications.
+// into a UDP packet.  It adds the ability to identify the target that
+// originated the Notifications, detect packet loss, and identify latency
+// introduced by the target wrapping notifications.
 //
 // The target should keep the total size of a serialized UDPWrapper message
 // small enough to not cause IP packet fragmentation.
 type UDPWrapper struct {
-	// ID Identifies the device (e.g., Loopback IP address, linecard, ...)
-	// TODO(borman): Add examples.  Perhaps Agent/module/submodule for juniper.
+	// ID Identifies the target (e.g., Loopback IP address, linecard, ...)
+	// TODO(borman): Add examples.  Perhaps agent/module/submodule for juniper.
 	Id *Path `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
 	// Optional Epoch time of when the message is queued for transmit.
 	// Useful to quantify delay between message generation and transmission.
@@ -1436,9 +1442,10 @@ type OpenConfigClient interface {
 	// Get requests a single snapshot of specified data.  A Get request may
 	// contain a hint that the request will be repeated (i.e., polling).
 	Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetResponse, error)
-	// GetModels returns information about the YANG models supported by the device.
+	// GetModels returns information about the YANG models supported by the
+	// target.
 	GetModels(ctx context.Context, in *GetModelsRequest, opts ...grpc.CallOption) (*GetModelsResponse, error)
-	// Set is the primary function for sending configuration data to the device.
+	// Set is the primary function for sending configuration data to the target.
 	// It sets the paths contained in the SetRequest to the specified values. If
 	// any of the paths are invalid, or are read-only, the SetResponse will
 	// return an error. All paths in the SetRequest must be valid or the entire
@@ -1527,9 +1534,10 @@ type OpenConfigServer interface {
 	// Get requests a single snapshot of specified data.  A Get request may
 	// contain a hint that the request will be repeated (i.e., polling).
 	Get(context.Context, *GetRequest) (*GetResponse, error)
-	// GetModels returns information about the YANG models supported by the device.
+	// GetModels returns information about the YANG models supported by the
+	// target.
 	GetModels(context.Context, *GetModelsRequest) (*GetModelsResponse, error)
-	// Set is the primary function for sending configuration data to the device.
+	// Set is the primary function for sending configuration data to the target.
 	// It sets the paths contained in the SetRequest to the specified values. If
 	// any of the paths are invalid, or are read-only, the SetResponse will
 	// return an error. All paths in the SetRequest must be valid or the entire
