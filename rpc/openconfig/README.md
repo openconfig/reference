@@ -23,23 +23,23 @@ RPC specification.
   * [How to compile proto for Go](https://developers.google.com/protocol-buffers/docs/gotutorial#compiling-your-protocol-buffers)
   * Compile the proto.
   ```
-  cd $WORKSPACE/github.com/openconfig/reference/rpc
-  protoc --go_out=plugins=grpc:. *.proto
+  cd $WORKSPACE
+  protoc -I . github.com/openconfig/reference/rpc/openconfig/openconfig.proto  --go_out=.
   ```
  * C++ based installation instructions
   * [How to compile proto for C++](https://developers.google.com/protocol-buffers/docs/cpptutorial#compiling-your-protocol-buffers)
   * [Install gRPC plugin](https://github.com/grpc/grpc/blob/release-0_13/INSTALL.md)
   * Compile the proto.
   ```
-  cd $WORKSPACE/github.com/openconfig/reference/rpc
-  protoc -I ./ --grpc_out=. --plugin=protoc-gen-grpc=`which grpc_cpp_plugin` ./openconfig.proto
-  protoc -I ./ --cpp_out=. ./openconfig.proto
+  cd $WORKSPACE
+  protoc -I ./ --grpc_out=. --plugin=protoc-gen-grpc=`which grpc_cpp_plugin` github.com/openconfig/reference/rpc/openconfig/openconfig.proto
+  protoc -I ./ --cpp_out=. github.com/openconfig/reference/rpc/openconfig/openconfig.proto
   ```
  * Python based installation instructions
   * [How to compile proto for python](https://developers.google.com/protocol-buffers/docs/pythontutorial#compiling-your-protocol-buffers)
   * [Install gRPC plugin](https://github.com/grpc/grpc/blob/release-0_13/INSTALL.md)
   * Compile the proto.
   ```
-  cd $WORKSPACE/github.com/openconfig/reference/rpc
-  protoc -I. --python_out=. --grpc_out=. --plugin=protoc-gen-grpc=`which grpc_python_plugin` openconfig.proto
+  cd $WORKSPACE
+  protoc -I. --python_out=. --grpc_out=. --plugin=protoc-gen-grpc=`which grpc_python_plugin` github.com/openconfig/reference/rpc/openconfig/openconfig.proto
   ```
