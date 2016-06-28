@@ -39,8 +39,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/openconfig/telemetry/auth/credential"
-	"github.com/openconfig/telemetry/collector/cli/query"
+	"github.com/openconfig/reference/telemetry/auth/credential"
+	"github.com/openconfig/reference/telemetry/collector/cli/query"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -94,7 +94,7 @@ func main() {
 		} else {
 			sn = q.Target
 		}
-		var creds credentials.TransportAuthenticator
+		var creds credentials.TransportCredentials
 		if *caFile != "" {
 			var err error
 			creds, err = credentials.NewClientTLSFromFile(*caFile, sn)

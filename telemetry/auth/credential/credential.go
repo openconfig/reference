@@ -21,7 +21,7 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-// passCred is an username/password implementation of credentials.Credentials.
+// passCred is an username/password implementation of credentials.PerRPCCredentials.
 type passCred struct {
 	username string
 	password string
@@ -43,8 +43,8 @@ func (pc *passCred) RequireTransportSecurity() bool {
 	return pc.secure
 }
 
-// NewPassCred returns a newly created passCred as credentials.Credentials.
-func NewPassCred(username, password string, secure bool) credentials.Credentials {
+// NewPassCred returns a newly created passCred as credentials.PerRPCCredentials.
+func NewPassCred(username, password string, secure bool) credentials.PerRPCCredentials {
 	return &passCred{
 		username: username,
 		password: password,
