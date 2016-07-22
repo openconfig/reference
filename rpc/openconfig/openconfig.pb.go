@@ -53,11 +53,6 @@ import fmt "fmt"
 import math "math"
 import google_protobuf "google/protobuf"
 
-import (
-	context "golang.org/x/net/context"
-	grpc "google.golang.org/grpc"
-)
-
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
 var _ = fmt.Errorf
@@ -258,7 +253,7 @@ func (SubscriptionList_Mode) EnumDescriptor() ([]byte, []int) { return fileDescr
 //
 // Timestamps are always represented as nanoseconds since UNIX epoch,
 // Jan 1 1970 00:00:00 UTC. Targets which are incapable of generating nanosecond
-// resolution are expected to round the timestamp to thier highest supported
+// resolution are expected to round the timestamp to the highest supported
 // resolution.
 //
 // Update paths are created by concatenating the prefix, if present, with the
@@ -974,14 +969,14 @@ func _SubscribeRequest_OneofSizer(msg proto.Message) (n int) {
 // If prefix is set then all subscriptions in the list and all notifications
 // generated are relative to prefix.
 //
-// If qos is provided then marking is the qos marking to use for this session.
-// The target should use this qos marking, if supported.
+// If qos is provided then marking is the QOS marking to use for this session.
+// The target should use this QOS marking, if supported.
 //
 // In the event of overlapping subscription, the most specific subscription for
 // a value is used.  For example, if the following two subscriptions were made:
 //
-//  /interfaces/interfaces/*/state
-//  /interfaces/interfaces/*/state/counters
+//  /interfaces/interfaces//state
+//  /interfaces/interfaces//state/counters
 //
 // Then values in state outside of counters would be subject to the first
 // subscription.  Values inside of counters would be subject to the second
@@ -1029,7 +1024,7 @@ func (m *SubscriptionList) GetQos() *QOSMarking {
 // subscription.
 //
 // If mode is ON_CHANGE, then the target must either be able to send
-// notifcations each time a value changes or reject the subscription.  This is
+// notifications each time a value changes or reject the subscription.  This is
 // typically used for events.  The sample_interval is ignored when the mode in
 // ON_CHANGE.
 //
@@ -1366,7 +1361,7 @@ func (*Heartbeat) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{2
 // small enough to not cause IP packet fragmentation.
 type UDPWrapper struct {
 	// ID Identifies the target (e.g., Loopback IP address, linecard, ...)
-	// TODO(borman): Add examples.  Perhaps agent/module/submodule for juniper.
+	// TODO(borman): Add examples.  Perhaps agent/module/submodule for vendor.
 	Id *Path `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
 	// Optional Epoch time of when the message is queued for transmit.
 	// Useful to quantify delay between message generation and transmission.
@@ -1430,221 +1425,6 @@ func init() {
 	proto.RegisterEnum("openconfig.GetRequest_Type", GetRequest_Type_name, GetRequest_Type_value)
 	proto.RegisterEnum("openconfig.UpdateResponse_Operation", UpdateResponse_Operation_name, UpdateResponse_Operation_value)
 	proto.RegisterEnum("openconfig.SubscriptionList_Mode", SubscriptionList_Mode_name, SubscriptionList_Mode_value)
-}
-
-// Reference imports to suppress errors if they are not otherwise used.
-var _ context.Context
-var _ grpc.ClientConn
-
-// Client API for OpenConfig service
-
-type OpenConfigClient interface {
-	// Get requests a single snapshot of specified data.  A Get request may
-	// contain a hint that the request will be repeated (i.e., polling).
-	Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetResponse, error)
-	// GetModels returns information about the YANG models supported by the
-	// target.
-	GetModels(ctx context.Context, in *GetModelsRequest, opts ...grpc.CallOption) (*GetModelsResponse, error)
-	// Set is the primary function for sending configuration data to the target.
-	// It sets the paths contained in the SetRequest to the specified values. If
-	// any of the paths are invalid, or are read-only, the SetResponse will
-	// return an error. All paths in the SetRequest must be valid or the entire
-	// request must be rejected. If a path specifies an internal node, rather than
-	// a leaf, then the value must be the values of the node's children encoded
-	// in JSON. Binary data in the tree must be base64 encoded, but if a path
-	// specifies a leaf of binary type, it may be sent as binary. See SetRequest
-	// for further explanation on the atomicity and idempotency of a Set
-	// operation.
-	Set(ctx context.Context, in *SetRequest, opts ...grpc.CallOption) (*SetResponse, error)
-	// Subscribe subscribes for streaming updates.  Streaming updates are provided
-	// as a series of Notifications, each of which update a portion of the tree.
-	// The initial SubscribeRequest contains a SubscriptionList, described below.
-	Subscribe(ctx context.Context, opts ...grpc.CallOption) (OpenConfig_SubscribeClient, error)
-}
-
-type openConfigClient struct {
-	cc *grpc.ClientConn
-}
-
-func NewOpenConfigClient(cc *grpc.ClientConn) OpenConfigClient {
-	return &openConfigClient{cc}
-}
-
-func (c *openConfigClient) Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetResponse, error) {
-	out := new(GetResponse)
-	err := grpc.Invoke(ctx, "/openconfig.OpenConfig/Get", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *openConfigClient) GetModels(ctx context.Context, in *GetModelsRequest, opts ...grpc.CallOption) (*GetModelsResponse, error) {
-	out := new(GetModelsResponse)
-	err := grpc.Invoke(ctx, "/openconfig.OpenConfig/GetModels", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *openConfigClient) Set(ctx context.Context, in *SetRequest, opts ...grpc.CallOption) (*SetResponse, error) {
-	out := new(SetResponse)
-	err := grpc.Invoke(ctx, "/openconfig.OpenConfig/Set", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *openConfigClient) Subscribe(ctx context.Context, opts ...grpc.CallOption) (OpenConfig_SubscribeClient, error) {
-	stream, err := grpc.NewClientStream(ctx, &_OpenConfig_serviceDesc.Streams[0], c.cc, "/openconfig.OpenConfig/Subscribe", opts...)
-	if err != nil {
-		return nil, err
-	}
-	x := &openConfigSubscribeClient{stream}
-	return x, nil
-}
-
-type OpenConfig_SubscribeClient interface {
-	Send(*SubscribeRequest) error
-	Recv() (*SubscribeResponse, error)
-	grpc.ClientStream
-}
-
-type openConfigSubscribeClient struct {
-	grpc.ClientStream
-}
-
-func (x *openConfigSubscribeClient) Send(m *SubscribeRequest) error {
-	return x.ClientStream.SendMsg(m)
-}
-
-func (x *openConfigSubscribeClient) Recv() (*SubscribeResponse, error) {
-	m := new(SubscribeResponse)
-	if err := x.ClientStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
-// Server API for OpenConfig service
-
-type OpenConfigServer interface {
-	// Get requests a single snapshot of specified data.  A Get request may
-	// contain a hint that the request will be repeated (i.e., polling).
-	Get(context.Context, *GetRequest) (*GetResponse, error)
-	// GetModels returns information about the YANG models supported by the
-	// target.
-	GetModels(context.Context, *GetModelsRequest) (*GetModelsResponse, error)
-	// Set is the primary function for sending configuration data to the target.
-	// It sets the paths contained in the SetRequest to the specified values. If
-	// any of the paths are invalid, or are read-only, the SetResponse will
-	// return an error. All paths in the SetRequest must be valid or the entire
-	// request must be rejected. If a path specifies an internal node, rather than
-	// a leaf, then the value must be the values of the node's children encoded
-	// in JSON. Binary data in the tree must be base64 encoded, but if a path
-	// specifies a leaf of binary type, it may be sent as binary. See SetRequest
-	// for further explanation on the atomicity and idempotency of a Set
-	// operation.
-	Set(context.Context, *SetRequest) (*SetResponse, error)
-	// Subscribe subscribes for streaming updates.  Streaming updates are provided
-	// as a series of Notifications, each of which update a portion of the tree.
-	// The initial SubscribeRequest contains a SubscriptionList, described below.
-	Subscribe(OpenConfig_SubscribeServer) error
-}
-
-func RegisterOpenConfigServer(s *grpc.Server, srv OpenConfigServer) {
-	s.RegisterService(&_OpenConfig_serviceDesc, srv)
-}
-
-func _OpenConfig_Get_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
-	in := new(GetRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	out, err := srv.(OpenConfigServer).Get(ctx, in)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func _OpenConfig_GetModels_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
-	in := new(GetModelsRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	out, err := srv.(OpenConfigServer).GetModels(ctx, in)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func _OpenConfig_Set_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
-	in := new(SetRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	out, err := srv.(OpenConfigServer).Set(ctx, in)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func _OpenConfig_Subscribe_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(OpenConfigServer).Subscribe(&openConfigSubscribeServer{stream})
-}
-
-type OpenConfig_SubscribeServer interface {
-	Send(*SubscribeResponse) error
-	Recv() (*SubscribeRequest, error)
-	grpc.ServerStream
-}
-
-type openConfigSubscribeServer struct {
-	grpc.ServerStream
-}
-
-func (x *openConfigSubscribeServer) Send(m *SubscribeResponse) error {
-	return x.ServerStream.SendMsg(m)
-}
-
-func (x *openConfigSubscribeServer) Recv() (*SubscribeRequest, error) {
-	m := new(SubscribeRequest)
-	if err := x.ServerStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
-var _OpenConfig_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "openconfig.OpenConfig",
-	HandlerType: (*OpenConfigServer)(nil),
-	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "Get",
-			Handler:    _OpenConfig_Get_Handler,
-		},
-		{
-			MethodName: "GetModels",
-			Handler:    _OpenConfig_GetModels_Handler,
-		},
-		{
-			MethodName: "Set",
-			Handler:    _OpenConfig_Set_Handler,
-		},
-	},
-	Streams: []grpc.StreamDesc{
-		{
-			StreamName:    "Subscribe",
-			Handler:       _OpenConfig_Subscribe_Handler,
-			ServerStreams: true,
-			ClientStreams: true,
-		},
-	},
 }
 
 var fileDescriptor0 = []byte{
