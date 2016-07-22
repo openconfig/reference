@@ -21,11 +21,13 @@ import (
 	"os"
 	"time"
 
+	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 
+	log "github.com/golang/glog"
 	ocpb "github.com/openconfig/reference/rpc/openconfig"
-	log "google.golang.org/grpc/grpclog"
 )
 
 const (
@@ -50,8 +52,10 @@ type Query struct {
 	Address     string
 	Target      string
 	DialOptions []grpc.DialOption
-	// Queries is a list queries madeof query elements.
+	// Queries is a list queries made of query elements.
 	Queries [][]string
+	// Update is a single SetRequest to be made on the target.
+	Update *ocpb.SetRequest
 }
 
 // Config contains the configuration for displaying a query.
@@ -75,7 +79,7 @@ func Display(ctx context.Context, query Query, cfg *Config) error {
 	if err != nil {
 		return err
 	}
-	log.Println(request)
+	log.Infof("Get with:\n%s\n", request)
 	resp, err := c.Get(ctx, request)
 	if err != nil {
 		return err
@@ -98,32 +102,57 @@ func DisplayStream(ctx context.Context, query Query, cfg *Config) error {
 	if err != nil {
 		return err
 	}
-	log.Println(request)
-	client, err := c.Subscribe(ctx)
+	stream, err := c.Subscribe(ctx)
 	if err != nil {
 		return err
 	}
-	client.Send(request)
-	log.Printf("Subscribed with:\n%s", request.String())
+	if err := stream.Send(request); err != nil {
+		return err
+	}
+	log.Infof("Subscribed with:\n%s", proto.MarshalTextString(request))
 	for {
-		resp, err := client.Recv()
+		resp, err := stream.Recv()
+		log.Info(proto.MarshalTextString(resp))
 		if err != nil {
-			return err
+			// TODO(hines): This should be io.EOF but for some reason the server
+			// currently sends this code.
+			if grpc.Code(err) != codes.OutOfRange {
+				return err
+			}
+			return nil
 		}
-		switch v := resp.GetResponse().(type) {
+		switch v := resp.Response.(type) {
 		default:
-			log.Printf("Unknown response:\n%s", resp.String())
+			log.Infof("Unknown response:\n%s\n", resp.String())
 		case *ocpb.SubscribeResponse_Heartbeat:
-			log.Printf("Heartbeat")
+			log.Infof("Heartbeat:%s\n", resp.String())
 		case *ocpb.SubscribeResponse_Update:
-			cfg.Display([]byte(v.Update.String()))
+			cfg.Display([]byte(proto.MarshalTextString(v.Update)))
 		case *ocpb.SubscribeResponse_SyncResponse:
-			log.Printf("Sync Response")
+			log.Infof("Sync Response: %s", resp.String())
 			if cfg.Once {
-				client.CloseSend()
+				stream.CloseSend()
 			}
 		}
 	}
+}
+
+// Update sends a SetRequest to the target.  If the Set fails an error will be
+// returned.  The response will be displayed by the configure cfg.Display.
+func Update(ctx context.Context, query Query, cfg *Config) error {
+	c, err := createClient(ctx, query, cfg)
+	if err != nil {
+		return err
+	}
+	if query.Update == nil {
+		return fmt.Errorf("query.Updates must be defined for Update")
+	}
+	resp, err := c.Set(ctx, query.Update)
+	if err != nil {
+		return fmt.Errorf("failed to set %s: %s", proto.MarshalTextString(query.Update), err)
+	}
+	cfg.Display([]byte(resp.String()))
+	return nil
 }
 
 func createClient(ctx context.Context, query Query, cfg *Config) (ocpb.OpenConfigClient, error) {
@@ -138,7 +167,7 @@ func createClient(ctx context.Context, query Query, cfg *Config) (ocpb.OpenConfi
 	if cfg.Display == nil {
 		cfg.Display = defaultDisplay
 	}
-	log.Printf("Creating connection: %+v", query)
+	log.Infof("Creating connection: %+v", query)
 	conn, err := grpc.Dial(query.Target, query.DialOptions...)
 	if err != nil {
 		return nil, err
@@ -158,7 +187,7 @@ func createRequest(q Query) (*ocpb.GetRequest, error) {
 }
 
 func createSubscribeRequest(q Query) (*ocpb.SubscribeRequest, error) {
-	// TODO(hines): Readd once bug is resolved for lack of mode support.
+	// TODO(hines): Re-add once bug is resolved for lack of mode support.
 	//subList := &ocpb.SubscriptionList{
 	//	 Mode: &ocpb.SubscriptionList_Once{
 	//	 Once: true,
