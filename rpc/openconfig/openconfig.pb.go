@@ -976,14 +976,14 @@ func _SubscribeRequest_OneofSizer(msg proto.Message) (n int) {
 // If prefix is set then all subscriptions in the list and all notifications
 // generated are relative to prefix.
 //
-// If qos is provided then marking is the qos marking to use for this session.
-// The target should use this qos marking, if supported.
+// If qos is provided then marking is the QOS marking to use for this session.
+// The target should use this QOS marking, if supported.
 //
 // In the event of overlapping subscription, the most specific subscription for
 // a value is used.  For example, if the following two subscriptions were made:
 //
-//  /interfaces/interfaces/*/state
-//  /interfaces/interfaces/*/state/counters
+//  /interfaces/interfaces//state
+//  /interfaces/interfaces//state/counters
 //
 // Then values in state outside of counters would be subject to the first
 // subscription.  Values inside of counters would be subject to the second
@@ -1031,7 +1031,7 @@ func (m *SubscriptionList) GetQos() *QOSMarking {
 // subscription.
 //
 // If mode is ON_CHANGE, then the target must either be able to send
-// notifcations each time a value changes or reject the subscription.  This is
+// notifications each time a value changes or reject the subscription.  This is
 // typically used for events.  The sample_interval is ignored when the mode in
 // ON_CHANGE.
 //
