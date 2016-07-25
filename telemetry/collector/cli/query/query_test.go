@@ -29,8 +29,8 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
+	log "github.com/golang/glog"
 	ocpb "github.com/openconfig/reference/rpc/openconfig"
-	log "google.golang.org/grpc/grpclog"
 )
 
 type generator interface {
@@ -84,10 +84,15 @@ type fakeTarget struct {
 }
 
 func key(p []string) string {
-	if p == nil {
+	if len(p) == 0 {
 		return ""
 	}
 	return strings.Join(p, "/")
+}
+
+func hash(prefix, path []string) string {
+	h := append(append([]string{}, prefix...), path...)
+	return strings.Join(h, "/")
 }
 
 func newFakeGRPCTarget() *fakeTarget {
@@ -129,7 +134,7 @@ func (ft *fakeTarget) Get(ctx context.Context, in *ocpb.GetRequest) (*ocpb.GetRe
 		}
 		n, event, err := ft.next(path)
 		if err != nil {
-			log.Print(err)
+			log.Error(err)
 			panic("internal fake server error")
 		}
 		if event != nil {

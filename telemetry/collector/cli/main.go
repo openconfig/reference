@@ -45,7 +45,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
-	log "google.golang.org/grpc/grpclog"
+	log "github.com/golang/glog"
 )
 
 var (
@@ -129,17 +129,19 @@ func main() {
 			f.Write(n)
 		}
 	}
-	if *subscribe {
-		if *subscribeOnce {
-			cfg.Once = true
+	switch {
+	case q.Update != nil:
+		if err := query.Update(context.Background(), q, &cfg); err != nil {
+			log.Infof("query.Update failed for query %v %v: %s\n", cfg, q, err)
 		}
+	case len(q.Queries) > 0 && *subscribe:
+		cfg.Once = *subscribeOnce
 		if err := query.DisplayStream(context.Background(), q, &cfg); err != nil {
-			log.Printf("query.DisplayStream failed for query %v %v: %s\n", cfg, q, err)
+			log.Infof("query.DisplayStream failed for query %v %v: %s\n", cfg, q, err)
 		}
-
-	} else {
+	default:
 		if err := query.Display(context.Background(), q, &cfg); err != nil {
-			log.Printf("query.Display failed for query %v %v: %s\n", cfg, q, err)
+			log.Infof("query.Display failed for query %v %v: %s\n", cfg, q, err)
 		}
 	}
 }
