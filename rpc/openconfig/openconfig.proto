@@ -230,6 +230,7 @@ message Value {
 enum Type {
   JSON = 0;
   BYTES = 1;
+  PROTO = 2;
 }
 
 // GetModelsRequest contains a list of models to return.  If no queries are
