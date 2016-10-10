@@ -112,7 +112,7 @@ func DisplayStream(ctx context.Context, query Query, cfg *Config) error {
 	log.Infof("Subscribed with:\n%s", proto.MarshalTextString(request))
 	for {
 		resp, err := stream.Recv()
-		log.Info(proto.MarshalTextString(resp))
+		log.V(2).Info(proto.MarshalTextString(resp))
 		if err != nil {
 			// TODO(hines): This should be io.EOF but for some reason the server
 			// currently sends this code.
@@ -121,17 +121,18 @@ func DisplayStream(ctx context.Context, query Query, cfg *Config) error {
 			}
 			return nil
 		}
-		switch v := resp.Response.(type) {
+		switch resp.Response.(type) {
 		default:
 			log.Infof("Unknown response:\n%s\n", resp.String())
 		case *ocpb.SubscribeResponse_Heartbeat:
 			log.Infof("Heartbeat:%s\n", resp.String())
 		case *ocpb.SubscribeResponse_Update:
-			cfg.Display([]byte(proto.MarshalTextString(v.Update)))
+			cfg.Display([]byte(proto.MarshalTextString(resp)))
 		case *ocpb.SubscribeResponse_SyncResponse:
 			log.Infof("Sync Response: %s", resp.String())
 			if cfg.Once {
 				stream.CloseSend()
+				return nil
 			}
 		}
 	}
@@ -141,6 +142,7 @@ func DisplayStream(ctx context.Context, query Query, cfg *Config) error {
 // returned.  The response will be displayed by the configure cfg.Display.
 func Update(ctx context.Context, query Query, cfg *Config) error {
 	c, err := createClient(ctx, query, cfg)
+	_ = c
 	if err != nil {
 		return err
 	}
