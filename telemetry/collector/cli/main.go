@@ -58,6 +58,7 @@ var (
 			os.Stdout.Write(append(b, '\n'))
 		}}
 
+	delimiter          = flag.String("delimiter", query.Delimiter, "Default seperator for query.")
 	queryFlag          = flag.String("query", "", "List of comma seperated queries to make")
 	targetFlag         = flag.String("target", "", "Target of the query (agent to connect to)")
 	tlsFlag            = flag.Bool("tls", false, "Connection uses TLS if true, else plain TCP")
@@ -70,19 +71,21 @@ var (
 	outfile            = flag.String("outfile", "", "File to output received notifications")
 )
 
-// ParseQuery converts s to a list of Queries
-func ParseQuery(s string) query.Query {
+// ParseQuery converts s to a list of Queries.
+func ParseQuery(s, delimiter string) query.Query {
 	queries := strings.Split(s, ",")
 	q := query.Query{}
 	for _, qItem := range queries {
-		q.Queries = append(q.Queries, strings.Split(qItem, query.Delimiter))
+		// Remove leading and trailing delimiters
+		qItem := strings.Trim(qItem, delimiter)
+		q.Queries = append(q.Queries, strings.Split(qItem, delimiter))
 	}
 	return q
 }
 
 func main() {
 	flag.Parse()
-	q := ParseQuery(*queryFlag)
+	q := ParseQuery(*queryFlag, *delimiter)
 	if len(q.Queries) == 0 {
 		log.Fatal("--query must be set")
 	}
