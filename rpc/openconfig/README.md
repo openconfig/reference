@@ -24,7 +24,7 @@ RPC specification.
   * Compile the proto.
   ```
   cd $WORKSPACE
-  protoc -I . github.com/openconfig/reference/rpc/openconfig/openconfig.proto  --go_out=.
+  protoc -I . github.com/openconfig/reference/rpc/openconfig/openconfig.proto  --go_out=plugins=grpc:.
   ```
  * C++ based installation instructions
   * [How to compile proto for C++](https://developers.google.com/protocol-buffers/docs/cpptutorial#compiling-your-protocol-buffers)
