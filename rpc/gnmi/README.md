@@ -2,8 +2,8 @@
 
 This directory contains a reference
 [protobuf3](https://github.com/google/protobuf/) service definition for the
-gRPC Network Management Interface (gNMI). This service provides an interface
-via which a network management system can interact with a network element.
+gRPC Network Management Interface (gNMI). This service defines an interface
+for a network management system to interact with a network element.
 
 The repository contents are as follows:
  * Reference protobuf - [gnmi.proto](gnmi.proto).
@@ -12,10 +12,9 @@ The repository contents are as follows:
      [gnmi-specification.pdf](gnmi-specification.pdf)
  * Generated Go code for gNMI - [gnmi.pb.go](gnmi.pb.go)
  * Generated Python code for gNMI - [gnmi_pb2.py](gnmi_pb2.py)
- 
+
 **Note:** This is not an official Google product.
 
 This proto has external dependencies on `google/protobuf/any.proto` and
 `google/protobuf/descriptor.proto`, which can be imported directly (or via
 GitHub paths).
-
