@@ -7,7 +7,7 @@ Paul Borman, Marcus Hines, Carl Lebsack, Chris Morrow, Anees Shaikh, Rob Shakir
 November 7th, 2016
 
 **Version:**  
-0.2.0
+0.2.1
 
 # Table of Contents
 
@@ -212,17 +212,17 @@ The value of a data node is encoded as a two-field message:
    </td>
   </tr>
   <tr>
-   <td>JSON_IETF
+   <td>ASCII
    </td>
-   <td>A JSON encoded string as per <a href="#231-json-and-json_ietf">2.3.1</a> using JSON encoding compatible with draft-ietf-netmod-yang-json
+   <td>An ASCII encoded string representing text formatted according to a target-defined convention (described in <a href="#2-3-4-ascii">Section 2.3.4</a>.
    </td>
    <td>3
    </td>
   </tr>
   <tr>
-   <td>ASCII
+   <td>JSON_IETF
    </td>
-   <td>An ASCII encoded string representing text formatted according to a target-defined convention (described in <a href="#2-3-4-text">Section 2.3.4</a>.
+   <td>A JSON encoded string as per <a href="#231-json-and-json_ietf">2.3.1</a> using JSON encoding compatible with draft-ietf-netmod-yang-json
    </td>
    <td>4
    </td>
@@ -357,9 +357,9 @@ The `BYTES` type indicates that the contents of the bytes field of the message c
 
 The `PROTOBUF` type indicates that the contents of the bytes field of the message contains a serialised protobuf message. Note that in the case that the sender utilises this type, the receiver must understand the schema (and hence the type of protobuf message that is serialised) in order to decode the value. Such agreement is not guaranteed by the protocol and hence must be established out-of-band.
 
-### 2.3.4 Text
+### 2.3.4 ASCII
 
-The `TEXT` type indicates that the contents of the bytes field of the message contains system-formatted text.  For configuration data, for example, this may consist of semi-structured CLI configuration data formatted according to the target platform.  The gNMI protocol does not define the format of the text -- this must be established out-of-band.
+The `ASCII` type indicates that the contents of the bytes field of the message contains system-formatted ASCII encoded text.  For configuration data, for example, this may consist of semi-structured CLI configuration data formatted according to the target platform.  The gNMI protocol does not define the format of the text -- this must be established out-of-band.
 
 ## 2.4 Use of Data Schema Paths
 
@@ -948,6 +948,12 @@ See the License for the specific language governing permissions and
 limitations under the License
 ```
 
+# 7 Revision History
+
+* v0.2.1: November 10, 2016
+ * Correct reference to `TEXT` vs. `ASCII` encoding type.
+ * Ensure that the encodings enumeration is numbered consistently.
+ * Fix broken links.
 
 ## Notes
 
