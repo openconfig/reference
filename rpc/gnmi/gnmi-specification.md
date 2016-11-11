@@ -7,7 +7,7 @@ Paul Borman, Marcus Hines, Carl Lebsack, Chris Morrow, Anees Shaikh, Rob Shakir
 November 7th, 2016
 
 **Version:**  
-0.2.0
+0.2.1
 
 # Table of Contents
 
@@ -65,6 +65,7 @@ November 7th, 2016
    * [4 Appendix: Current Protobuf Message and Service Specification](#4-appendix-current-protobuf-message-and-service-specification)
    * [5 Appendix: Current Outstanding Issues/Future Features](#5-appendix-current-outstanding-issuesfuture-features)
    * [6 Copyright](#6-copyright)
+   * [7 Revision History](#7-revision-history)
       * [Notes](#notes)
 
 # 1 Introduction
@@ -121,7 +122,7 @@ Timestamp values MUST be represented as the number of nanoseconds since the Unix
 
 ### 2.2.2 Paths
 
-Paths are represented according to [OpenConfig Path Conventions](https://docs.google.com/document/d/1GM-FsEgKuSqfc502L3LNf9Xit2zGv9mFli0Q3rZLuEY/edit?ts=57bf5372#heading=h.9ijwkmpkvs8f), a simplified form of XPATH. Rather than utilising a single string to represent the path - with the "/" character separating each element of the path, the path is represented by an ordered list of strings, starting at the root node, and ending at the most specific path element.
+Paths are represented according to [gNMI Path Conventions](https://github.com/openconfig/reference/blob/master/rpc/gnmi/gnmi-path-conventions.md), a simplified form of XPATH. Rather than utilising a single string to represent the path - with the "/" character separating each element of the path, the path is represented by an ordered list of strings, starting at the root node, and ending at the most specific path element.
 
 A path is represented by the `Path` message with the following fields:
 
@@ -212,17 +213,17 @@ The value of a data node is encoded as a two-field message:
    </td>
   </tr>
   <tr>
-   <td>JSON_IETF
+   <td>ASCII
    </td>
-   <td>A JSON encoded string as per <a href="#231-json-and-json_ietf">2.3.1</a> using JSON encoding compatible with draft-ietf-netmod-yang-json
+   <td>An ASCII encoded string representing text formatted according to a target-defined convention (described in <a href="#2-3-4-ascii">Section 2.3.4</a>.
    </td>
    <td>3
    </td>
   </tr>
   <tr>
-   <td>ASCII
+   <td>JSON_IETF
    </td>
-   <td>An ASCII encoded string representing text formatted according to a target-defined convention (described in <a href="#2-3-4-text">Section 2.3.4</a>.
+   <td>A JSON encoded string as per <a href="#231-json-and-json_ietf">2.3.1</a> using JSON encoding compatible with draft-ietf-netmod-yang-json
    </td>
    <td>4
    </td>
@@ -357,9 +358,9 @@ The `BYTES` type indicates that the contents of the bytes field of the message c
 
 The `PROTOBUF` type indicates that the contents of the bytes field of the message contains a serialised protobuf message. Note that in the case that the sender utilises this type, the receiver must understand the schema (and hence the type of protobuf message that is serialised) in order to decode the value. Such agreement is not guaranteed by the protocol and hence must be established out-of-band.
 
-### 2.3.4 Text
+### 2.3.4 ASCII
 
-The `TEXT` type indicates that the contents of the bytes field of the message contains system-formatted text.  For configuration data, for example, this may consist of semi-structured CLI configuration data formatted according to the target platform.  The gNMI protocol does not define the format of the text -- this must be established out-of-band.
+The `ASCII` type indicates that the contents of the bytes field of the message contains system-formatted ASCII encoded text.  For configuration data, for example, this may consist of semi-structured CLI configuration data formatted according to the target platform.  The gNMI protocol does not define the format of the text -- this must be established out-of-band.
 
 ## 2.4 Use of Data Schema Paths
 
@@ -503,7 +504,7 @@ If the target is expected to authenticate an RPC operation, the client MUST supp
 
 Authorization is also performed per-RPC by the server, through validating client-provided metadata. The client MAY include the appropriate AAA metadata, which MUST contain a username, and MAY include a password in the context of each RPC call it generates.  If the client includes both username and password, the target MUST authenticate and authorize the request.  If the client only supplies the username, the target MUST authorize the RPC request.
 
-A more detailed discussion of the requirements for authentication and encryption used for gNMI is in [[GNMI-AUTH]](https://docs.google.com/a/google.com/document/d/1srwRrtmVSVWvBbE0D29Q3VA2VuXyHqJOihg-oCZi0qY/edit?usp=sharing).
+A more detailed discussion of the requirements for authentication and encryption used for gNMI is in [[GNMI-AUTH]](https://github.com/openconfig/reference/blob/master/rpc/gnmi/gnmi-authentication.md).
 
 ## 3.2 Capability Discovery
 
@@ -948,6 +949,12 @@ See the License for the specific language governing permissions and
 limitations under the License
 ```
 
+# 7 Revision History
+
+* v0.2.1: November 10, 2016
+ * Correct reference to `TEXT` vs. `ASCII` encoding type.
+ * Ensure that the encodings enumeration is numbered consistently.
+ * Fix broken links.
 
 ## Notes
 
