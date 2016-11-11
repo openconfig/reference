@@ -1,7 +1,7 @@
 # gNMI path encoding conventions
 
 ## Schema path encoding conventions for gNMI
-*Updated*: October 13, 2016
+*Updated*: October 13, 2016   
 *Version*: 0.2.1
 
 
