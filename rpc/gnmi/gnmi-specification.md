@@ -65,6 +65,7 @@ November 7th, 2016
    * [4 Appendix: Current Protobuf Message and Service Specification](#4-appendix-current-protobuf-message-and-service-specification)
    * [5 Appendix: Current Outstanding Issues/Future Features](#5-appendix-current-outstanding-issuesfuture-features)
    * [6 Copyright](#6-copyright)
+   * [7 Revision History](#7-revision-history)
       * [Notes](#notes)
 
 # 1 Introduction
