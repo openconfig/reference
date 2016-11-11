@@ -1,19 +1,14 @@
-# gNMI authentication
-
 ## gNMI Authentication and Encryption
 
-**Contributors**: Alex Bogdanov, Josh George, Chris Morrow, Anees Shaikh, Rob Shakir
 
-January 20, 2016
-
-**Updated**: October 5, 2016
-**Version:**: 0.1.0
+**Updated**: October 5, 2016  
+**Version:**: 0.2.1
 
 #### Background
 
-Network devices managed by the gRPC Network Management Interface (gNMI) must support secure bidirectional communication over a [gRPC](http://www.grpc.io/) channel, along with standard authorization and accounting of all management operations.  An example of the primary entities of a gNMI-based management system is shown in the figure below.  The configuration system and telemetry collectors act as RPC clients to the network device (target).  The target exposes the gNMI service with methods for subscribing to telemetry streams or sending configuration data.
+Network devices managed by the gRPC Network Management Interface ([gNMI](https://github.com/openconfig/reference/blob/master/rpc/gnmi/gnmi-specification.md)) must support secure bidirectional communication over a [gRPC](http://www.grpc.io/) channel, along with standard authorization and accounting of all management operations.  An example of the primary entities of a gNMI-based management system is shown in the figure below.  The configuration system and telemetry collectors act as RPC clients to the network device (target).  The target exposes the gNMI service with methods for subscribing to telemetry streams or sending configuration data.
 
-![drawing](img/auth-overview.png) 
+![drawing](img/auth-overview.png)
 
 #### Requirements on the network device (gNMI target)
 
@@ -49,11 +44,11 @@ Network devices managed by the gRPC Network Management Interface (gNMI) must sup
 
 #### Telemetry Authentication
 
-
-
 *   Each telemetry message will not be authenticated with a username/password, as this is redundant and will not be a performant solution.
 *   Each telemetry message will only be carried over the encrypted gRPC streaming channel which was previously authenticated.
 *   Telemetry <code><em>Subscribe()</em></code> RPCs will be treated as a configuration RPC, which require a username/password credential inside the metadata.
+
+**Contributors**: Alex Bogdanov, Josh George, Chris Morrow, Anees Shaikh, Rob Shakir
 
 ## Appendix - gRPC Authentication Flow Diagram
 
