@@ -70,7 +70,7 @@ November 7th, 2016
 
 # 1 Introduction
 
-This document defines an [gRPC](http://grpc.io)-based protocol for the modification and retrieval of configuration from a network element, as well as the control and generation of telemetry streams from a network element to a data collection system. The intention is that a single gRPC service definition can cover both configuration and telemetry - allowing a single implementation on the network element, as well as a single NMS element to interact with the device via telemetry and configuration RPCs.
+This document defines a [gRPC](http://grpc.io)-based protocol for the modification and retrieval of configuration from a network element, as well as the control and generation of telemetry streams from a network element to a data collection system. The intention is that a single gRPC service definition can cover both configuration and telemetry - allowing a single implementation on the network element, as well as a single NMS element to interact with the device via telemetry and configuration RPCs.
 
 All messages within the gRPC service definition are defined as [protocol buffers](https://developers.google.com/protocol-buffers/) (specifically proto3).  gRPC service definitions are expected to be described using the relevant features of the protobuf IDL.  In addition to this protocol description document, a reference protobuf definition is included in [Appendix 4](#4-appendix-current-protobuf-message-and-service-specification), and maintained in [[REFERENCE-PROTO]](https://github.com/openconfig/reference/blob/master/rpc/gnmi/gnmi.proto).
 
@@ -79,7 +79,7 @@ The service defined within this document is assumed to carry payloads that conta
 
 
 1.  structure can be represented by a tree structure where nodes can be uniquely identified by a path consisting of node names, or node names coupled with attributes;
-1.  values can be serialised into a scalar object,
+1.  values can be serialised into a scalar object.
 
 Currently, values may be serialised to a scalar object through encoding as a JSON string, a byte-array, or a serialised protobuf object - although the definition of new serialisations is possible.
 
@@ -89,14 +89,14 @@ Throughout this specification the following terminology is used:
 
 *   *Telemetry* - refers to streaming data relating to underlying characteristics of the device - either operational state or configuration.
 *   *Configuration* - elements within the data schema which are read/write and can be manipulated by the client.
-*   *Target* - the device within the protocol which acts as the owner of the data that is being manipulated or reported on. Typically this will be a network device..
+*   *Target* - the device within the protocol which acts as the owner of the data that is being manipulated or reported on. Typically this will be a network device.
 *   *Client* - the device or system using the protocol described in this document to query/modify data on the target, or act as a collector for streamed data. Typically this will be a network management system.
 
 # 2 Common Message Types and Encodings
 
 ## 2.1 Reusable Notification Message Format
 
-When a target wishes to communicate data relating to the state of its internal database to an interested client, it does so via means of a common Notification message.  Notification messages are reused in other higher-layer messages for various purposes. The exact use of the Notification message is described on a per-RPC basis.
+When a target wishes to communicate data relating to the state of its internal database to an interested client, it does so via means of a common `Notification` message.  Notification messages are reused in other higher-layer messages for various purposes. The exact use of the Notification message is described on a per-RPC basis.
 
 The fields of the Notification message are as follows:
 
@@ -122,7 +122,7 @@ Timestamp values MUST be represented as the number of nanoseconds since the Unix
 
 ### 2.2.2 Paths
 
-Paths are represented according to [gNMI Path Conventions](https://github.com/openconfig/reference/blob/master/rpc/gnmi/gnmi-path-conventions.md), a simplified form of XPATH. Rather than utilising a single string to represent the path - with the "/" character separating each element of the path, the path is represented by an ordered list of strings, starting at the root node, and ending at the most specific path element.
+Paths are represented according to [gNMI Path Conventions](https://github.com/openconfig/reference/blob/master/rpc/gnmi/gnmi-path-conventions.md), a simplified form of XPATH. Rather than utilising a single string to represent the path - with the `/` character separating each element of the path, the path is represented by an ordered list of strings, starting at the root node, and ending at the most specific path element.
 
 A path is represented by the `Path` message with the following fields:
 
@@ -157,7 +157,7 @@ path: <
 ```
 
 
-The root node ('`/`') is indicated by encoding a single path element which is an empty string, as per the following example:
+The root node (`/`) is indicated by encoding a single path element which is an empty string, as per the following example:
 
 
 ```
@@ -215,7 +215,7 @@ The value of a data node is encoded as a two-field message:
   <tr>
    <td>ASCII
    </td>
-   <td>An ASCII encoded string representing text formatted according to a target-defined convention (described in <a href="#2-3-4-ascii">Section 2.3.4</a>.
+   <td>An ASCII encoded string representing text formatted according to a target-defined convention (described in <a href="#2-3-4-ascii">Section 2.3.4</a>).
    </td>
    <td>3
    </td>
@@ -223,7 +223,7 @@ The value of a data node is encoded as a two-field message:
   <tr>
    <td>JSON_IETF
    </td>
-   <td>A JSON encoded string as per <a href="#231-json-and-json_ietf">2.3.1</a> using JSON encoding compatible with draft-ietf-netmod-yang-json
+   <td>A JSON encoded string as per <a href="#231-json-and-json_ietf">2.3.1</a> using JSON encoding compatible with [draft-ietf-netmod-yang-json](https://tools.ietf.org/html/draft-ietf-netmod-yang-json)
    </td>
    <td>4
    </td>
@@ -235,7 +235,7 @@ The value of a data node is encoded as a two-field message:
 
 ### 2.3.1 JSON and JSON_IETF
 
-The JSON type indicates that the value included within the bytes field of the node value message is encoded as a JSON string. This format utilises the specification in [RFC7159](https://tools.ietf.org/html/rfc7159). Additional types (e.g., `JSON_IETF`) are utilised to indicate specific additional characteristics of the encoding of the JSON data (particularly where they relate to serialisation of  YANG-modeled data).
+The `JSON` type indicates that the value included within the `bytes` field of the node value message is encoded as a JSON string. This format utilises the specification in [RFC7159](https://tools.ietf.org/html/rfc7159). Additional types (e.g., `JSON_IETF`) are utilised to indicate specific additional characteristics of the encoding of the JSON data (particularly where they relate to serialisation of  YANG-modeled data).
 
 For any JSON encoding:
 
@@ -352,21 +352,21 @@ Both the client and target MUST support the JSON encoding as a minimum.
 
 ### 2.3.2 Bytes
 
-The `BYTES` type indicates that the contents of the bytes field of the message contains a byte sequence whose semantics is opaque to the protocol.
+The `BYTES` type indicates that the contents of the `bytes` field of the message contains a byte sequence whose semantics is opaque to the protocol.
 
 ### 2.3.3 Protobuf
 
-The `PROTOBUF` type indicates that the contents of the bytes field of the message contains a serialised protobuf message. Note that in the case that the sender utilises this type, the receiver must understand the schema (and hence the type of protobuf message that is serialised) in order to decode the value. Such agreement is not guaranteed by the protocol and hence must be established out-of-band.
+The `PROTOBUF` type indicates that the contents of the `bytes` field of the message contains a serialised protobuf message. Note that in the case that the sender utilises this type, the receiver must understand the schema (and hence the type of protobuf message that is serialised) in order to decode the value. Such agreement is not guaranteed by the protocol and hence must be established out-of-band.
 
 ### 2.3.4 ASCII
 
-The `ASCII` type indicates that the contents of the bytes field of the message contains system-formatted ASCII encoded text.  For configuration data, for example, this may consist of semi-structured CLI configuration data formatted according to the target platform.  The gNMI protocol does not define the format of the text -- this must be established out-of-band.
+The `ASCII` type indicates that the contents of the `bytes` field of the message contains system-formatted ASCII encoded text.  For configuration data, for example, this may consist of semi-structured CLI configuration data formatted according to the target platform.  The gNMI protocol does not define the format of the text – this must be established out-of-band.
 
 ## 2.4 Use of Data Schema Paths
 
 ### 2.4.1 Path Prefixes
 
-In a number of messages, a prefix can be specified to reduce the lengths of path fields within the message. In this case, a prefix field is specified within a message - comprising of a valid path encoded according to Section [2.2.2.](#222-paths) In the case that a prefix is specified, the absolute path is comprised of the concatenation of the list of path elements representing the prefix and the list of path elements in the `path` field.
+In a number of messages, a prefix can be specified to reduce the lengths of path fields within the message. In this case, a `prefix` field is specified within a message - comprising of a valid path encoded according to Section [2.2.2.](#222-paths) In the case that a prefix is specified, the absolute path is comprised of the concatenation of the list of path elements representing the prefix and the list of path elements in the `path` field.
 
 For example, again considering the data tree shown in Section [2.3.1](#231-json-and-json_ietf) if a `Notification` message updating values, a prefix could be used to refer to the `/a/b[name=b1]/c/d` and `/a/b[name=b1]/c/e `data nodes:
 
@@ -407,7 +407,7 @@ In some cases, a client or target MAY desire to utilises aliases for a particula
 
 Support for path aliases MAY be provided by a target. In a case where a target does not support aliases, the maximum message length SHOULD be considered, especially in terms of bandwidth utilisation, and the efficiency of message generation.
 
-A path alias is encoded as a string. In order to avoid valid data paths clashing with aliases (e.g., `a` in the above example), an alias name MUST be prefixed with a # character.
+A path alias is encoded as a string. In order to avoid valid data paths clashing with aliases (e.g., `a` in the above example), an alias name MUST be prefixed with a `#` character.
 
 The means by which an alias is created is defined on a per-RPC basis. In order to delete an alias, the alias name is sent with the path corresponding to the alias empty.
 
@@ -498,7 +498,7 @@ The service consists of the following RPCs:
 
 The session between the client and server MUST be encrypted using TLS - and a target or client MUST NOT fall back to unencrypted channels.
 
-New connections are mutually authenticated -- each entity validates the x.509 certificate of the remote entity to ensure that the remote entity is both known, and authorized to connect to the local system.
+New connections are mutually authenticated -- each entity validates the X.509 certificate of the remote entity to ensure that the remote entity is both known, and authorized to connect to the local system.
 
 If the target is expected to authenticate an RPC operation, the client MUST supply a username and password in the metadata of the RPC message (e.g., `SubscribeRequest`, `GetRequest` or `SetRequest`).  If the client supplies username/password credentials, the target MUST authenticate the RPC per its local authentication functionality.
 
@@ -543,10 +543,10 @@ The `GetRequest` message contains the following fields:
 
 
 *   `prefix` - a path (specified as per [Section 2.2.2](#222-paths)), and used as described in [Section 2.4.1](#24-1-path-prefixes). The prefix is applied to all paths within the `GetRequest` message.
-*   `path` - a set of paths (expressed as per [Section 2.2.2](#222-paths)) for which the client is requesting a data snapshot from the target. The path specified MAY utilize wildcards. In the case that the path specified is not valid, the target MUST populate the `error` field of the `GetResponse` message indicating an error code of `InvalidArgument` and SHOULD provide information about the invalid path in the error message`.`
+*   `path` - a set of paths (expressed as per [Section 2.2.2](#222-paths)) for which the client is requesting a data snapshot from the target. The path specified MAY utilize wildcards. In the case that the path specified is not valid, the target MUST populate the `error` field of the `GetResponse` message indicating an error code of `InvalidArgument` and SHOULD provide information about the invalid path in the error message.
 *   `type` - the type of data that is requested from the target. The valid values for type are described below.
 *   `encoding` - the encoding that the target should utilise to serialise the subtree of the data tree requested. The type MUST be one of the encodings specified in [Section 2.3](#23-encoding-data-in-an-update-message). If the `Capabilities` RPC has been utilised, the client SHOULD use an encoding advertised as supported by the target. If the encoding is not specified, JSON MUST be used. If the target does not support the specified encoding, the target MUST populate the error field of the `GetResponse` message, specifying an error of `InvalidArgument`. The error message MUST indicate that the specified encoding is unsupported.
-*   `use_models` - a set of `ModelData` messages (defined in [Section 2.6.1](#261-the-modeldata-message)) indicating the schema definition modules that define the data elements that should be returned in response to the Get RPC call. The semantics of the `use_models` field are defined in [Section 2.6](#26-schema-definition-models)..
+*   `use_models` - a set of `ModelData` messages (defined in [Section 2.6.1](#261-the-modeldata-message)) indicating the schema definition modules that define the data elements that should be returned in response to the Get RPC call. The semantics of the `use_models` field are defined in [Section 2.6](#26-schema-definition-models).
 
 Since the data tree stored by the target may consist of different types of data (e.g., values that are operational in nature, such as protocol statistics) - the client MAY specify that a subset of values in the tree are of interest. In order for such filtering to be implemented, the data schema on the target MUST be annotated in a manner which specifies the type of data for individual leaves, or subtrees of the data tree.
 
@@ -558,7 +558,7 @@ The types of data currently defined are:
 *   `STATE` - specified to be the read-only data on the target. If the data schema is described in YANG, `STATE` data is the "config false" set of leaves on the target.
 *   `OPERATIONAL` - specified to be the read-only data on the target that is related to software processes operating on the device, or external interactions of the device.
 
- If the `type` field is not specified, the target MUST return CONFIG, STATE  and OPERATIONAL data fields in the tree resulting from the client's query..
+If the `type` field is not specified, the target MUST return CONFIG, STATE  and OPERATIONAL data fields in the tree resulting from the client's query.
 
 ### 3.3.2 The GetResponse message
 
@@ -567,7 +567,7 @@ The `GetResponse` message consists of:
 
 
 *   `notification` -  a set of `Notification` messages, as defined in [Section 2.1](#21-reusable-notification-message-format). The target MUST generate a `Notification` message for each path specified in the client's `GetRequest`, and hence MUST NOT collapse data from multiple paths into a single `Notification` within the response. The `timestamp` field of the `Notification` message MUST be set to the time at which the target's snapshot of the relevant path was taken.
-*   `error` -- an `Error` message encoded as per the specification in [Section 2.5](#25-error-handling), used to indicate errors in the get request received by the target from the client.
+*   `error` - an `Error` message encoded as per the specification in [Section 2.5](#25-error-handling), used to indicate errors in the `GetRequest` received by the target from the client.
 
 ### 3.3.3 Considerations for using Get
 
@@ -642,7 +642,7 @@ The path convention defined in [Section 2.2.2](#222-paths) allows nodes in the d
 
 
 *   In the case that multiple attribute values are required to uniquely address an element - e.g., `/a/f[k1=10][k2=20] `- and a replace or update operation's path specifies  a subset of the attributes (e.g., `/a/f[k1=10]`) then this MUST be considered an error by the target system - and an error code of` InvalidArgument (3)` specified.
-*   Where the path specified refers to a node which itself represents the collection of objects (list, map, or array) a replace operation MUST remove all collection entries that are not supplied in the value provided in the `SetRequest`. An update operation MUST be considered to add new entries to the collection if they do not exist
+*   Where the path specified refers to a node which itself represents the collection of objects (list, map, or array) a replace operation MUST remove all collection entries that are not supplied in the value provided in the `SetRequest`. An update operation MUST be considered to add new entries to the collection if they do not exist.
 *   In the case that key values are specified both as attributes of a node, and as their own elements within the data tree, update or replace operations that modify instances of the key in conflicting ways MUST be considered an error. The target MUST return an error code of `InvalidArgument (3)`.
 
 For example, consider a tree corresponding to the examples above, as illustrated below.
@@ -669,7 +669,7 @@ In this case, nodes `k1` and `k2` are standalone nodes within the schema, but al
 
 ### 3.4.6 Deleting Configuration
 
-Where a path is contained within the `delete` field of the `SetRequest` message, it should be removed from the target's data tree. In the case that the path specified is to an element that has children, these children MUST be recursively deleted. If a wildcard path is utilised, the wildcards MUST be expanded by the target, and the corresponding elements of the data tree deleted. Such wildcards MUST support paths specifying a subset of attributes required to identity entries within a collection (list, array, or map) of the data schema.
+Where a path is contained within the `delete` field of the `SetRequest` message, it should be removed from the target's data tree. In the case that the path specified is to an element that has children, these children MUST be recursively deleted. If a wildcard path is utilised, the wildcards MUST be expanded by the target, and the corresponding elements of the data tree deleted. Such wildcards MUST support paths specifying a subset of attributes required to identify entries within a collection (list, array, or map) of the data schema.
 
 In the case that a path specifies an element within the data tree that does not exist, these deletes MUST be silently accepted.
 
@@ -711,7 +711,7 @@ Subscriptions are fundamentally a set of independent update messages relating to
 
 
 *   Receive ongoing updates from a target which allow synchronization between the client and target for the state of elements within the data tree. In this case (i.e., a `STREAM` subscription), a client creating a subscription receives an initial set of updates, terminated by a message indicating that initial synchronisation has completed, and then receives subsequent updates indicating changes to the initial state of those elements.
-*   Receive a single view (polled, or one-off) for elements of the data tree on a per-data element basis according to the state that they are in at the time that the message is transmitted.  This can be more resource efficient for both target and client than a Get request for large subtrees within the data tree.  The target does not need to coalesce values into a single snapshot view, or create an in-memory representation of the subtree at the time of the request, and subsequently transmit this entire view to the client.
+*   Receive a single view (polled, or one-off) for elements of the data tree on a per-data element basis according to the state that they are in at the time that the message is transmitted.  This can be more resource efficient for both target and client than a `GetRequest` for large subtrees within the data tree.  The target does not need to coalesce values into a single snapshot view, or create an in-memory representation of the subtree at the time of the request, and subsequently transmit this entire view to the client.
 
 Based on the fact that subsequent update messages are considered to be independent, and to ensure that the efficiencies described above can be achieved, by default a target MUST NOT aggregate values within an update message.
 
@@ -727,18 +727,18 @@ Where aggregation is permitted by both the client and schema, each update messag
 
 A `SubscribeRequest` message is sent by a client to request updates from the target for a specified set of paths.
 
-The fields of the subscribe request are as follows:
+The fields of the `SubscribeRequest` are as follows:
 
 
 
 *   A group of fields, only one of which may be specified, which indicate the type of operation that the `SubscribeRequest` relates to. These are:
     *   `subscribe` - a `SubscriptionList` message specifying a new set of paths that the client wishes to subscribe to.
     *   `poll `- a `Poll` message used to specify (on an existing channel) that the client wishes to receive a polled update for the paths specified within the subscription.  The semantics of the `Poll` message are described in [Section 3.5.1.5.3](#3515-3-poll-subscriptions).
-    *   `aliases - `used by a client to define (on an existing channel) a new path alias (as described in [Section 2.4.2](#242-path-aliases)). The use of the aliases message is described in [Section 3.5.1.6](#35-1-6-client-defined-aliases-within-a-subscription).
+    *   `aliases` - used by a client to define (on an existing channel) a new path alias (as described in [Section 2.4.2](#242-path-aliases)). The use of the aliases message is described in [Section 3.5.1.6](#35-1-6-client-defined-aliases-within-a-subscription).
 
-In order to create a new subscription (and its associated channel) a client MUST send a `SubscribeRequest` message, specifying the `subscribe `field. The `SubscriptionList` may create a one-off subscription, a poll-only subscription, or a streaming subscription.. In the case of ONCE subscriptions, the channel between client and target MUST be closed following the initial response generation.
+In order to create a new subscription (and its associated channel) a client MUST send a `SubscribeRequest` message, specifying the `subscribe` field. The `SubscriptionList` may create a one-off subscription, a poll-only subscription, or a streaming subscription. In the case of ONCE subscriptions, the channel between client and target MUST be closed following the initial response generation.
 
-Subscriptions are set once, and subsequently not modified by a client. If a client wishes to subscribe to additional paths from a target, it MUST do so by sending an additional `Subscribe` RPC call, specifying a new `SubscriptionList` message. In order to end an existing subscription, a client simply closes the gRPC channel that relates to that subscription.  If a channel is initiated with a `SubscribeRequest` message that does not specify a `SubscriptionList` message with the `request` field, the target MUST consider this an error. If an additional `SubscribeRequest` message specifying a `SubscriptionList` is sent via an existing channel, the target MUST respond to this message with `SubscribeResponse` message indicating an error message, with a contained error message indicating an error code of `InvalidArgument (4)`; existing subscriptions on other gRPC channels MUST not be modified or terminated.  .
+Subscriptions are set once, and subsequently not modified by a client. If a client wishes to subscribe to additional paths from a target, it MUST do so by sending an additional `Subscribe` RPC call, specifying a new `SubscriptionList` message. In order to end an existing subscription, a client simply closes the gRPC channel that relates to that subscription.  If a channel is initiated with a `SubscribeRequest` message that does not specify a `SubscriptionList` message with the `request` field, the target MUST consider this an error. If an additional `SubscribeRequest` message specifying a `SubscriptionList` is sent via an existing channel, the target MUST respond to this message with `SubscribeResponse` message indicating an error message, with a contained error message indicating an error code of `InvalidArgument (4)`; existing subscriptions on other gRPC channels MUST not be modified or terminated.
 
 If a client initiates a `Subscribe` RPC with a `SubscribeRequest` message which does not contain a `SubscriptionList` message, this is an error.  A `SubscribeResponse` message with the contained `error` message indicating a error code of  `InvalidArgument` MUST be sent. The error text SHOULD indicate that an out-of-order operation was requested on a non-existent subscription. The target MUST subsequently close the channel.
 
@@ -773,7 +773,7 @@ A `SubscribeResponse` message is transmitted by a target to a client over an est
 
 
 *   A set of fields referred to as the `response` fields, only one of which can be specified per `SubscribeResponse` message:
-    *   `update` - a Notification message providing an update value for a subscribe data entity as described in [Section 3.5.2.3](#3523-sending-telemetry-updates). The update field is also utilised when a target wishes to create an alias within a subscription, as described in [Section 3.5.2.2](#3-5-2-2-target-defined-aliases-within-a-subscription).
+    *   `update` - a `Notification` message providing an update value for a subscribed data entity as described in [Section 3.5.2.3](#3523-sending-telemetry-updates). The `update` field is also utilised when a target wishes to create an alias within a subscription, as described in [Section 3.5.2.2](#3-5-2-2-target-defined-aliases-within-a-subscription).
     *   `sync_response`  - a boolean field indicating that a particular set of data values has been transmitted, used for `POLL` and `STREAM` subscriptions.
     *   `error` - an `Error` message  transmitted to indicate an error has occurred within a particular `Subscribe` RPC call.
 
@@ -785,20 +785,20 @@ A subscription operating in the `ONCE` mode acts as a single request/response ch
 
 In order to create a one-off subscription, a client sends a `SubscribeRequest` message to the target. The `subscribe` field within this message specifies a `SubscriptionList` with the mode field set to `ONCE`. Updates corresponding to the subscription are generated as per the semantics described in [Section 3.5.2](#352-sending-telemetry-updates).
 
-Following the transmission of all updates which correspond to data items within the set of paths specified within the subscription list, a `SubscribeResponse` message with the `sync_response` field set to true MUST be transmitted, and the channel over which the `SubscribeRequest` was received MUST be closed.
+Following the transmission of all updates which correspond to data items within the set of paths specified within the subscription list, a `SubscribeResponse` message with the `sync_response` field set to `true` MUST be transmitted, and the channel over which the `SubscribeRequest` was received MUST be closed.
 
 ##### 3.5.1.5.2 STREAM Subscriptions
 
 Stream subscriptions are long-lived subscriptions which continue to transmit updates relating to the set of paths that are covered within the subscription indefinitely.
 
-A `STREAM` subscription is created by sending a `SubscribeRequest` message with the subscribe field containing a `SubscriptionList` message with the type specified as `STREAM`. Each entry within the `Subscription` message is specified with one of the following `modes:`
+A `STREAM` subscription is created by sending a `SubscribeRequest` message with the subscribe field containing a `SubscriptionList` message with the type specified as `STREAM`. Each entry within the `Subscription` message is specified with one of the following `modes`:
 
 
 
-*   **On Change (`ON_CHANGE`)** - when a subscription is defined to be "on change", data updates are only sent when the value of the data item changes. A heartbeat interval MAY be specified along with an on change subscription - in this case, the value of the data item(s) MUST be re-sent once per heartbeat interval regardless of whether the value has changed or not.
+*   **On Change (`ON_CHANGE`)** - when a subscription is defined to be "on change", data updates are only sent when the value of the data item changes. A heartbeat interval MAY be specified along with an "on change" subscription - in this case, the value of the data item(s) MUST be re-sent once per heartbeat interval regardless of whether the value has changed or not.
 *   **Sampled (`SAMPLE`)** - a subscription that is defined to be sampled MUST be specified along with a <code>sample_interval</code> encoded as an unsigned 64-bit integer representing nanoseconds.  The value of the data item(s) is sent once per sample interval to the client.  If the target is unable to support the desired <code>sample_interval</code> it MUST reject the subscription by returning a <code>SubscribeResponse</code> message with the error field set to an error message indicating the <code>InvalidArgument (3)</code> error code. If the <code>sample_interval</code> is set to 0, the target MUST create the subscription and send the data with the lowest interval possible for the target.
-    *   Optionally, the <code>suppress_redundant</code> field of the Subscription message may be set for a sampled subscription. In the case that it is set to true, the target SHOULD NOT generate a telemetry update message unless the value of the path being reported on has changed since the last update was generated. Updates MUST only be generated for those individual leaf nodes in the subscription that have changed. That is to say that for a subscription to <code>/a/b</code> - where there are leaves <code>c</code> and <code>d</code> branching from the <code>b</code> node - if the value of <code>c</code> has changed, but <code>d</code> remains unchanged, an update for <code>d</code> MUST NOT be generated, whereas an update for <code>'c'</code> MUST be generated.
-    *   A <code>heartbeat_interval</code> MAY be specified to modify the behavior of <code>suppress_redundant</code> in a sampled subscription.  In this case, the target MUST generate one telemetry update  per heartbeat interval, regardless of whether the suppress redundant flag is set to true. This value is specified as an unsigned 64-bit integer in nanoseconds.
+    *   Optionally, the <code>suppress_redundant</code> field of the `Subscription` message may be set for a sampled subscription. In the case that it is set to `true`, the target SHOULD NOT generate a telemetry update message unless the value of the path being reported on has changed since the last update was generated. Updates MUST only be generated for those individual leaf nodes in the subscription that have changed. That is to say that for a subscription to <code>/a/b</code> - where there are leaves <code>c</code> and <code>d</code> branching from the <code>b</code> node - if the value of <code>c</code> has changed, but <code>d</code> remains unchanged, an update for <code>d</code> MUST NOT be generated, whereas an update for <code>c</code> MUST be generated.
+    *   A <code>heartbeat_interval</code> MAY be specified to modify the behavior of <code>suppress_redundant</code> in a sampled subscription.  In this case, the target MUST generate one telemetry update  per heartbeat interval, regardless of whether the `suppress_redundant` flag is set to `true`. This value is specified as an unsigned 64-bit integer in nanoseconds.
 *   <strong>Target Defined <code>(TARGET_DEFINED)</code> - </strong>when a client creates a subscription specifying the target defined mode, the target SHOULD determine the best type of subscription to be created on a per-leaf basis. That is to say, if the path specified within the message refers to some leaves which are event driven (e.g., the changing of state of an entity based on an external trigger) then an <code>ON_CHANGE</code> subscription may be created, whereas if other data represents counter values, a <code>SAMPLE</code> subscription may be created.
 
 ##### 3.5.1.5.3 POLL Subscriptions
@@ -813,7 +813,7 @@ When a client wishes to create an alias that a target should use for a path, the
 
 
 
-*   `path` - the target path for the alias - encoded as per [Section 2.2.2](#222-paths)
+*   `path` - the target path for the alias - encoded as per [Section 2.2.2](#222-paths).
 *   `alias` - the (client-defined) alias for the path, encoded as per [Section 2.4.2](#242-path-aliases).
 
 Where a target is unable to support a client-defined alias it SHOULD respond with a `SubscribeResponse` message with the error field indicating an error of the following types:
@@ -858,7 +858,7 @@ Since it is not possible for the target to infer whether its clients are sensiti
 
 #### 3.5.2.2 Target-defined Aliases within a Subscription
 
-Where the `use_aliases` field of a `SubscriptionList` message has been set to true, a target MAY create aliases for paths within a subscription. A target-defined alias MUST be created separately from an update to the corresponding data item(s).
+Where the `use_aliases` field of a `SubscriptionList` message has been set to `true`, a target MAY create aliases for paths within a subscription. A target-defined alias MUST be created separately from an update to the corresponding data item(s).
 
 To create a target-defined alias, a `SubscribeResponse` message is generated with the `update` field set to a `Notification` message. The `Notification` message specifies the aliased path within the `prefix` field, and a non-null `alias` field, specified according to [Section 2.4.2](#242-path-aliases).
 
@@ -918,11 +918,11 @@ Where a leaf node's value has changed, or a new node has been created, an `Updat
 
 Where a node within the subscribed paths has been removed, the `delete` field of the `Notification` message MUST have the path of the node that has been removed appended to it.  
 
-When the target has transmitted the initial updates for all paths specified within the subscription, a `SubscribeResponse` message with the `sync_response` field set to true MUST be transmitted to the client to indicate that the initial transmission of updates has concluded.  This provides an indication to the client that all of the existing data for the subscription has been sent at least once.  For `STREAM` subscriptions, such messages are not required for subsequent updates. For `POLL` subscriptions, after each set of updates for  individual poll request, a `SubscribeResponse` message with the `sync_response` field set to true MUST be generated.
+When the target has transmitted the initial updates for all paths specified within the subscription, a `SubscribeResponse` message with the `sync_response` field set to `true` MUST be transmitted to the client to indicate that the initial transmission of updates has concluded.  This provides an indication to the client that all of the existing data for the subscription has been sent at least once.  For `STREAM` subscriptions, such messages are not required for subsequent updates. For `POLL` subscriptions, after each set of updates for  individual poll request, a `SubscribeResponse` message with the `sync_response` field set to `true` MUST be generated.
 
 # 4 Appendix: Current Protobuf Message and Service Specification
 
-The latest Protobuf IDL gNMI specification will be found at https://github.com/openconfig/reference/.
+The latest Protobuf IDL gNMI specification is found at https://github.com/openconfig/reference/.
 
 # 5 Appendix: Current Outstanding Issues/Future Features
 
