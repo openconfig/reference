@@ -46,7 +46,12 @@ import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
 import google_protobuf "github.com/golang/protobuf/ptypes/any"
-import google_protobuf1 "github.com/golang/protobuf/protoc-gen-go/descriptor"
+import google_protobuf1 "github.com/google/protobuf/src/google/protobuf"
+
+import (
+	context "golang.org/x/net/context"
+	grpc "google.golang.org/grpc"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -70,23 +75,23 @@ const (
 	Encoding_JSON      Encoding = 0
 	Encoding_BYTES     Encoding = 1
 	Encoding_PROTO     Encoding = 2
-	Encoding_JSON_IETF Encoding = 3
-	Encoding_ASCII     Encoding = 4
+	Encoding_ASCII     Encoding = 3
+	Encoding_JSON_IETF Encoding = 4
 )
 
 var Encoding_name = map[int32]string{
 	0: "JSON",
 	1: "BYTES",
 	2: "PROTO",
-	3: "JSON_IETF",
-	4: "ASCII",
+	3: "ASCII",
+	4: "JSON_IETF",
 }
 var Encoding_value = map[string]int32{
 	"JSON":      0,
 	"BYTES":     1,
 	"PROTO":     2,
-	"JSON_IETF": 3,
-	"ASCII":     4,
+	"ASCII":     3,
+	"JSON_IETF": 4,
 }
 
 func (x Encoding) String() string {
@@ -228,11 +233,25 @@ func (m *Notification) String() string            { return proto.CompactTextStri
 func (*Notification) ProtoMessage()               {}
 func (*Notification) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
 
+func (m *Notification) GetTimestamp() int64 {
+	if m != nil {
+		return m.Timestamp
+	}
+	return 0
+}
+
 func (m *Notification) GetPrefix() *Path {
 	if m != nil {
 		return m.Prefix
 	}
 	return nil
+}
+
+func (m *Notification) GetAlias() string {
+	if m != nil {
+		return m.Alias
+	}
+	return ""
 }
 
 func (m *Notification) GetUpdate() []*Update {
@@ -290,6 +309,20 @@ func (m *Path) String() string            { return proto.CompactTextString(m) }
 func (*Path) ProtoMessage()               {}
 func (*Path) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{2} }
 
+func (m *Path) GetElement() []string {
+	if m != nil {
+		return m.Element
+	}
+	return nil
+}
+
+func (m *Path) GetOrigin() string {
+	if m != nil {
+		return m.Origin
+	}
+	return ""
+}
+
 // Value encodes a data tree node's value - along with the way in which
 // the value is encoded.
 // Reference: gNMI Specification Section 2.2.3.
@@ -303,6 +336,20 @@ func (m *Value) String() string            { return proto.CompactTextString(m) }
 func (*Value) ProtoMessage()               {}
 func (*Value) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{3} }
 
+func (m *Value) GetValue() []byte {
+	if m != nil {
+		return m.Value
+	}
+	return nil
+}
+
+func (m *Value) GetType() Encoding {
+	if m != nil {
+		return m.Type
+	}
+	return Encoding_JSON
+}
+
 // Error message used by the target to return errors to the client.
 // Reference: gNMI Specification Section 2.5
 type Error struct {
@@ -315,6 +362,20 @@ func (m *Error) Reset()                    { *m = Error{} }
 func (m *Error) String() string            { return proto.CompactTextString(m) }
 func (*Error) ProtoMessage()               {}
 func (*Error) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{4} }
+
+func (m *Error) GetCode() uint32 {
+	if m != nil {
+		return m.Code
+	}
+	return 0
+}
+
+func (m *Error) GetMessage() string {
+	if m != nil {
+		return m.Message
+	}
+	return ""
+}
 
 func (m *Error) GetData() *google_protobuf.Any {
 	if m != nil {
@@ -690,11 +751,32 @@ func (m *SubscriptionList) GetSubscription() []*Subscription {
 	return nil
 }
 
+func (m *SubscriptionList) GetUseAliases() bool {
+	if m != nil {
+		return m.UseAliases
+	}
+	return false
+}
+
 func (m *SubscriptionList) GetQos() *QOSMarking {
 	if m != nil {
 		return m.Qos
 	}
 	return nil
+}
+
+func (m *SubscriptionList) GetMode() SubscriptionList_Mode {
+	if m != nil {
+		return m.Mode
+	}
+	return SubscriptionList_STREAM
+}
+
+func (m *SubscriptionList) GetAllowAggregation() bool {
+	if m != nil {
+		return m.AllowAggregation
+	}
+	return false
 }
 
 func (m *SubscriptionList) GetUseModels() []*ModelData {
@@ -734,6 +816,34 @@ func (m *Subscription) GetPath() *Path {
 	return nil
 }
 
+func (m *Subscription) GetMode() SubscriptionMode {
+	if m != nil {
+		return m.Mode
+	}
+	return SubscriptionMode_TARGET_DEFINED
+}
+
+func (m *Subscription) GetSampleInterval() uint64 {
+	if m != nil {
+		return m.SampleInterval
+	}
+	return 0
+}
+
+func (m *Subscription) GetSuppressRedundant() bool {
+	if m != nil {
+		return m.SuppressRedundant
+	}
+	return false
+}
+
+func (m *Subscription) GetHeartbeatInterval() uint64 {
+	if m != nil {
+		return m.HeartbeatInterval
+	}
+	return 0
+}
+
 // QOSMarking specifies the DSCP value to be set on transmitted telemetry
 // updates from the target.
 // Reference: gNMI Specification Section 3.5.1.2
@@ -745,6 +855,13 @@ func (m *QOSMarking) Reset()                    { *m = QOSMarking{} }
 func (m *QOSMarking) String() string            { return proto.CompactTextString(m) }
 func (*QOSMarking) ProtoMessage()               {}
 func (*QOSMarking) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{10} }
+
+func (m *QOSMarking) GetMarking() uint32 {
+	if m != nil {
+		return m.Marking
+	}
+	return 0
+}
 
 // Alias specifies a data tree path, and an associated string which defines an
 // alias which is to be used for this path in the context of the RPC. The alias
@@ -766,6 +883,13 @@ func (m *Alias) GetPath() *Path {
 		return m.Path
 	}
 	return nil
+}
+
+func (m *Alias) GetAlias() string {
+	if m != nil {
+		return m.Alias
+	}
+	return ""
 }
 
 // AliasList specifies a list of aliases. It is used in a SubscribeRequest for
@@ -887,6 +1011,13 @@ func (m *UpdateResult) String() string            { return proto.CompactTextStri
 func (*UpdateResult) ProtoMessage()               {}
 func (*UpdateResult) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{15} }
 
+func (m *UpdateResult) GetTimestamp() int64 {
+	if m != nil {
+		return m.Timestamp
+	}
+	return 0
+}
+
 func (m *UpdateResult) GetPath() *Path {
 	if m != nil {
 		return m.Path
@@ -899,6 +1030,13 @@ func (m *UpdateResult) GetMessage() *Error {
 		return m.Message
 	}
 	return nil
+}
+
+func (m *UpdateResult) GetOp() UpdateResult_Operation {
+	if m != nil {
+		return m.Op
+	}
+	return UpdateResult_INVALID
 }
 
 // GetRequest is sent when a client initiates a Get RPC. It is used to specify
@@ -932,6 +1070,20 @@ func (m *GetRequest) GetPath() []*Path {
 		return m.Path
 	}
 	return nil
+}
+
+func (m *GetRequest) GetType() GetRequest_DataType {
+	if m != nil {
+		return m.Type
+	}
+	return GetRequest_ALL
+}
+
+func (m *GetRequest) GetEncoding() Encoding {
+	if m != nil {
+		return m.Encoding
+	}
+	return Encoding_JSON
 }
 
 func (m *GetRequest) GetUseModels() []*ModelData {
@@ -1001,6 +1153,20 @@ func (m *CapabilityResponse) GetSupportedModels() []*ModelData {
 	return nil
 }
 
+func (m *CapabilityResponse) GetSupportedEncodings() []Encoding {
+	if m != nil {
+		return m.SupportedEncodings
+	}
+	return nil
+}
+
+func (m *CapabilityResponse) GetGNMIVersion() string {
+	if m != nil {
+		return m.GNMIVersion
+	}
+	return ""
+}
+
 // ModelData is used to describe a set of schema modules. It can be used in a
 // CapabilityResponse where a target reports the set of modules that it
 // supports, and within the SubscribeRequest and GetRequest messages to specify
@@ -1017,12 +1183,34 @@ func (m *ModelData) String() string            { return proto.CompactTextString(
 func (*ModelData) ProtoMessage()               {}
 func (*ModelData) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{20} }
 
+func (m *ModelData) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
+func (m *ModelData) GetOrganization() string {
+	if m != nil {
+		return m.Organization
+	}
+	return ""
+}
+
+func (m *ModelData) GetVersion() string {
+	if m != nil {
+		return m.Version
+	}
+	return ""
+}
+
 var E_GnmiService = &proto.ExtensionDesc{
 	ExtendedType:  (*google_protobuf1.FileOptions)(nil),
 	ExtensionType: (*string)(nil),
 	Field:         1001,
 	Name:          "gnmi.gnmi_service",
 	Tag:           "bytes,1001,opt,name=gnmi_service,json=gnmiService",
+	Filename:      "github.com/openconfig/reference/rpc/gnmi/gnmi.proto",
 }
 
 func init() {
@@ -1053,6 +1241,250 @@ func init() {
 	proto.RegisterEnum("gnmi.UpdateResult_Operation", UpdateResult_Operation_name, UpdateResult_Operation_value)
 	proto.RegisterEnum("gnmi.GetRequest_DataType", GetRequest_DataType_name, GetRequest_DataType_value)
 	proto.RegisterExtension(E_GnmiService)
+}
+
+// Reference imports to suppress errors if they are not otherwise used.
+var _ context.Context
+var _ grpc.ClientConn
+
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the grpc package it is being compiled against.
+const _ = grpc.SupportPackageIsVersion4
+
+// Client API for GNMI service
+
+type GNMIClient interface {
+	// Capabilities allows the client to retrieve the set of capabilities that
+	// is supported by the target. This allows the target to validate the
+	// service version that is implemented and retrieve the set of models that
+	// the target supports. The models can then be specified in subsequent RPCs
+	// to restrict the set of data that is utilized.
+	// Reference: gNMI Specification Section 3.2
+	Capabilities(ctx context.Context, in *CapabilityRequest, opts ...grpc.CallOption) (*CapabilityResponse, error)
+	// Retrieve a snapshot of data from the target. A Get RPC requests that the
+	// target snapshots a subset of the data tree as specified by the paths
+	// included in the message and serializes this to be returned to the
+	// client using the specified encoding.
+	// Reference: gNMI Specification Section 3.3
+	Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetResponse, error)
+	// Set allows the client to modify the state of data on the target. The
+	// paths to modified along with the new values that the client wishes
+	// to set the value to.
+	// Reference: gNMI Specification Section 3.4
+	Set(ctx context.Context, in *SetRequest, opts ...grpc.CallOption) (*SetResponse, error)
+	// Subscribe allows a client to request the target to send it values
+	// of particular paths within the data tree. These values may be streamed
+	// at a particular cadence (STREAM), sent one off on a long-lived channel
+	// (POLL), or sent as a one-off retrieval (ONCE).
+	// Reference: gNMI Specification Section 3.5
+	Subscribe(ctx context.Context, opts ...grpc.CallOption) (GNMI_SubscribeClient, error)
+}
+
+type gNMIClient struct {
+	cc *grpc.ClientConn
+}
+
+func NewGNMIClient(cc *grpc.ClientConn) GNMIClient {
+	return &gNMIClient{cc}
+}
+
+func (c *gNMIClient) Capabilities(ctx context.Context, in *CapabilityRequest, opts ...grpc.CallOption) (*CapabilityResponse, error) {
+	out := new(CapabilityResponse)
+	err := grpc.Invoke(ctx, "/gnmi.gNMI/Capabilities", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *gNMIClient) Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetResponse, error) {
+	out := new(GetResponse)
+	err := grpc.Invoke(ctx, "/gnmi.gNMI/Get", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *gNMIClient) Set(ctx context.Context, in *SetRequest, opts ...grpc.CallOption) (*SetResponse, error) {
+	out := new(SetResponse)
+	err := grpc.Invoke(ctx, "/gnmi.gNMI/Set", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *gNMIClient) Subscribe(ctx context.Context, opts ...grpc.CallOption) (GNMI_SubscribeClient, error) {
+	stream, err := grpc.NewClientStream(ctx, &_GNMI_serviceDesc.Streams[0], c.cc, "/gnmi.gNMI/Subscribe", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &gNMISubscribeClient{stream}
+	return x, nil
+}
+
+type GNMI_SubscribeClient interface {
+	Send(*SubscribeRequest) error
+	Recv() (*SubscribeResponse, error)
+	grpc.ClientStream
+}
+
+type gNMISubscribeClient struct {
+	grpc.ClientStream
+}
+
+func (x *gNMISubscribeClient) Send(m *SubscribeRequest) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *gNMISubscribeClient) Recv() (*SubscribeResponse, error) {
+	m := new(SubscribeResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+// Server API for GNMI service
+
+type GNMIServer interface {
+	// Capabilities allows the client to retrieve the set of capabilities that
+	// is supported by the target. This allows the target to validate the
+	// service version that is implemented and retrieve the set of models that
+	// the target supports. The models can then be specified in subsequent RPCs
+	// to restrict the set of data that is utilized.
+	// Reference: gNMI Specification Section 3.2
+	Capabilities(context.Context, *CapabilityRequest) (*CapabilityResponse, error)
+	// Retrieve a snapshot of data from the target. A Get RPC requests that the
+	// target snapshots a subset of the data tree as specified by the paths
+	// included in the message and serializes this to be returned to the
+	// client using the specified encoding.
+	// Reference: gNMI Specification Section 3.3
+	Get(context.Context, *GetRequest) (*GetResponse, error)
+	// Set allows the client to modify the state of data on the target. The
+	// paths to modified along with the new values that the client wishes
+	// to set the value to.
+	// Reference: gNMI Specification Section 3.4
+	Set(context.Context, *SetRequest) (*SetResponse, error)
+	// Subscribe allows a client to request the target to send it values
+	// of particular paths within the data tree. These values may be streamed
+	// at a particular cadence (STREAM), sent one off on a long-lived channel
+	// (POLL), or sent as a one-off retrieval (ONCE).
+	// Reference: gNMI Specification Section 3.5
+	Subscribe(GNMI_SubscribeServer) error
+}
+
+func RegisterGNMIServer(s *grpc.Server, srv GNMIServer) {
+	s.RegisterService(&_GNMI_serviceDesc, srv)
+}
+
+func _GNMI_Capabilities_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CapabilityRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GNMIServer).Capabilities(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/gnmi.gNMI/Capabilities",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GNMIServer).Capabilities(ctx, req.(*CapabilityRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _GNMI_Get_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GNMIServer).Get(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/gnmi.gNMI/Get",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GNMIServer).Get(ctx, req.(*GetRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _GNMI_Set_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GNMIServer).Set(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/gnmi.gNMI/Set",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GNMIServer).Set(ctx, req.(*SetRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _GNMI_Subscribe_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(GNMIServer).Subscribe(&gNMISubscribeServer{stream})
+}
+
+type GNMI_SubscribeServer interface {
+	Send(*SubscribeResponse) error
+	Recv() (*SubscribeRequest, error)
+	grpc.ServerStream
+}
+
+type gNMISubscribeServer struct {
+	grpc.ServerStream
+}
+
+func (x *gNMISubscribeServer) Send(m *SubscribeResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *gNMISubscribeServer) Recv() (*SubscribeRequest, error) {
+	m := new(SubscribeRequest)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+var _GNMI_serviceDesc = grpc.ServiceDesc{
+	ServiceName: "gnmi.gNMI",
+	HandlerType: (*GNMIServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "Capabilities",
+			Handler:    _GNMI_Capabilities_Handler,
+		},
+		{
+			MethodName: "Get",
+			Handler:    _GNMI_Get_Handler,
+		},
+		{
+			MethodName: "Set",
+			Handler:    _GNMI_Set_Handler,
+		},
+	},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "Subscribe",
+			Handler:       _GNMI_Subscribe_Handler,
+			ServerStreams: true,
+			ClientStreams: true,
+		},
+	},
+	Metadata: "github.com/openconfig/reference/rpc/gnmi/gnmi.proto",
 }
 
 func init() {
@@ -1140,17 +1572,17 @@ var fileDescriptor0 = []byte{
 	0x1e, 0x99, 0xc9, 0xdd, 0xae, 0x63, 0x71, 0x46, 0x26, 0xd4, 0xfd, 0x70, 0x4a, 0x3c, 0xe7, 0x27,
 	0x12, 0xaf, 0x4c, 0xce, 0x5b, 0xa0, 0xf1, 0x89, 0xb9, 0xf8, 0x44, 0x72, 0xdd, 0xde, 0x87, 0x6a,
 	0xe2, 0x0e, 0xdf, 0x29, 0x5f, 0xf5, 0x7b, 0x5d, 0xa3, 0xc0, 0xd3, 0xb8, 0xfb, 0xed, 0xc0, 0xee,
-	0xcb, 0x8c, 0x9e, 0xe0, 0xde, 0xa0, 0x67, 0xa8, 0x68, 0x05, 0x74, 0xce, 0x1f, 0xb6, 0xed, 0xc1,
-	0x81, 0x51, 0xe4, 0x1c, 0xab, 0xbf, 0xd7, 0x6e, 0x1b, 0xda, 0xb6, 0xb5, 0xb8, 0xee, 0xc5, 0xde,
-	0x42, 0xb0, 0x3a, 0xb0, 0xf0, 0xa1, 0x3d, 0x18, 0xee, 0xdb, 0x07, 0xed, 0xae, 0xcd, 0x5b, 0x68,
-	0x05, 0xf4, 0x5e, 0x77, 0xb8, 0x77, 0x64, 0x75, 0x0f, 0x79, 0x17, 0xf1, 0xd5, 0x66, 0x1d, 0x9f,
-	0x74, 0x6c, 0x43, 0xdd, 0xf9, 0x57, 0x01, 0x8d, 0xc7, 0x8d, 0x2c, 0xa8, 0xa7, 0x69, 0x72, 0x28,
-	0x43, 0xb7, 0x25, 0x8e, 0x4b, 0x09, 0xdd, 0x68, 0x2c, 0x33, 0xe2, 0x9c, 0x6e, 0x43, 0xf1, 0x90,
-	0x46, 0xc8, 0x78, 0xb7, 0x55, 0x36, 0xd6, 0x73, 0x94, 0x4c, 0xb6, 0x9f, 0xc9, 0xf6, 0x97, 0x64,
-	0xf3, 0xa3, 0xf3, 0x25, 0xe8, 0xe9, 0x17, 0x17, 0x5a, 0x5c, 0x9c, 0xe9, 0x17, 0xe3, 0xc6, 0xed,
-	0x25, 0xba, 0xd4, 0xde, 0x52, 0x1e, 0x2b, 0xcf, 0x5e, 0x42, 0x9d, 0x73, 0x87, 0x8c, 0x86, 0xe7,
-	0xce, 0x98, 0xa2, 0x3b, 0x4b, 0xdf, 0xa3, 0x07, 0x8e, 0x4b, 0x7b, 0x02, 0x45, 0xd6, 0x78, 0x5b,
-	0x89, 0xeb, 0xc1, 0x9b, 0x39, 0x7d, 0xa9, 0xb1, 0x5b, 0xfd, 0xeb, 0xcb, 0xd2, 0xe3, 0xe6, 0x4e,
-	0xf3, 0xf1, 0xa8, 0x2c, 0x74, 0x9e, 0xfc, 0x17, 0x00, 0x00, 0xff, 0xff, 0xfb, 0xf7, 0xf9, 0x22,
+	0xcb, 0x8c, 0x9e, 0xe0, 0xde, 0xa0, 0x67, 0xa8, 0xfc, 0x68, 0xf5, 0xf7, 0xda, 0x6d, 0xa3, 0x88,
+	0x56, 0x40, 0xe7, 0xa2, 0xc3, 0xb6, 0x3d, 0x38, 0x30, 0xb4, 0x6d, 0x6b, 0x71, 0xdd, 0x8b, 0xbd,
+	0x85, 0x60, 0x75, 0x60, 0xe1, 0x43, 0x7b, 0x30, 0xdc, 0xb7, 0x0f, 0xda, 0x5d, 0x9b, 0xb7, 0xd0,
+	0x0a, 0xe8, 0xbd, 0xee, 0x70, 0xef, 0xc8, 0xea, 0x1e, 0xf2, 0x2e, 0xe2, 0xab, 0xcd, 0x3a, 0x3e,
+	0xe9, 0xd8, 0x86, 0xba, 0xf3, 0xaf, 0x02, 0x1a, 0x8f, 0x1b, 0x59, 0x50, 0x4f, 0xd3, 0xe4, 0x50,
+	0x86, 0x6e, 0x4b, 0x1c, 0x97, 0x12, 0xba, 0xd1, 0x58, 0x66, 0xc4, 0x39, 0xdd, 0x86, 0xe2, 0x21,
+	0x8d, 0x90, 0xf1, 0x6e, 0xab, 0x6c, 0xac, 0xe7, 0x28, 0x99, 0x6c, 0x3f, 0x93, 0xed, 0x2f, 0xc9,
+	0xe6, 0x47, 0xe7, 0x4b, 0xd0, 0xd3, 0x2f, 0x2e, 0xb4, 0xb8, 0x38, 0xd3, 0x2f, 0xc6, 0x8d, 0xdb,
+	0x4b, 0x74, 0xa9, 0xbd, 0xa5, 0x3c, 0x56, 0x9e, 0xbd, 0x84, 0x3a, 0xe7, 0x0e, 0x19, 0x0d, 0xcf,
+	0x9d, 0x31, 0x45, 0x77, 0x96, 0xbe, 0x47, 0x0f, 0x1c, 0x97, 0xf6, 0x04, 0x8a, 0xac, 0xf1, 0xb6,
+	0x12, 0xd7, 0x83, 0x37, 0x73, 0xfa, 0x52, 0x63, 0xb7, 0xfa, 0xd7, 0x97, 0xa5, 0xc7, 0xcd, 0x9d,
+	0xe6, 0xe3, 0x51, 0x59, 0xe8, 0x3c, 0xf9, 0x2f, 0x00, 0x00, 0xff, 0xff, 0x06, 0xb2, 0x82, 0x6a,
 	0x43, 0x0d, 0x00, 0x00,
 }
