@@ -1,6 +1,6 @@
 ## Schema path encoding conventions for gNMI
 
-**Updated**: February 24, 2016
+**Updated**: February 24, 2016<br>
 **Version**: 0.2.0
 
 This document is a supplement to the [gNMI
@@ -32,13 +32,14 @@ with hierarchical paths.
 gNMI paths are encoded as a list (slice, array etc.) of path string elements.
 
 *  the root path `/` is encoded as a zero length array (slice) of path
-elements.  Example declarations in several languages:
+   elements.  Example declarations in several languages:
 ```
   path := []string{}
   path = []
   vector<string> path {};
 ```
-Note this is not the same as a path consisting of a single empty string element.
+  Note this is not the same as a path consisting of a single empty\
+  string element.
 
 *  a human-readable path can be formed by concatenating elements of the prefix
   and path using a `/` separator, and preceded by a leading `/` character.
@@ -47,7 +48,7 @@ Note this is not the same as a path consisting of a single empty string element.
     prefix: []string{“a”}
     path: []string{“b”,"c"}
   ```
-  results in the path `/a/b/c` in the human readable form.
+  results in the path `/a/b/c` in human readable form.
 
 *   subscription and data retrieval paths (Subscribe and Get RPCs) are
     recursive, i.e., select the specified element and all of its descendents
@@ -91,7 +92,7 @@ Note this is not the same as a path consisting of a single empty string element.
     the quotes are actually part of the value).  The value extends
     from the first `'='` to the closing (unescaped) `']'`.  When the
     type of the value (integer, string, etc.) must be known, e.g. for
-    validation, it can be ecovered from the corresponding schema.
+    validation, it can be recovered from the corresponding schema.
 
 *   list keys and values must appear in the order defined in the corresponding
     schema.  All list keys must appear.
@@ -105,17 +106,17 @@ Note this is not the same as a path consisting of a single empty string element.
     schema -- these are used particularly for telemetry subscriptions or
     `Get` requests.
 
-  *  They may be used in multiple levels of the path, e.g., select all state
+  *  wildcards may be used in multiple levels of the path, e.g., select all state
      containers three levels deep
     ```
-    .../*/*/*/state
+    /interfaces/*/*/*/state
     ```
 
 *   wildcards may also appear as list key values.
   ```
-    .../interfaces/interface[name=*]/state
+    /interfaces/interface[name=*]/state
   ```
-    Note that all list keys must appear, even if some are wildecarded:
+    Note that all list keys must appear, even if some are wildcarded:
   ```
   /network-instances/network-instance/tables/table[protocol=BGP][address-family=*]
   ```
@@ -129,17 +130,17 @@ Note this is not the same as a path consisting of a single empty string element.
     `...` to select all matching descendents.  This is semantically equivalent
     to the empty element notation, `//`, in XPATH.
     ```
-    .../interfaces/interface/.../state
+      /interfaces/interface/.../state
     ```
     *   Select all `state` containers under interface 'eth0'
     ```
-    .../interfaces/interface[name=eth0]/.../state
+      /interfaces/interface[name=eth0]/.../state
     ```
     *   Select all state attributes under the the interface `config` or `state`
         containers for all interfaces
     ```
-    .../interfaces/interface[name=*]/.../state
-    .../interfaces/interface[name=*]/.../config
+      /interfaces/interface[name=*]/.../state
+      /interfaces/interface[name=*]/.../config
     ```
 
 **Contributors**: Paul Borman, Josh George, Kevin Grant, Chuan Han, Marcus Hines, Carl Lebsack, Anees Shaikh, Rob Shakir, Manish Verma
