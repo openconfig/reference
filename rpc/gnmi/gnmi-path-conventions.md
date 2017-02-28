@@ -33,12 +33,12 @@ gNMI paths are encoded as a list (slice, array etc.) of path string elements.
 
 *  the root path `/` is encoded as a zero length array (slice) of path
    elements.  Example declarations in several languages:
-```
-  path := []string{}
-  path = []
-  vector<string> path {};
-```
-  Note this is not the same as a path consisting of a single empty\
+
+    * Go: `path := []string{}`
+    * Python: `path = []`
+    * C++ : `vector<string> path {};`
+
+  Note this is not the same as a path consisting of a single empty
   string element.
 
 *  a human-readable path can be formed by concatenating elements of the prefix
