@@ -101,7 +101,7 @@ message Update {
     bool bool_val = 13;               // Bool value.
     bytes bytes_val = 14;             // Arbitrary byte sequence value.
     float float_val = 15;             // Floating point value.
-    Decimal64 decimal_val = 16;	      // Decimal64 encoded value.
+    Decimal64 decimal_val = 16;       // Decimal64 encoded value.
     ScalarArray leaflist_val = 17;    // Mixed type scalar array value.
     google.protobuf.Any any_val = 18; // protobuf.Any encoded bytes.
     string json_val = 19;             // JSON-encoded text.
