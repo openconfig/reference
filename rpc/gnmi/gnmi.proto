@@ -311,14 +311,18 @@ message SetRequest {
 
 // SetResponse is the response to a SetRequest, sent from the target to the
 // client. It reports the result of the modifications to the data tree that were
-// specified by the client.
+// specified by the client. Errors for this RPC should be reported using the
+// https://github.com/googleapis/googleapis/blob/master/google/rpc/status.proto
+// message in the RPC return. The gnmi.Error message can be used to add additional
+// details where required.
 // Reference: gNMI Specification Section 3.4.2
 message SetResponse {
   Path prefix = 1;                      // Prefix used for paths.
   // A set of responses specifying the result of the operations specified in
   // the SetRequest.
   repeated UpdateResult response = 2;
-  Error message = 3;                  // The overall status of the transaction.
+  Error message = 3 [deprecated=true]; // The overall status of the transaction.
+  int64 timestamp = 4;                 // Timestamp of transaction (ns since epoch).
 }
 
 // UpdateResult is used within the SetResponse message to communicate the
@@ -332,7 +336,11 @@ message UpdateResult {
     REPLACE = 2;          // The result relates to a replace of Path.
     UPDATE = 3;           // The result relates to an update of Path.
   }
-  int64 timestamp = 1;    // Timestamp of generation (ns since epoch).
+  // Deprecated timestamp for the UpdateResult, this field has been
+  // replaced by the timestamp within the SetResponse message, since
+  // all mutations effected by a set should be applied as a single
+  // transaction.
+  int64 timestamp = 1 [deprecated=true];
   Path path = 2;          // Path associated with the update.
   Error message = 3;      // Status of the update operation.
   Operation op = 4;       // Operation type associated with the update.
