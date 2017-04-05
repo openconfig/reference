@@ -104,8 +104,8 @@ message Update {
     Decimal64 decimal_val = 16;       // Decimal64 encoded value.
     ScalarArray leaflist_val = 17;    // Mixed type scalar array value.
     google.protobuf.Any any_val = 18; // protobuf.Any encoded bytes.
-    string json_val = 19;             // JSON-encoded text.
-    string json_ietf_val = 20;        // JSON-encoded text per RFC7951.
+    bytes json_val = 19;              // JSON-encoded text.
+    bytes json_ietf_val = 20;         // JSON-encoded text per RFC7951.
     string ascii_val = 21;            // Arbitrary ASCII text.
   }
 }
