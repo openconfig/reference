@@ -7,7 +7,7 @@ Paul Borman, Marcus Hines, Carl Lebsack, Chris Morrow, Anees Shaikh, Rob Shakir
 November 7th, 2016
 
 **Version:**  
-0.2.1
+0.2.2
 
 # Table of Contents
 
@@ -540,19 +540,15 @@ The target closes the channel established by the `Get` RPC following the transmi
 
 The `GetRequest` message contains the following fields:
 
-
-
 *   `prefix` - a path (specified as per [Section 2.2.2](#222-paths)), and used as described in [Section 2.4.1](#24-1-path-prefixes). The prefix is applied to all paths within the `GetRequest` message.
 *   `path` - a set of paths (expressed as per [Section 2.2.2](#222-paths)) for which the client is requesting a data snapshot from the target. The path specified MAY utilize wildcards. In the case that the path specified is not valid, the target MUST populate the `error` field of the `GetResponse` message indicating an error code of `InvalidArgument` and SHOULD provide information about the invalid path in the error message.
 *   `type` - the type of data that is requested from the target. The valid values for type are described below.
-*   `encoding` - the encoding that the target should utilise to serialise the subtree of the data tree requested. The type MUST be one of the encodings specified in [Section 2.3](#23-encoding-data-in-an-update-message). If the `Capabilities` RPC has been utilised, the client SHOULD use an encoding advertised as supported by the target. If the encoding is not specified, JSON MUST be used. If the target does not support the specified encoding, the target MUST populate the error field of the `GetResponse` message, specifying an error of `InvalidArgument`. The error message MUST indicate that the specified encoding is unsupported.
+*   `encoding` - the encoding that the target should utilise to serialise the subtree of the data tree requested. The type MUST be one of the encodings specified in [Section 2.3](#23-encoding-data-in-an-update-message). If the `Capabilities` RPC has been utilised, the client SHOULD use an encoding advertised as supported by the target. If the encoding is not specified, JSON MUST be used. If the target does not support the specified encoding, the target MUST populate the error field of the `GetResponse` message, specifying an error of `Unimplemented`. The error message MUST indicate that the specified encoding is unsupported.
 *   `use_models` - a set of `ModelData` messages (defined in [Section 2.6.1](#261-the-modeldata-message)) indicating the schema definition modules that define the data elements that should be returned in response to the Get RPC call. The semantics of the `use_models` field are defined in [Section 2.6](#26-schema-definition-models).
 
 Since the data tree stored by the target may consist of different types of data (e.g., values that are operational in nature, such as protocol statistics) - the client MAY specify that a subset of values in the tree are of interest. In order for such filtering to be implemented, the data schema on the target MUST be annotated in a manner which specifies the type of data for individual leaves, or subtrees of the data tree.
 
 The types of data currently defined are:
-
-
 
 *   `CONFIG` - specified to be data that the target considers to be read/write. If the data schema is described in YANG, this corresponds to the "config true" set of leaves on the target.
 *   `STATE` - specified to be the read-only data on the target. If the data schema is described in YANG, `STATE` data is the "config false" set of leaves on the target.
@@ -563,8 +559,6 @@ If the `type` field is not specified, the target MUST return CONFIG, STATE  and 
 ### 3.3.2 The GetResponse message
 
 The `GetResponse` message consists of:
-
-
 
 *   `notification` -  a set of `Notification` messages, as defined in [Section 2.1](#21-reusable-notification-message-format). The target MUST generate a `Notification` message for each path specified in the client's `GetRequest`, and hence MUST NOT collapse data from multiple paths into a single `Notification` within the response. The `timestamp` field of the `Notification` message MUST be set to the time at which the target's snapshot of the relevant path was taken.
 *   `error` - an `Error` message encoded as per the specification in [Section 2.5](#25-error-handling), used to indicate errors in the `GetRequest` received by the target from the client.
@@ -677,8 +671,6 @@ In the case that a path specifies an element within the data tree that does not 
 
 When a client issues a `SetRequest`, and the target is unable to apply the specified changes, an error MUST be reported to the client. The error is specified in multiple places:
 
-
-
 *   Within a `SetResponse` message, the error field indicates the completion status of the entire transaction.
 *   With a `UpdateResult` message, where the error field indicates the completion status of the individual operation.
 
@@ -688,13 +680,12 @@ In the case that any operation within the `SetRequest` message fails, then (as p
 
 For the operation that the target is unable to process, the `message` field MUST be set to a specific error code indicating the reason for failure based on the following mappings to canonical gRPC error codes:
 
-
-
 *   When the client has specified metadata requiring authentication (see [Section 3.1](#31-session-security-authentication-and-rpc-authorization)), and the authentication fails -  `Unauthenticated (16)`.
 *   When the client does not have permission to modify the path specified by the operation - `PermissionDenied (7)`.
 *   When the operation specifies a path that cannot be parsed by the target - `InvalidArgument (3)`. In this case, the `message` field of the `Error` message specified SHOULD specify human-readable text indicating that the path could not be parsed.
 *   When the operation is an update or replace operation that corresponds to a path that is not valid - `NotFound (5)`. In this case the `message` field of the `Error` message specified SHOULD specify human-readable text indicating the path that was invalid.
-*   When the operation is an update or replace operation that includes an invalid value within the `Update` message specified - `InvalidArgument (3)`. This error SHOULD be used in cases where the payload specifies scalar values that do not correspond to the correct schema type, and in the case that multiple values are specified using a particular encoding (e.g., JSON) which cannot be decoded by the target.
+*   When the operation is an update or replace operation that includes an invalid value within the `Update` message specified - `InvalidArgument (3)`. This error SHOULD be used in cases where the payload specifies scalar values that do not correspond to the correct schema type,
+* When the client specifies a payload utilising an encoding that is not supported by the target (e.g., JSON) - `Unimplemented (12)` SHOULD be used to indicate that the encoding is not supported.
 
 ## 3.5 Subscribing to Telemetry Updates
 
@@ -707,8 +698,6 @@ The target generates messages according to the type of subscription that has bee
 Subscriptions are created for a set of paths - which cannot be modified throughout the lifetime of the subscription. In order to cancel a subscription, the client closes the gRPC channel over which the `Subscribe` RPC was initiated, or terminates the entire gRPC session.
 
 Subscriptions are fundamentally a set of independent update messages relating to the state of the data tree. That is, it is not possible for a client requesting a subscription to assume that the set of update messages received represent a snapshot of the data tree at a particular point in time. Subscriptions therefore allow a client to:
-
-
 
 *   Receive ongoing updates from a target which allow synchronization between the client and target for the state of elements within the data tree. In this case (i.e., a `STREAM` subscription), a client creating a subscription receives an initial set of updates, terminated by a message indicating that initial synchronisation has completed, and then receives subsequent updates indicating changes to the initial state of those elements.
 *   Receive a single view (polled, or one-off) for elements of the data tree on a per-data element basis according to the state that they are in at the time that the message is transmitted.  This can be more resource efficient for both target and client than a `GetRequest` for large subtrees within the data tree.  The target does not need to coalesce values into a single snapshot view, or create an in-memory representation of the subtree at the time of the request, and subsequently transmit this entire view to the client.
@@ -729,8 +718,6 @@ A `SubscribeRequest` message is sent by a client to request updates from the tar
 
 The fields of the `SubscribeRequest` are as follows:
 
-
-
 *   A group of fields, only one of which may be specified, which indicate the type of operation that the `SubscribeRequest` relates to. These are:
     *   `subscribe` - a `SubscriptionList` message specifying a new set of paths that the client wishes to subscribe to.
     *   `poll `- a `Poll` message used to specify (on an existing channel) that the client wishes to receive a polled update for the paths specified within the subscription.  The semantics of the `Poll` message are described in [Section 3.5.1.5.3](#3515-3-poll-subscriptions).
@@ -745,8 +732,6 @@ If a client initiates a `Subscribe` RPC with a `SubscribeRequest` message which 
 #### 3.5.1.2 The SubscriptionList Message
 
 A `SubscriptionList` message is used to indicate a set of paths for which common subscription behavior are required. The fields of the message are:
-
-
 
 *   `subscription` - a set of `Subscription` messages that indicate the set of paths associated with the subscription list.
 *   `mode` -  the type of subscription that is being created. This may be `ONCE` (described in [3.5.1.5.1](#3515-1-once-subscriptions)); `STREAM` (described in [3.5.1.5.2](#3-5-1-5-2-stream-subscriptions)); or `POLL` (described in [3.5.1.5.3](#3-5-1-5-3-poll-subscriptions)). The default value for the mode field is `STREAM`.
@@ -770,8 +755,6 @@ For `POLL` and `STREAM` subscriptions, a client may optionally specify additiona
 
 A `SubscribeResponse` message is transmitted by a target to a client over an established channel created by the `Subscribe` RPC. The message contains the following fields:
 
-
-
 *   A set of fields referred to as the `response` fields, only one of which can be specified per `SubscribeResponse` message:
     *   `update` - a `Notification` message providing an update value for a subscribed data entity as described in [Section 3.5.2.3](#3523-sending-telemetry-updates). The `update` field is also utilised when a target wishes to create an alias within a subscription, as described in [Section 3.5.2.2](#3-5-2-2-target-defined-aliases-within-a-subscription).
     *   `sync_response`  - a boolean field indicating that a particular set of data values has been transmitted, used for `POLL` and `STREAM` subscriptions.
@@ -793,9 +776,9 @@ Stream subscriptions are long-lived subscriptions which continue to transmit upd
 
 A `STREAM` subscription is created by sending a `SubscribeRequest` message with the subscribe field containing a `SubscriptionList` message with the type specified as `STREAM`. Each entry within the `Subscription` message is specified with one of the following `modes`:
 
-
-
-*   **On Change (`ON_CHANGE`)** - when a subscription is defined to be "on change", data updates are only sent when the value of the data item changes. A heartbeat interval MAY be specified along with an "on change" subscription - in this case, the value of the data item(s) MUST be re-sent once per heartbeat interval regardless of whether the value has changed or not.
+*   **On Change (`ON_CHANGE`)** - when a subscription is defined to be "on change", data updates are only sent when the value of the data item changes.
+    * For all `ON_CHANGE` subscriptions, the target MUST first generate updates for all paths that match the subscription path(s), and transmit them. Following this initial set of updates, updated values SHOULD only be transmitted when their value changes.
+    * A heartbeat interval MAY be specified along with an "on change" subscription - in this case, the value of the data item(s) MUST be re-sent once per heartbeat interval regardless of whether the value has changed or not.
 *   **Sampled (`SAMPLE`)** - a subscription that is defined to be sampled MUST be specified along with a <code>sample_interval</code> encoded as an unsigned 64-bit integer representing nanoseconds.  The value of the data item(s) is sent once per sample interval to the client.  If the target is unable to support the desired <code>sample_interval</code> it MUST reject the subscription by returning a <code>SubscribeResponse</code> message with the error field set to an error message indicating the <code>InvalidArgument (3)</code> error code. If the <code>sample_interval</code> is set to 0, the target MUST create the subscription and send the data with the lowest interval possible for the target.
     *   Optionally, the <code>suppress_redundant</code> field of the `Subscription` message may be set for a sampled subscription. In the case that it is set to `true`, the target SHOULD NOT generate a telemetry update message unless the value of the path being reported on has changed since the last update was generated. Updates MUST only be generated for those individual leaf nodes in the subscription that have changed. That is to say that for a subscription to <code>/a/b</code> - where there are leaves <code>c</code> and <code>d</code> branching from the <code>b</code> node - if the value of <code>c</code> has changed, but <code>d</code> remains unchanged, an update for <code>d</code> MUST NOT be generated, whereas an update for <code>c</code> MUST be generated.
     *   A <code>heartbeat_interval</code> MAY be specified to modify the behavior of <code>suppress_redundant</code> in a sampled subscription.  In this case, the target MUST generate one telemetry update  per heartbeat interval, regardless of whether the `suppress_redundant` flag is set to `true`. This value is specified as an unsigned 64-bit integer in nanoseconds.
@@ -926,8 +909,6 @@ The latest Protobuf IDL gNMI specification is found at https://github.com/openco
 
 # 5 Appendix: Current Outstanding Issues/Future Features
 
-
-
 *   Ability for the client to exclude paths from a subscription or get.
 *   "Dial out" for the target to register with an NMS and publish pre-configured subscriptions.
 
@@ -950,6 +931,10 @@ limitations under the License
 ```
 
 # 7 Revision History
+
+* v0.2.2: March 7, 2016
+  * Add clarifications of `ON_CHANGE` subscriptions and the requirement for an initial sync of matching subscription paths.
+  * Correct responses to an unsupported encoding error to be `Unimplemented` (fixes [#36](https://github.com/openconfig/reference/issues/36)).
 
 * v0.2.1: November 10, 2016
  * Correct reference to `TEXT` vs. `ASCII` encoding type.
