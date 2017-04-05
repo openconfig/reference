@@ -161,11 +161,11 @@ message Decimal64 {
 // ScalarArray is used to encode a mixed-type array of values.
 message ScalarArray {
   // The set of elements contained within the array.
-  repeated ScalarArrayValue element = 1;
+  repeated ScalarArrayElement element = 1;
 }
 
-// ScalarArrayValue specifies an individual element of a scalar array.
-message ScalarArrayValue {
+// ScalarArrayElement specifies an individual element of a scalar array.
+message ScalarArrayElement {
   // One of the fields within the value oneof may be specified
   // indicating an element included within the ScalarArray.
   oneof value {
