@@ -101,18 +101,18 @@ message TypedValue {
   // encoding is a particular form of the base protobuf type, a specific
   // field is used to store the value (e.g., json_val).
   oneof value {
-    string string_val = 3;            // String value.
-    int64 int_val = 4;                // Integer value.
-    uint64 uint_val = 5;              // Unsigned integer value.
-    bool bool_val = 6;                // Bool value.
-    bytes bytes_val = 7;              // Arbitrary byte sequence value.
-    float float_val = 8;              // Floating point value.
-    Decimal64 decimal_val = 9;        // Decimal64 encoded value.
-    ScalarArray leaflist_val = 10;    // Mixed type scalar array value.
-    google.protobuf.Any any_val = 11; // protobuf.Any encoded bytes.
-    bytes json_val = 12;              // JSON-encoded text.
-    bytes json_ietf_val = 13;         // JSON-encoded text per RFC7951.
-    string ascii_val = 14;            // Arbitrary ASCII text.
+    string string_val = 1;            // String value.
+    int64 int_val = 2;                // Integer value.
+    uint64 uint_val = 3;              // Unsigned integer value.
+    bool bool_val = 4;                // Bool value.
+    bytes bytes_val = 5;              // Arbitrary byte sequence value.
+    float float_val = 6;              // Floating point value.
+    Decimal64 decimal_val = 7;        // Decimal64 encoded value.
+    ScalarArray leaflist_val = 8;     // Mixed type scalar array value.
+    google.protobuf.Any any_val = 9;  // protobuf.Any encoded bytes.
+    bytes json_val = 10;              // JSON-encoded text.
+    bytes json_ietf_val = 11;         // JSON-encoded text per RFC7951.
+    string ascii_val = 12;            // Arbitrary ASCII text.
   }
 }
 
@@ -166,9 +166,9 @@ message Decimal64 {
 
 // ScalarArray is used to encode a mixed-type array of values.
 message ScalarArray {
-  // The set of elements contained within the array. It should be noted
-  // that not all types within the typed value may be valid in all
-  // contexts (e.g., it may be invalid to have nested ScalarArrays).
+  // The set of elements within the array. Each TypedValue message should
+  // specify only elements that have a field identifier of 1-7 (i.e., the
+  // values are scalar values).
   repeated TypedValue element = 1;
 }
 
