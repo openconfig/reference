@@ -157,8 +157,8 @@ message Error {
 
 
 // Decimal64 is used to encode floating-point decimal number. The value
-// expressed as a set of digits with the precision specifying the number
-// of digits following the decimal point in the digit set.
+// is expressed as a set of digits with the precision specifying the
+// number of digits following the decimal point in the digit set.
 message Decimal64 {
   uint64 digits = 1;      // Set of digits.
   uint32 precision = 2;    // Number of digits following the decimal point.

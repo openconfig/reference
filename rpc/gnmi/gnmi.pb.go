@@ -743,8 +743,8 @@ func (m *Error) GetData() *google_protobuf.Any {
 }
 
 // Decimal64 is used to encode floating-point decimal number. The value
-// expressed as a set of digits with the precision specifying the number
-// of digits following the decimal point in the digit set.
+// is expressed as a set of digits with the precision specifying the
+// number of digits following the decimal point in the digit set.
 type Decimal64 struct {
 	Digits    uint64 `protobuf:"varint,1,opt,name=digits" json:"digits,omitempty"`
 	Precision uint32 `protobuf:"varint,2,opt,name=precision" json:"precision,omitempty"`
