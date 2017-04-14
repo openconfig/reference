@@ -233,11 +233,25 @@ func (m *Notification) String() string            { return proto.CompactTextStri
 func (*Notification) ProtoMessage()               {}
 func (*Notification) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
 
+func (m *Notification) GetTimestamp() int64 {
+	if m != nil {
+		return m.Timestamp
+	}
+	return 0
+}
+
 func (m *Notification) GetPrefix() *Path {
 	if m != nil {
 		return m.Prefix
 	}
 	return nil
+}
+
+func (m *Notification) GetAlias() string {
+	if m != nil {
+		return m.Alias
+	}
+	return ""
 }
 
 func (m *Notification) GetUpdate() []*Update {
@@ -295,6 +309,20 @@ func (m *Path) String() string            { return proto.CompactTextString(m) }
 func (*Path) ProtoMessage()               {}
 func (*Path) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{2} }
 
+func (m *Path) GetElement() []string {
+	if m != nil {
+		return m.Element
+	}
+	return nil
+}
+
+func (m *Path) GetOrigin() string {
+	if m != nil {
+		return m.Origin
+	}
+	return ""
+}
+
 // Value encodes a data tree node's value - along with the way in which
 // the value is encoded.
 // Reference: gNMI Specification Section 2.2.3.
@@ -308,6 +336,20 @@ func (m *Value) String() string            { return proto.CompactTextString(m) }
 func (*Value) ProtoMessage()               {}
 func (*Value) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{3} }
 
+func (m *Value) GetValue() []byte {
+	if m != nil {
+		return m.Value
+	}
+	return nil
+}
+
+func (m *Value) GetType() Encoding {
+	if m != nil {
+		return m.Type
+	}
+	return Encoding_JSON
+}
+
 // Error message used by the target to return errors to the client.
 // Reference: gNMI Specification Section 2.5
 type Error struct {
@@ -320,6 +362,20 @@ func (m *Error) Reset()                    { *m = Error{} }
 func (m *Error) String() string            { return proto.CompactTextString(m) }
 func (*Error) ProtoMessage()               {}
 func (*Error) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{4} }
+
+func (m *Error) GetCode() uint32 {
+	if m != nil {
+		return m.Code
+	}
+	return 0
+}
+
+func (m *Error) GetMessage() string {
+	if m != nil {
+		return m.Message
+	}
+	return ""
+}
 
 func (m *Error) GetData() *google_protobuf.Any {
 	if m != nil {
@@ -695,11 +751,32 @@ func (m *SubscriptionList) GetSubscription() []*Subscription {
 	return nil
 }
 
+func (m *SubscriptionList) GetUseAliases() bool {
+	if m != nil {
+		return m.UseAliases
+	}
+	return false
+}
+
 func (m *SubscriptionList) GetQos() *QOSMarking {
 	if m != nil {
 		return m.Qos
 	}
 	return nil
+}
+
+func (m *SubscriptionList) GetMode() SubscriptionList_Mode {
+	if m != nil {
+		return m.Mode
+	}
+	return SubscriptionList_STREAM
+}
+
+func (m *SubscriptionList) GetAllowAggregation() bool {
+	if m != nil {
+		return m.AllowAggregation
+	}
+	return false
 }
 
 func (m *SubscriptionList) GetUseModels() []*ModelData {
@@ -739,6 +816,34 @@ func (m *Subscription) GetPath() *Path {
 	return nil
 }
 
+func (m *Subscription) GetMode() SubscriptionMode {
+	if m != nil {
+		return m.Mode
+	}
+	return SubscriptionMode_TARGET_DEFINED
+}
+
+func (m *Subscription) GetSampleInterval() uint64 {
+	if m != nil {
+		return m.SampleInterval
+	}
+	return 0
+}
+
+func (m *Subscription) GetSuppressRedundant() bool {
+	if m != nil {
+		return m.SuppressRedundant
+	}
+	return false
+}
+
+func (m *Subscription) GetHeartbeatInterval() uint64 {
+	if m != nil {
+		return m.HeartbeatInterval
+	}
+	return 0
+}
+
 // QOSMarking specifies the DSCP value to be set on transmitted telemetry
 // updates from the target.
 // Reference: gNMI Specification Section 3.5.1.2
@@ -750,6 +855,13 @@ func (m *QOSMarking) Reset()                    { *m = QOSMarking{} }
 func (m *QOSMarking) String() string            { return proto.CompactTextString(m) }
 func (*QOSMarking) ProtoMessage()               {}
 func (*QOSMarking) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{10} }
+
+func (m *QOSMarking) GetMarking() uint32 {
+	if m != nil {
+		return m.Marking
+	}
+	return 0
+}
 
 // Alias specifies a data tree path, and an associated string which defines an
 // alias which is to be used for this path in the context of the RPC. The alias
@@ -771,6 +883,13 @@ func (m *Alias) GetPath() *Path {
 		return m.Path
 	}
 	return nil
+}
+
+func (m *Alias) GetAlias() string {
+	if m != nil {
+		return m.Alias
+	}
+	return ""
 }
 
 // AliasList specifies a list of aliases. It is used in a SubscribeRequest for
@@ -892,6 +1011,13 @@ func (m *UpdateResult) String() string            { return proto.CompactTextStri
 func (*UpdateResult) ProtoMessage()               {}
 func (*UpdateResult) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{15} }
 
+func (m *UpdateResult) GetTimestamp() int64 {
+	if m != nil {
+		return m.Timestamp
+	}
+	return 0
+}
+
 func (m *UpdateResult) GetPath() *Path {
 	if m != nil {
 		return m.Path
@@ -904,6 +1030,13 @@ func (m *UpdateResult) GetMessage() *Error {
 		return m.Message
 	}
 	return nil
+}
+
+func (m *UpdateResult) GetOp() UpdateResult_Operation {
+	if m != nil {
+		return m.Op
+	}
+	return UpdateResult_INVALID
 }
 
 // GetRequest is sent when a client initiates a Get RPC. It is used to specify
@@ -937,6 +1070,20 @@ func (m *GetRequest) GetPath() []*Path {
 		return m.Path
 	}
 	return nil
+}
+
+func (m *GetRequest) GetType() GetRequest_DataType {
+	if m != nil {
+		return m.Type
+	}
+	return GetRequest_ALL
+}
+
+func (m *GetRequest) GetEncoding() Encoding {
+	if m != nil {
+		return m.Encoding
+	}
+	return Encoding_JSON
 }
 
 func (m *GetRequest) GetUseModels() []*ModelData {
@@ -1006,6 +1153,20 @@ func (m *CapabilityResponse) GetSupportedModels() []*ModelData {
 	return nil
 }
 
+func (m *CapabilityResponse) GetSupportedEncodings() []Encoding {
+	if m != nil {
+		return m.SupportedEncodings
+	}
+	return nil
+}
+
+func (m *CapabilityResponse) GetGNMIVersion() string {
+	if m != nil {
+		return m.GNMIVersion
+	}
+	return ""
+}
+
 // ModelData is used to describe a set of schema modules. It can be used in a
 // CapabilityResponse where a target reports the set of modules that it
 // supports, and within the SubscribeRequest and GetRequest messages to specify
@@ -1022,12 +1183,34 @@ func (m *ModelData) String() string            { return proto.CompactTextString(
 func (*ModelData) ProtoMessage()               {}
 func (*ModelData) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{20} }
 
+func (m *ModelData) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
+func (m *ModelData) GetOrganization() string {
+	if m != nil {
+		return m.Organization
+	}
+	return ""
+}
+
+func (m *ModelData) GetVersion() string {
+	if m != nil {
+		return m.Version
+	}
+	return ""
+}
+
 var E_GnmiService = &proto.ExtensionDesc{
 	ExtendedType:  (*google_protobuf1.FileOptions)(nil),
 	ExtensionType: (*string)(nil),
 	Field:         1001,
 	Name:          "gnmi.gnmi_service",
 	Tag:           "bytes,1001,opt,name=gnmi_service,json=gnmiService",
+	Filename:      "github.com/openconfig/reference/rpc/gnmi/gnmi.proto",
 }
 
 func init() {
@@ -1310,7 +1493,7 @@ func init() {
 
 var fileDescriptor0 = []byte{
 	// 1460 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x94, 0x56, 0xdd, 0x6e, 0x1b, 0x45,
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x56, 0xdd, 0x6e, 0x1b, 0x45,
 	0x14, 0xf6, 0xae, 0xd7, 0x3f, 0x7b, 0xec, 0x24, 0x9b, 0x69, 0xd5, 0x9a, 0x50, 0x41, 0xba, 0xd0,
 	0x12, 0xa5, 0xad, 0x5d, 0xb9, 0x52, 0x85, 0x8a, 0x4a, 0xbb, 0x49, 0x36, 0x89, 0xc1, 0xb1, 0xc3,
 	0xd8, 0xad, 0xc4, 0x05, 0xb2, 0x26, 0xf6, 0xc4, 0x59, 0xb1, 0xde, 0xdd, 0xee, 0xac, 0x03, 0xe1,
