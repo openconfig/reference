@@ -22,7 +22,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='gnmi.proto',
   package='gnmi',
   syntax='proto3',
-  serialized_pb=_b('\n\ngnmi.proto\x12\x04gnmi\x1a\x19google/protobuf/any.proto\x1a google/protobuf/descriptor.proto\"\x86\x01\n\x0cNotification\x12\x11\n\ttimestamp\x18\x01 \x01(\x03\x12\x1a\n\x06prefix\x18\x02 \x01(\x0b\x32\n.gnmi.Path\x12\r\n\x05\x61lias\x18\x03 \x01(\t\x12\x1c\n\x06update\x18\x04 \x03(\x0b\x32\x0c.gnmi.Update\x12\x1a\n\x06\x64\x65lete\x18\x05 \x03(\x0b\x32\n.gnmi.Path\"\x82\x03\n\x06Update\x12\x18\n\x04path\x18\x01 \x01(\x0b\x32\n.gnmi.Path\x12\x1e\n\x05value\x18\x02 \x01(\x0b\x32\x0b.gnmi.ValueB\x02\x18\x01\x12\x14\n\nstring_val\x18\n \x01(\tH\x00\x12\x11\n\x07int_val\x18\x0b \x01(\x03H\x00\x12\x12\n\x08uint_val\x18\x0c \x01(\x04H\x00\x12\x12\n\x08\x62ool_val\x18\r \x01(\x08H\x00\x12\x13\n\tbytes_val\x18\x0e \x01(\x0cH\x00\x12\x13\n\tfloat_val\x18\x0f \x01(\x02H\x00\x12&\n\x0b\x64\x65\x63imal_val\x18\x10 \x01(\x0b\x32\x0f.gnmi.Decimal64H\x00\x12)\n\x0cleaflist_val\x18\x11 \x01(\x0b\x32\x11.gnmi.ScalarArrayH\x00\x12\'\n\x07\x61ny_val\x18\x12 \x01(\x0b\x32\x14.google.protobuf.AnyH\x00\x12\x12\n\x08json_val\x18\x13 \x01(\x0cH\x00\x12\x17\n\rjson_ietf_val\x18\x14 \x01(\x0cH\x00\x12\x13\n\tascii_val\x18\x15 \x01(\tH\x00\x42\x05\n\x03val\"\'\n\x04Path\x12\x0f\n\x07\x65lement\x18\x01 \x03(\t\x12\x0e\n\x06origin\x18\x02 \x01(\t\"8\n\x05Value\x12\r\n\x05value\x18\x01 \x01(\x0c\x12\x1c\n\x04type\x18\x02 \x01(\x0e\x32\x0e.gnmi.Encoding:\x02\x18\x01\"J\n\x05\x45rror\x12\x0c\n\x04\x63ode\x18\x01 \x01(\r\x12\x0f\n\x07message\x18\x02 \x01(\t\x12\"\n\x04\x64\x61ta\x18\x03 \x01(\x0b\x32\x14.google.protobuf.Any\".\n\tDecimal64\x12\x0e\n\x06\x64igits\x18\x01 \x01(\x04\x12\x11\n\tprecision\x18\x02 \x01(\r\"8\n\x0bScalarArray\x12)\n\x07\x65lement\x18\x01 \x03(\x0b\x32\x18.gnmi.ScalarArrayElement\"\xc0\x01\n\x12ScalarArrayElement\x12\x14\n\nstring_val\x18\x01 \x01(\tH\x00\x12\x11\n\x07int_val\x18\x02 \x01(\x03H\x00\x12\x12\n\x08uint_val\x18\x03 \x01(\x04H\x00\x12\x12\n\x08\x62ool_val\x18\x04 \x01(\x08H\x00\x12\x13\n\tbytes_val\x18\x05 \x01(\x0cH\x00\x12\x13\n\tfloat_val\x18\x06 \x01(\x02H\x00\x12&\n\x0b\x64\x65\x63imal_val\x18\x07 \x01(\x0b\x32\x0f.gnmi.Decimal64H\x00\x42\x07\n\x05value\"\x8a\x01\n\x10SubscribeRequest\x12+\n\tsubscribe\x18\x01 \x01(\x0b\x32\x16.gnmi.SubscriptionListH\x00\x12\x1a\n\x04poll\x18\x03 \x01(\x0b\x32\n.gnmi.PollH\x00\x12\"\n\x07\x61liases\x18\x04 \x01(\x0b\x32\x0f.gnmi.AliasListH\x00\x42\t\n\x07request\"\x06\n\x04Poll\"|\n\x11SubscribeResponse\x12$\n\x06update\x18\x01 \x01(\x0b\x32\x12.gnmi.NotificationH\x00\x12\x17\n\rsync_response\x18\x03 \x01(\x08H\x00\x12\x1c\n\x05\x65rror\x18\x04 \x01(\x0b\x32\x0b.gnmi.ErrorH\x00\x42\n\n\x08response\"\xc1\x02\n\x10SubscriptionList\x12\x1a\n\x06prefix\x18\x01 \x01(\x0b\x32\n.gnmi.Path\x12(\n\x0csubscription\x18\x02 \x03(\x0b\x32\x12.gnmi.Subscription\x12\x13\n\x0buse_aliases\x18\x03 \x01(\x08\x12\x1d\n\x03qos\x18\x04 \x01(\x0b\x32\x10.gnmi.QOSMarking\x12)\n\x04mode\x18\x05 \x01(\x0e\x32\x1b.gnmi.SubscriptionList.Mode\x12\x19\n\x11\x61llow_aggregation\x18\x06 \x01(\x08\x12#\n\nuse_models\x18\x07 \x03(\x0b\x32\x0f.gnmi.ModelData\x12 \n\x08\x65ncoding\x18\x08 \x01(\x0e\x32\x0e.gnmi.Encoding\"&\n\x04Mode\x12\n\n\x06STREAM\x10\x00\x12\x08\n\x04ONCE\x10\x01\x12\x08\n\x04POLL\x10\x02\"\x9f\x01\n\x0cSubscription\x12\x18\n\x04path\x18\x01 \x01(\x0b\x32\n.gnmi.Path\x12$\n\x04mode\x18\x02 \x01(\x0e\x32\x16.gnmi.SubscriptionMode\x12\x17\n\x0fsample_interval\x18\x03 \x01(\x04\x12\x1a\n\x12suppress_redundant\x18\x04 \x01(\x08\x12\x1a\n\x12heartbeat_interval\x18\x05 \x01(\x04\"\x1d\n\nQOSMarking\x12\x0f\n\x07marking\x18\x01 \x01(\r\"0\n\x05\x41lias\x12\x18\n\x04path\x18\x01 \x01(\x0b\x32\n.gnmi.Path\x12\r\n\x05\x61lias\x18\x02 \x01(\t\"\'\n\tAliasList\x12\x1a\n\x05\x61lias\x18\x01 \x03(\x0b\x32\x0b.gnmi.Alias\"\x81\x01\n\nSetRequest\x12\x1a\n\x06prefix\x18\x01 \x01(\x0b\x32\n.gnmi.Path\x12\x1a\n\x06\x64\x65lete\x18\x02 \x03(\x0b\x32\n.gnmi.Path\x12\x1d\n\x07replace\x18\x03 \x03(\x0b\x32\x0c.gnmi.Update\x12\x1c\n\x06update\x18\x04 \x03(\x0b\x32\x0c.gnmi.Update\"\x84\x01\n\x0bSetResponse\x12\x1a\n\x06prefix\x18\x01 \x01(\x0b\x32\n.gnmi.Path\x12$\n\x08response\x18\x02 \x03(\x0b\x32\x12.gnmi.UpdateResult\x12 \n\x07message\x18\x03 \x01(\x0b\x32\x0b.gnmi.ErrorB\x02\x18\x01\x12\x11\n\ttimestamp\x18\x04 \x01(\x03\"\xc6\x01\n\x0cUpdateResult\x12\x15\n\ttimestamp\x18\x01 \x01(\x03\x42\x02\x18\x01\x12\x18\n\x04path\x18\x02 \x01(\x0b\x32\n.gnmi.Path\x12\x1c\n\x07message\x18\x03 \x01(\x0b\x32\x0b.gnmi.Error\x12(\n\x02op\x18\x04 \x01(\x0e\x32\x1c.gnmi.UpdateResult.Operation\"=\n\tOperation\x12\x0b\n\x07INVALID\x10\x00\x12\n\n\x06\x44\x45LETE\x10\x01\x12\x0b\n\x07REPLACE\x10\x02\x12\n\n\x06UPDATE\x10\x03\"\xef\x01\n\nGetRequest\x12\x1a\n\x06prefix\x18\x01 \x01(\x0b\x32\n.gnmi.Path\x12\x18\n\x04path\x18\x02 \x03(\x0b\x32\n.gnmi.Path\x12\'\n\x04type\x18\x03 \x01(\x0e\x32\x19.gnmi.GetRequest.DataType\x12 \n\x08\x65ncoding\x18\x05 \x01(\x0e\x32\x0e.gnmi.Encoding\x12#\n\nuse_models\x18\x06 \x03(\x0b\x32\x0f.gnmi.ModelData\";\n\x08\x44\x61taType\x12\x07\n\x03\x41LL\x10\x00\x12\n\n\x06\x43ONFIG\x10\x01\x12\t\n\x05STATE\x10\x02\x12\x0f\n\x0bOPERATIONAL\x10\x03\"S\n\x0bGetResponse\x12(\n\x0cnotification\x18\x01 \x03(\x0b\x32\x12.gnmi.Notification\x12\x1a\n\x05\x65rror\x18\x02 \x01(\x0b\x32\x0b.gnmi.Error\"\x13\n\x11\x43\x61pabilityRequest\"\x82\x01\n\x12\x43\x61pabilityResponse\x12)\n\x10supported_models\x18\x01 \x03(\x0b\x32\x0f.gnmi.ModelData\x12+\n\x13supported_encodings\x18\x02 \x03(\x0e\x32\x0e.gnmi.Encoding\x12\x14\n\x0cgNMI_version\x18\x03 \x01(\t\"@\n\tModelData\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x14\n\x0corganization\x18\x02 \x01(\t\x12\x0f\n\x07version\x18\x03 \x01(\t*D\n\x08\x45ncoding\x12\x08\n\x04JSON\x10\x00\x12\t\n\x05\x42YTES\x10\x01\x12\t\n\x05PROTO\x10\x02\x12\t\n\x05\x41SCII\x10\x03\x12\r\n\tJSON_IETF\x10\x04*A\n\x10SubscriptionMode\x12\x12\n\x0eTARGET_DEFINED\x10\x00\x12\r\n\tON_CHANGE\x10\x01\x12\n\n\x06SAMPLE\x10\x02\x32\xe3\x01\n\x04gNMI\x12\x41\n\x0c\x43\x61pabilities\x12\x17.gnmi.CapabilityRequest\x1a\x18.gnmi.CapabilityResponse\x12*\n\x03Get\x12\x10.gnmi.GetRequest\x1a\x11.gnmi.GetResponse\x12*\n\x03Set\x12\x10.gnmi.SetRequest\x1a\x11.gnmi.SetResponse\x12@\n\tSubscribe\x12\x16.gnmi.SubscribeRequest\x1a\x17.gnmi.SubscribeResponse(\x01\x30\x01:3\n\x0cgnmi_service\x12\x1c.google.protobuf.FileOptions\x18\xe9\x07 \x01(\tB\x08\xca>\x05\x30.3.1b\x06proto3')
+  serialized_pb=_b('\n\ngnmi.proto\x12\x04gnmi\x1a\x19google/protobuf/any.proto\x1a google/protobuf/descriptor.proto\"\x86\x01\n\x0cNotification\x12\x11\n\ttimestamp\x18\x01 \x01(\x03\x12\x1a\n\x06prefix\x18\x02 \x01(\x0b\x32\n.gnmi.Path\x12\r\n\x05\x61lias\x18\x03 \x01(\t\x12\x1c\n\x06update\x18\x04 \x03(\x0b\x32\x0c.gnmi.Update\x12\x1a\n\x06\x64\x65lete\x18\x05 \x03(\x0b\x32\n.gnmi.Path\"a\n\x06Update\x12\x18\n\x04path\x18\x01 \x01(\x0b\x32\n.gnmi.Path\x12\x1e\n\x05value\x18\x02 \x01(\x0b\x32\x0b.gnmi.ValueB\x02\x18\x01\x12\x1d\n\x03val\x18\x03 \x01(\x0b\x32\x10.gnmi.TypedValue\"\xce\x02\n\nTypedValue\x12\x14\n\nstring_val\x18\x01 \x01(\tH\x00\x12\x11\n\x07int_val\x18\x02 \x01(\x03H\x00\x12\x12\n\x08uint_val\x18\x03 \x01(\x04H\x00\x12\x12\n\x08\x62ool_val\x18\x04 \x01(\x08H\x00\x12\x13\n\tbytes_val\x18\x05 \x01(\x0cH\x00\x12\x13\n\tfloat_val\x18\x06 \x01(\x02H\x00\x12&\n\x0b\x64\x65\x63imal_val\x18\x07 \x01(\x0b\x32\x0f.gnmi.Decimal64H\x00\x12)\n\x0cleaflist_val\x18\x08 \x01(\x0b\x32\x11.gnmi.ScalarArrayH\x00\x12\'\n\x07\x61ny_val\x18\t \x01(\x0b\x32\x14.google.protobuf.AnyH\x00\x12\x12\n\x08json_val\x18\n \x01(\x0cH\x00\x12\x17\n\rjson_ietf_val\x18\x0b \x01(\x0cH\x00\x12\x13\n\tascii_val\x18\x0c \x01(\tH\x00\x42\x07\n\x05value\"\'\n\x04Path\x12\x0f\n\x07\x65lement\x18\x01 \x03(\t\x12\x0e\n\x06origin\x18\x02 \x01(\t\"8\n\x05Value\x12\r\n\x05value\x18\x01 \x01(\x0c\x12\x1c\n\x04type\x18\x02 \x01(\x0e\x32\x0e.gnmi.Encoding:\x02\x18\x01\"J\n\x05\x45rror\x12\x0c\n\x04\x63ode\x18\x01 \x01(\r\x12\x0f\n\x07message\x18\x02 \x01(\t\x12\"\n\x04\x64\x61ta\x18\x03 \x01(\x0b\x32\x14.google.protobuf.Any\".\n\tDecimal64\x12\x0e\n\x06\x64igits\x18\x01 \x01(\x04\x12\x11\n\tprecision\x18\x02 \x01(\r\"0\n\x0bScalarArray\x12!\n\x07\x65lement\x18\x01 \x03(\x0b\x32\x10.gnmi.TypedValue\"\x8a\x01\n\x10SubscribeRequest\x12+\n\tsubscribe\x18\x01 \x01(\x0b\x32\x16.gnmi.SubscriptionListH\x00\x12\x1a\n\x04poll\x18\x03 \x01(\x0b\x32\n.gnmi.PollH\x00\x12\"\n\x07\x61liases\x18\x04 \x01(\x0b\x32\x0f.gnmi.AliasListH\x00\x42\t\n\x07request\"\x06\n\x04Poll\"|\n\x11SubscribeResponse\x12$\n\x06update\x18\x01 \x01(\x0b\x32\x12.gnmi.NotificationH\x00\x12\x17\n\rsync_response\x18\x03 \x01(\x08H\x00\x12\x1c\n\x05\x65rror\x18\x04 \x01(\x0b\x32\x0b.gnmi.ErrorH\x00\x42\n\n\x08response\"\xc1\x02\n\x10SubscriptionList\x12\x1a\n\x06prefix\x18\x01 \x01(\x0b\x32\n.gnmi.Path\x12(\n\x0csubscription\x18\x02 \x03(\x0b\x32\x12.gnmi.Subscription\x12\x13\n\x0buse_aliases\x18\x03 \x01(\x08\x12\x1d\n\x03qos\x18\x04 \x01(\x0b\x32\x10.gnmi.QOSMarking\x12)\n\x04mode\x18\x05 \x01(\x0e\x32\x1b.gnmi.SubscriptionList.Mode\x12\x19\n\x11\x61llow_aggregation\x18\x06 \x01(\x08\x12#\n\nuse_models\x18\x07 \x03(\x0b\x32\x0f.gnmi.ModelData\x12 \n\x08\x65ncoding\x18\x08 \x01(\x0e\x32\x0e.gnmi.Encoding\"&\n\x04Mode\x12\n\n\x06STREAM\x10\x00\x12\x08\n\x04ONCE\x10\x01\x12\x08\n\x04POLL\x10\x02\"\x9f\x01\n\x0cSubscription\x12\x18\n\x04path\x18\x01 \x01(\x0b\x32\n.gnmi.Path\x12$\n\x04mode\x18\x02 \x01(\x0e\x32\x16.gnmi.SubscriptionMode\x12\x17\n\x0fsample_interval\x18\x03 \x01(\x04\x12\x1a\n\x12suppress_redundant\x18\x04 \x01(\x08\x12\x1a\n\x12heartbeat_interval\x18\x05 \x01(\x04\"\x1d\n\nQOSMarking\x12\x0f\n\x07marking\x18\x01 \x01(\r\"0\n\x05\x41lias\x12\x18\n\x04path\x18\x01 \x01(\x0b\x32\n.gnmi.Path\x12\r\n\x05\x61lias\x18\x02 \x01(\t\"\'\n\tAliasList\x12\x1a\n\x05\x61lias\x18\x01 \x03(\x0b\x32\x0b.gnmi.Alias\"\x81\x01\n\nSetRequest\x12\x1a\n\x06prefix\x18\x01 \x01(\x0b\x32\n.gnmi.Path\x12\x1a\n\x06\x64\x65lete\x18\x02 \x03(\x0b\x32\n.gnmi.Path\x12\x1d\n\x07replace\x18\x03 \x03(\x0b\x32\x0c.gnmi.Update\x12\x1c\n\x06update\x18\x04 \x03(\x0b\x32\x0c.gnmi.Update\"\x84\x01\n\x0bSetResponse\x12\x1a\n\x06prefix\x18\x01 \x01(\x0b\x32\n.gnmi.Path\x12$\n\x08response\x18\x02 \x03(\x0b\x32\x12.gnmi.UpdateResult\x12 \n\x07message\x18\x03 \x01(\x0b\x32\x0b.gnmi.ErrorB\x02\x18\x01\x12\x11\n\ttimestamp\x18\x04 \x01(\x03\"\xc6\x01\n\x0cUpdateResult\x12\x15\n\ttimestamp\x18\x01 \x01(\x03\x42\x02\x18\x01\x12\x18\n\x04path\x18\x02 \x01(\x0b\x32\n.gnmi.Path\x12\x1c\n\x07message\x18\x03 \x01(\x0b\x32\x0b.gnmi.Error\x12(\n\x02op\x18\x04 \x01(\x0e\x32\x1c.gnmi.UpdateResult.Operation\"=\n\tOperation\x12\x0b\n\x07INVALID\x10\x00\x12\n\n\x06\x44\x45LETE\x10\x01\x12\x0b\n\x07REPLACE\x10\x02\x12\n\n\x06UPDATE\x10\x03\"\xef\x01\n\nGetRequest\x12\x1a\n\x06prefix\x18\x01 \x01(\x0b\x32\n.gnmi.Path\x12\x18\n\x04path\x18\x02 \x03(\x0b\x32\n.gnmi.Path\x12\'\n\x04type\x18\x03 \x01(\x0e\x32\x19.gnmi.GetRequest.DataType\x12 \n\x08\x65ncoding\x18\x05 \x01(\x0e\x32\x0e.gnmi.Encoding\x12#\n\nuse_models\x18\x06 \x03(\x0b\x32\x0f.gnmi.ModelData\";\n\x08\x44\x61taType\x12\x07\n\x03\x41LL\x10\x00\x12\n\n\x06\x43ONFIG\x10\x01\x12\t\n\x05STATE\x10\x02\x12\x0f\n\x0bOPERATIONAL\x10\x03\"S\n\x0bGetResponse\x12(\n\x0cnotification\x18\x01 \x03(\x0b\x32\x12.gnmi.Notification\x12\x1a\n\x05\x65rror\x18\x02 \x01(\x0b\x32\x0b.gnmi.Error\"\x13\n\x11\x43\x61pabilityRequest\"\x82\x01\n\x12\x43\x61pabilityResponse\x12)\n\x10supported_models\x18\x01 \x03(\x0b\x32\x0f.gnmi.ModelData\x12+\n\x13supported_encodings\x18\x02 \x03(\x0e\x32\x0e.gnmi.Encoding\x12\x14\n\x0cgNMI_version\x18\x03 \x01(\t\"@\n\tModelData\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x14\n\x0corganization\x18\x02 \x01(\t\x12\x0f\n\x07version\x18\x03 \x01(\t*D\n\x08\x45ncoding\x12\x08\n\x04JSON\x10\x00\x12\t\n\x05\x42YTES\x10\x01\x12\t\n\x05PROTO\x10\x02\x12\t\n\x05\x41SCII\x10\x03\x12\r\n\tJSON_IETF\x10\x04*A\n\x10SubscriptionMode\x12\x12\n\x0eTARGET_DEFINED\x10\x00\x12\r\n\tON_CHANGE\x10\x01\x12\n\n\x06SAMPLE\x10\x02\x32\xe3\x01\n\x04gNMI\x12\x41\n\x0c\x43\x61pabilities\x12\x17.gnmi.CapabilityRequest\x1a\x18.gnmi.CapabilityResponse\x12*\n\x03Get\x12\x10.gnmi.GetRequest\x1a\x11.gnmi.GetResponse\x12*\n\x03Set\x12\x10.gnmi.SetRequest\x1a\x11.gnmi.SetResponse\x12@\n\tSubscribe\x12\x16.gnmi.SubscribeRequest\x1a\x17.gnmi.SubscribeResponse(\x01\x30\x01:3\n\x0cgnmi_service\x12\x1c.google.protobuf.FileOptions\x18\xe9\x07 \x01(\tB\x08\xca>\x05\x30.3.1b\x06proto3')
   ,
   dependencies=[google_dot_protobuf_dot_any__pb2.DESCRIPTOR,google_dot_protobuf_dot_descriptor__pb2.DESCRIPTOR,])
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
@@ -56,8 +56,8 @@ _ENCODING = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   options=None,
-  serialized_start=2981,
-  serialized_end=3049,
+  serialized_start=2825,
+  serialized_end=2893,
 )
 _sym_db.RegisterEnumDescriptor(_ENCODING)
 
@@ -83,8 +83,8 @@ _SUBSCRIPTIONMODE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   options=None,
-  serialized_start=3051,
-  serialized_end=3116,
+  serialized_start=2895,
+  serialized_end=2960,
 )
 _sym_db.RegisterEnumDescriptor(_SUBSCRIPTIONMODE)
 
@@ -128,8 +128,8 @@ _SUBSCRIPTIONLIST_MODE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   options=None,
-  serialized_start=1642,
-  serialized_end=1680,
+  serialized_start=1486,
+  serialized_end=1524,
 )
 _sym_db.RegisterEnumDescriptor(_SUBSCRIPTIONLIST_MODE)
 
@@ -158,8 +158,8 @@ _UPDATERESULT_OPERATION = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   options=None,
-  serialized_start=2371,
-  serialized_end=2432,
+  serialized_start=2215,
+  serialized_end=2276,
 )
 _sym_db.RegisterEnumDescriptor(_UPDATERESULT_OPERATION)
 
@@ -188,8 +188,8 @@ _GETREQUEST_DATATYPE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   options=None,
-  serialized_start=2615,
-  serialized_end=2674,
+  serialized_start=2459,
+  serialized_end=2518,
 )
 _sym_db.RegisterEnumDescriptor(_GETREQUEST_DATATYPE)
 
@@ -275,85 +275,116 @@ _UPDATE = _descriptor.Descriptor(
       is_extension=False, extension_scope=None,
       options=_descriptor._ParseOptions(descriptor_pb2.FieldOptions(), _b('\030\001'))),
     _descriptor.FieldDescriptor(
-      name='string_val', full_name='gnmi.Update.string_val', index=2,
-      number=10, type=9, cpp_type=9, label=1,
+      name='val', full_name='gnmi.Update.val', index=2,
+      number=3, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=218,
+  serialized_end=315,
+)
+
+
+_TYPEDVALUE = _descriptor.Descriptor(
+  name='TypedValue',
+  full_name='gnmi.TypedValue',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='string_val', full_name='gnmi.TypedValue.string_val', index=0,
+      number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='int_val', full_name='gnmi.Update.int_val', index=3,
-      number=11, type=3, cpp_type=2, label=1,
+      name='int_val', full_name='gnmi.TypedValue.int_val', index=1,
+      number=2, type=3, cpp_type=2, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='uint_val', full_name='gnmi.Update.uint_val', index=4,
-      number=12, type=4, cpp_type=4, label=1,
+      name='uint_val', full_name='gnmi.TypedValue.uint_val', index=2,
+      number=3, type=4, cpp_type=4, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='bool_val', full_name='gnmi.Update.bool_val', index=5,
-      number=13, type=8, cpp_type=7, label=1,
+      name='bool_val', full_name='gnmi.TypedValue.bool_val', index=3,
+      number=4, type=8, cpp_type=7, label=1,
       has_default_value=False, default_value=False,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='bytes_val', full_name='gnmi.Update.bytes_val', index=6,
-      number=14, type=12, cpp_type=9, label=1,
+      name='bytes_val', full_name='gnmi.TypedValue.bytes_val', index=4,
+      number=5, type=12, cpp_type=9, label=1,
       has_default_value=False, default_value=_b(""),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='float_val', full_name='gnmi.Update.float_val', index=7,
-      number=15, type=2, cpp_type=6, label=1,
+      name='float_val', full_name='gnmi.TypedValue.float_val', index=5,
+      number=6, type=2, cpp_type=6, label=1,
       has_default_value=False, default_value=float(0),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='decimal_val', full_name='gnmi.Update.decimal_val', index=8,
-      number=16, type=11, cpp_type=10, label=1,
+      name='decimal_val', full_name='gnmi.TypedValue.decimal_val', index=6,
+      number=7, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='leaflist_val', full_name='gnmi.Update.leaflist_val', index=9,
-      number=17, type=11, cpp_type=10, label=1,
+      name='leaflist_val', full_name='gnmi.TypedValue.leaflist_val', index=7,
+      number=8, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='any_val', full_name='gnmi.Update.any_val', index=10,
-      number=18, type=11, cpp_type=10, label=1,
+      name='any_val', full_name='gnmi.TypedValue.any_val', index=8,
+      number=9, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='json_val', full_name='gnmi.Update.json_val', index=11,
-      number=19, type=12, cpp_type=9, label=1,
+      name='json_val', full_name='gnmi.TypedValue.json_val', index=9,
+      number=10, type=12, cpp_type=9, label=1,
       has_default_value=False, default_value=_b(""),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='json_ietf_val', full_name='gnmi.Update.json_ietf_val', index=12,
-      number=20, type=12, cpp_type=9, label=1,
+      name='json_ietf_val', full_name='gnmi.TypedValue.json_ietf_val', index=10,
+      number=11, type=12, cpp_type=9, label=1,
       has_default_value=False, default_value=_b(""),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='ascii_val', full_name='gnmi.Update.ascii_val', index=13,
-      number=21, type=9, cpp_type=9, label=1,
+      name='ascii_val', full_name='gnmi.TypedValue.ascii_val', index=11,
+      number=12, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -370,11 +401,11 @@ _UPDATE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
     _descriptor.OneofDescriptor(
-      name='val', full_name='gnmi.Update.val',
+      name='value', full_name='gnmi.TypedValue.value',
       index=0, containing_type=None, fields=[]),
   ],
-  serialized_start=219,
-  serialized_end=605,
+  serialized_start=318,
+  serialized_end=652,
 )
 
 
@@ -411,8 +442,8 @@ _PATH = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=607,
-  serialized_end=646,
+  serialized_start=654,
+  serialized_end=693,
 )
 
 
@@ -449,8 +480,8 @@ _VALUE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=648,
-  serialized_end=704,
+  serialized_start=695,
+  serialized_end=751,
 )
 
 
@@ -494,8 +525,8 @@ _ERROR = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=706,
-  serialized_end=780,
+  serialized_start=753,
+  serialized_end=827,
 )
 
 
@@ -532,8 +563,8 @@ _DECIMAL64 = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=782,
-  serialized_end=828,
+  serialized_start=829,
+  serialized_end=875,
 )
 
 
@@ -563,84 +594,8 @@ _SCALARARRAY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=830,
-  serialized_end=886,
-)
-
-
-_SCALARARRAYELEMENT = _descriptor.Descriptor(
-  name='ScalarArrayElement',
-  full_name='gnmi.ScalarArrayElement',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='string_val', full_name='gnmi.ScalarArrayElement.string_val', index=0,
-      number=1, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='int_val', full_name='gnmi.ScalarArrayElement.int_val', index=1,
-      number=2, type=3, cpp_type=2, label=1,
-      has_default_value=False, default_value=0,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='uint_val', full_name='gnmi.ScalarArrayElement.uint_val', index=2,
-      number=3, type=4, cpp_type=4, label=1,
-      has_default_value=False, default_value=0,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='bool_val', full_name='gnmi.ScalarArrayElement.bool_val', index=3,
-      number=4, type=8, cpp_type=7, label=1,
-      has_default_value=False, default_value=False,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='bytes_val', full_name='gnmi.ScalarArrayElement.bytes_val', index=4,
-      number=5, type=12, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b(""),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='float_val', full_name='gnmi.ScalarArrayElement.float_val', index=5,
-      number=6, type=2, cpp_type=6, label=1,
-      has_default_value=False, default_value=float(0),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='decimal_val', full_name='gnmi.ScalarArrayElement.decimal_val', index=6,
-      number=7, type=11, cpp_type=10, label=1,
-      has_default_value=False, default_value=None,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-    _descriptor.OneofDescriptor(
-      name='value', full_name='gnmi.ScalarArrayElement.value',
-      index=0, containing_type=None, fields=[]),
-  ],
-  serialized_start=889,
-  serialized_end=1081,
+  serialized_start=877,
+  serialized_end=925,
 )
 
 
@@ -687,8 +642,8 @@ _SUBSCRIBEREQUEST = _descriptor.Descriptor(
       name='request', full_name='gnmi.SubscribeRequest.request',
       index=0, containing_type=None, fields=[]),
   ],
-  serialized_start=1084,
-  serialized_end=1222,
+  serialized_start=928,
+  serialized_end=1066,
 )
 
 
@@ -711,8 +666,8 @@ _POLL = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1224,
-  serialized_end=1230,
+  serialized_start=1068,
+  serialized_end=1074,
 )
 
 
@@ -759,8 +714,8 @@ _SUBSCRIBERESPONSE = _descriptor.Descriptor(
       name='response', full_name='gnmi.SubscribeResponse.response',
       index=0, containing_type=None, fields=[]),
   ],
-  serialized_start=1232,
-  serialized_end=1356,
+  serialized_start=1076,
+  serialized_end=1200,
 )
 
 
@@ -840,8 +795,8 @@ _SUBSCRIPTIONLIST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1359,
-  serialized_end=1680,
+  serialized_start=1203,
+  serialized_end=1524,
 )
 
 
@@ -899,8 +854,8 @@ _SUBSCRIPTION = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1683,
-  serialized_end=1842,
+  serialized_start=1527,
+  serialized_end=1686,
 )
 
 
@@ -930,8 +885,8 @@ _QOSMARKING = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1844,
-  serialized_end=1873,
+  serialized_start=1688,
+  serialized_end=1717,
 )
 
 
@@ -968,8 +923,8 @@ _ALIAS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1875,
-  serialized_end=1923,
+  serialized_start=1719,
+  serialized_end=1767,
 )
 
 
@@ -999,8 +954,8 @@ _ALIASLIST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1925,
-  serialized_end=1964,
+  serialized_start=1769,
+  serialized_end=1808,
 )
 
 
@@ -1051,8 +1006,8 @@ _SETREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1967,
-  serialized_end=2096,
+  serialized_start=1811,
+  serialized_end=1940,
 )
 
 
@@ -1103,8 +1058,8 @@ _SETRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2099,
-  serialized_end=2231,
+  serialized_start=1943,
+  serialized_end=2075,
 )
 
 
@@ -1156,8 +1111,8 @@ _UPDATERESULT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2234,
-  serialized_end=2432,
+  serialized_start=2078,
+  serialized_end=2276,
 )
 
 
@@ -1216,8 +1171,8 @@ _GETREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2435,
-  serialized_end=2674,
+  serialized_start=2279,
+  serialized_end=2518,
 )
 
 
@@ -1254,8 +1209,8 @@ _GETRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2676,
-  serialized_end=2759,
+  serialized_start=2520,
+  serialized_end=2603,
 )
 
 
@@ -1278,8 +1233,8 @@ _CAPABILITYREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2761,
-  serialized_end=2780,
+  serialized_start=2605,
+  serialized_end=2624,
 )
 
 
@@ -1323,8 +1278,8 @@ _CAPABILITYRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2783,
-  serialized_end=2913,
+  serialized_start=2627,
+  serialized_end=2757,
 )
 
 
@@ -1368,8 +1323,8 @@ _MODELDATA = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2915,
-  serialized_end=2979,
+  serialized_start=2759,
+  serialized_end=2823,
 )
 
 _NOTIFICATION.fields_by_name['prefix'].message_type = _PATH
@@ -1377,70 +1332,49 @@ _NOTIFICATION.fields_by_name['update'].message_type = _UPDATE
 _NOTIFICATION.fields_by_name['delete'].message_type = _PATH
 _UPDATE.fields_by_name['path'].message_type = _PATH
 _UPDATE.fields_by_name['value'].message_type = _VALUE
-_UPDATE.fields_by_name['decimal_val'].message_type = _DECIMAL64
-_UPDATE.fields_by_name['leaflist_val'].message_type = _SCALARARRAY
-_UPDATE.fields_by_name['any_val'].message_type = google_dot_protobuf_dot_any__pb2._ANY
-_UPDATE.oneofs_by_name['val'].fields.append(
-  _UPDATE.fields_by_name['string_val'])
-_UPDATE.fields_by_name['string_val'].containing_oneof = _UPDATE.oneofs_by_name['val']
-_UPDATE.oneofs_by_name['val'].fields.append(
-  _UPDATE.fields_by_name['int_val'])
-_UPDATE.fields_by_name['int_val'].containing_oneof = _UPDATE.oneofs_by_name['val']
-_UPDATE.oneofs_by_name['val'].fields.append(
-  _UPDATE.fields_by_name['uint_val'])
-_UPDATE.fields_by_name['uint_val'].containing_oneof = _UPDATE.oneofs_by_name['val']
-_UPDATE.oneofs_by_name['val'].fields.append(
-  _UPDATE.fields_by_name['bool_val'])
-_UPDATE.fields_by_name['bool_val'].containing_oneof = _UPDATE.oneofs_by_name['val']
-_UPDATE.oneofs_by_name['val'].fields.append(
-  _UPDATE.fields_by_name['bytes_val'])
-_UPDATE.fields_by_name['bytes_val'].containing_oneof = _UPDATE.oneofs_by_name['val']
-_UPDATE.oneofs_by_name['val'].fields.append(
-  _UPDATE.fields_by_name['float_val'])
-_UPDATE.fields_by_name['float_val'].containing_oneof = _UPDATE.oneofs_by_name['val']
-_UPDATE.oneofs_by_name['val'].fields.append(
-  _UPDATE.fields_by_name['decimal_val'])
-_UPDATE.fields_by_name['decimal_val'].containing_oneof = _UPDATE.oneofs_by_name['val']
-_UPDATE.oneofs_by_name['val'].fields.append(
-  _UPDATE.fields_by_name['leaflist_val'])
-_UPDATE.fields_by_name['leaflist_val'].containing_oneof = _UPDATE.oneofs_by_name['val']
-_UPDATE.oneofs_by_name['val'].fields.append(
-  _UPDATE.fields_by_name['any_val'])
-_UPDATE.fields_by_name['any_val'].containing_oneof = _UPDATE.oneofs_by_name['val']
-_UPDATE.oneofs_by_name['val'].fields.append(
-  _UPDATE.fields_by_name['json_val'])
-_UPDATE.fields_by_name['json_val'].containing_oneof = _UPDATE.oneofs_by_name['val']
-_UPDATE.oneofs_by_name['val'].fields.append(
-  _UPDATE.fields_by_name['json_ietf_val'])
-_UPDATE.fields_by_name['json_ietf_val'].containing_oneof = _UPDATE.oneofs_by_name['val']
-_UPDATE.oneofs_by_name['val'].fields.append(
-  _UPDATE.fields_by_name['ascii_val'])
-_UPDATE.fields_by_name['ascii_val'].containing_oneof = _UPDATE.oneofs_by_name['val']
+_UPDATE.fields_by_name['val'].message_type = _TYPEDVALUE
+_TYPEDVALUE.fields_by_name['decimal_val'].message_type = _DECIMAL64
+_TYPEDVALUE.fields_by_name['leaflist_val'].message_type = _SCALARARRAY
+_TYPEDVALUE.fields_by_name['any_val'].message_type = google_dot_protobuf_dot_any__pb2._ANY
+_TYPEDVALUE.oneofs_by_name['value'].fields.append(
+  _TYPEDVALUE.fields_by_name['string_val'])
+_TYPEDVALUE.fields_by_name['string_val'].containing_oneof = _TYPEDVALUE.oneofs_by_name['value']
+_TYPEDVALUE.oneofs_by_name['value'].fields.append(
+  _TYPEDVALUE.fields_by_name['int_val'])
+_TYPEDVALUE.fields_by_name['int_val'].containing_oneof = _TYPEDVALUE.oneofs_by_name['value']
+_TYPEDVALUE.oneofs_by_name['value'].fields.append(
+  _TYPEDVALUE.fields_by_name['uint_val'])
+_TYPEDVALUE.fields_by_name['uint_val'].containing_oneof = _TYPEDVALUE.oneofs_by_name['value']
+_TYPEDVALUE.oneofs_by_name['value'].fields.append(
+  _TYPEDVALUE.fields_by_name['bool_val'])
+_TYPEDVALUE.fields_by_name['bool_val'].containing_oneof = _TYPEDVALUE.oneofs_by_name['value']
+_TYPEDVALUE.oneofs_by_name['value'].fields.append(
+  _TYPEDVALUE.fields_by_name['bytes_val'])
+_TYPEDVALUE.fields_by_name['bytes_val'].containing_oneof = _TYPEDVALUE.oneofs_by_name['value']
+_TYPEDVALUE.oneofs_by_name['value'].fields.append(
+  _TYPEDVALUE.fields_by_name['float_val'])
+_TYPEDVALUE.fields_by_name['float_val'].containing_oneof = _TYPEDVALUE.oneofs_by_name['value']
+_TYPEDVALUE.oneofs_by_name['value'].fields.append(
+  _TYPEDVALUE.fields_by_name['decimal_val'])
+_TYPEDVALUE.fields_by_name['decimal_val'].containing_oneof = _TYPEDVALUE.oneofs_by_name['value']
+_TYPEDVALUE.oneofs_by_name['value'].fields.append(
+  _TYPEDVALUE.fields_by_name['leaflist_val'])
+_TYPEDVALUE.fields_by_name['leaflist_val'].containing_oneof = _TYPEDVALUE.oneofs_by_name['value']
+_TYPEDVALUE.oneofs_by_name['value'].fields.append(
+  _TYPEDVALUE.fields_by_name['any_val'])
+_TYPEDVALUE.fields_by_name['any_val'].containing_oneof = _TYPEDVALUE.oneofs_by_name['value']
+_TYPEDVALUE.oneofs_by_name['value'].fields.append(
+  _TYPEDVALUE.fields_by_name['json_val'])
+_TYPEDVALUE.fields_by_name['json_val'].containing_oneof = _TYPEDVALUE.oneofs_by_name['value']
+_TYPEDVALUE.oneofs_by_name['value'].fields.append(
+  _TYPEDVALUE.fields_by_name['json_ietf_val'])
+_TYPEDVALUE.fields_by_name['json_ietf_val'].containing_oneof = _TYPEDVALUE.oneofs_by_name['value']
+_TYPEDVALUE.oneofs_by_name['value'].fields.append(
+  _TYPEDVALUE.fields_by_name['ascii_val'])
+_TYPEDVALUE.fields_by_name['ascii_val'].containing_oneof = _TYPEDVALUE.oneofs_by_name['value']
 _VALUE.fields_by_name['type'].enum_type = _ENCODING
 _ERROR.fields_by_name['data'].message_type = google_dot_protobuf_dot_any__pb2._ANY
-_SCALARARRAY.fields_by_name['element'].message_type = _SCALARARRAYELEMENT
-_SCALARARRAYELEMENT.fields_by_name['decimal_val'].message_type = _DECIMAL64
-_SCALARARRAYELEMENT.oneofs_by_name['value'].fields.append(
-  _SCALARARRAYELEMENT.fields_by_name['string_val'])
-_SCALARARRAYELEMENT.fields_by_name['string_val'].containing_oneof = _SCALARARRAYELEMENT.oneofs_by_name['value']
-_SCALARARRAYELEMENT.oneofs_by_name['value'].fields.append(
-  _SCALARARRAYELEMENT.fields_by_name['int_val'])
-_SCALARARRAYELEMENT.fields_by_name['int_val'].containing_oneof = _SCALARARRAYELEMENT.oneofs_by_name['value']
-_SCALARARRAYELEMENT.oneofs_by_name['value'].fields.append(
-  _SCALARARRAYELEMENT.fields_by_name['uint_val'])
-_SCALARARRAYELEMENT.fields_by_name['uint_val'].containing_oneof = _SCALARARRAYELEMENT.oneofs_by_name['value']
-_SCALARARRAYELEMENT.oneofs_by_name['value'].fields.append(
-  _SCALARARRAYELEMENT.fields_by_name['bool_val'])
-_SCALARARRAYELEMENT.fields_by_name['bool_val'].containing_oneof = _SCALARARRAYELEMENT.oneofs_by_name['value']
-_SCALARARRAYELEMENT.oneofs_by_name['value'].fields.append(
-  _SCALARARRAYELEMENT.fields_by_name['bytes_val'])
-_SCALARARRAYELEMENT.fields_by_name['bytes_val'].containing_oneof = _SCALARARRAYELEMENT.oneofs_by_name['value']
-_SCALARARRAYELEMENT.oneofs_by_name['value'].fields.append(
-  _SCALARARRAYELEMENT.fields_by_name['float_val'])
-_SCALARARRAYELEMENT.fields_by_name['float_val'].containing_oneof = _SCALARARRAYELEMENT.oneofs_by_name['value']
-_SCALARARRAYELEMENT.oneofs_by_name['value'].fields.append(
-  _SCALARARRAYELEMENT.fields_by_name['decimal_val'])
-_SCALARARRAYELEMENT.fields_by_name['decimal_val'].containing_oneof = _SCALARARRAYELEMENT.oneofs_by_name['value']
+_SCALARARRAY.fields_by_name['element'].message_type = _TYPEDVALUE
 _SUBSCRIBEREQUEST.fields_by_name['subscribe'].message_type = _SUBSCRIPTIONLIST
 _SUBSCRIBEREQUEST.fields_by_name['poll'].message_type = _POLL
 _SUBSCRIBEREQUEST.fields_by_name['aliases'].message_type = _ALIASLIST
@@ -1498,12 +1432,12 @@ _CAPABILITYRESPONSE.fields_by_name['supported_models'].message_type = _MODELDATA
 _CAPABILITYRESPONSE.fields_by_name['supported_encodings'].enum_type = _ENCODING
 DESCRIPTOR.message_types_by_name['Notification'] = _NOTIFICATION
 DESCRIPTOR.message_types_by_name['Update'] = _UPDATE
+DESCRIPTOR.message_types_by_name['TypedValue'] = _TYPEDVALUE
 DESCRIPTOR.message_types_by_name['Path'] = _PATH
 DESCRIPTOR.message_types_by_name['Value'] = _VALUE
 DESCRIPTOR.message_types_by_name['Error'] = _ERROR
 DESCRIPTOR.message_types_by_name['Decimal64'] = _DECIMAL64
 DESCRIPTOR.message_types_by_name['ScalarArray'] = _SCALARARRAY
-DESCRIPTOR.message_types_by_name['ScalarArrayElement'] = _SCALARARRAYELEMENT
 DESCRIPTOR.message_types_by_name['SubscribeRequest'] = _SUBSCRIBEREQUEST
 DESCRIPTOR.message_types_by_name['Poll'] = _POLL
 DESCRIPTOR.message_types_by_name['SubscribeResponse'] = _SUBSCRIBERESPONSE
@@ -1537,6 +1471,13 @@ Update = _reflection.GeneratedProtocolMessageType('Update', (_message.Message,),
   # @@protoc_insertion_point(class_scope:gnmi.Update)
   ))
 _sym_db.RegisterMessage(Update)
+
+TypedValue = _reflection.GeneratedProtocolMessageType('TypedValue', (_message.Message,), dict(
+  DESCRIPTOR = _TYPEDVALUE,
+  __module__ = 'gnmi_pb2'
+  # @@protoc_insertion_point(class_scope:gnmi.TypedValue)
+  ))
+_sym_db.RegisterMessage(TypedValue)
 
 Path = _reflection.GeneratedProtocolMessageType('Path', (_message.Message,), dict(
   DESCRIPTOR = _PATH,
@@ -1572,13 +1513,6 @@ ScalarArray = _reflection.GeneratedProtocolMessageType('ScalarArray', (_message.
   # @@protoc_insertion_point(class_scope:gnmi.ScalarArray)
   ))
 _sym_db.RegisterMessage(ScalarArray)
-
-ScalarArrayElement = _reflection.GeneratedProtocolMessageType('ScalarArrayElement', (_message.Message,), dict(
-  DESCRIPTOR = _SCALARARRAYELEMENT,
-  __module__ = 'gnmi_pb2'
-  # @@protoc_insertion_point(class_scope:gnmi.ScalarArrayElement)
-  ))
-_sym_db.RegisterMessage(ScalarArrayElement)
 
 SubscribeRequest = _reflection.GeneratedProtocolMessageType('SubscribeRequest', (_message.Message,), dict(
   DESCRIPTOR = _SUBSCRIBEREQUEST,

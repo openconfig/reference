@@ -89,24 +89,30 @@ message Notification {
 message Update {
   Path path = 1;                      // The path (key) for the update.
   Value value = 2 [deprecated=true];  // The value (value) for the update.
+  TypedValue val = 3;                 // The explicitly typed update value.
+}
+
+// TypedValue is used to encode a value being sent between the client and
+// target (originated by either entity).
+message TypedValue {
   // One of the fields within the val oneof is populated with the value
   // of the update. The type of the value being included in the Update
   // determines which field should be populated. In the case that the
   // encoding is a particular form of the base protobuf type, a specific
   // field is used to store the value (e.g., json_val).
-  oneof val {
-    string string_val = 10;           // String value.
-    int64 int_val = 11;               // Integer value.
-    uint64 uint_val = 12;             // Unsigned integer value.
-    bool bool_val = 13;               // Bool value.
-    bytes bytes_val = 14;             // Arbitrary byte sequence value.
-    float float_val = 15;             // Floating point value.
-    Decimal64 decimal_val = 16;	      // Decimal64 encoded value.
-    ScalarArray leaflist_val = 17;    // Mixed type scalar array value.
-    google.protobuf.Any any_val = 18; // protobuf.Any encoded bytes.
-    bytes json_val = 19;              // JSON-encoded text.
-    bytes json_ietf_val = 20;         // JSON-encoded text per RFC7951.
-    string ascii_val = 21;            // Arbitrary ASCII text.
+  oneof value {
+    string string_val = 1;            // String value.
+    int64 int_val = 2;                // Integer value.
+    uint64 uint_val = 3;              // Unsigned integer value.
+    bool bool_val = 4;                // Bool value.
+    bytes bytes_val = 5;              // Arbitrary byte sequence value.
+    float float_val = 6;              // Floating point value.
+    Decimal64 decimal_val = 7;        // Decimal64 encoded value.
+    ScalarArray leaflist_val = 8;     // Mixed type scalar array value.
+    google.protobuf.Any any_val = 9;  // protobuf.Any encoded bytes.
+    bytes json_val = 10;              // JSON-encoded text.
+    bytes json_ietf_val = 11;         // JSON-encoded text per RFC7951.
+    string ascii_val = 12;            // Arbitrary ASCII text.
   }
 }
 
@@ -120,7 +126,7 @@ message Path {
 }
 
 // Value encodes a data tree node's value - along with the way in which
-// the value is encoded. This field is deprecated by gNMI 0.3.0.
+// the value is encoded. This message is deprecated by gNMI 0.3.0.
 // Reference: gNMI Specification Section 2.2.3.
 message Value {
   option deprecated = true;
@@ -151,8 +157,8 @@ message Error {
 
 
 // Decimal64 is used to encode floating-point decimal number. The value
-// expressed as a set of digits with the precision specifying the number
-// of digits following the decimal point in the digit set.
+// is expressed as a set of digits with the precision specifying the
+// number of digits following the decimal point in the digit set.
 message Decimal64 {
   uint64 digits = 1;      // Set of digits.
   uint32 precision = 2;    // Number of digits following the decimal point.
@@ -160,23 +166,10 @@ message Decimal64 {
 
 // ScalarArray is used to encode a mixed-type array of values.
 message ScalarArray {
-  // The set of elements contained within the array.
-  repeated ScalarArrayElement element = 1;
-}
-
-// ScalarArrayElement specifies an individual element of a scalar array.
-message ScalarArrayElement {
-  // One of the fields within the value oneof may be specified
-  // indicating an element included within the ScalarArray.
-  oneof value {
-    string string_val = 1;      // String value.
-    int64 int_val = 2;          // Integer value.
-    uint64 uint_val = 3;        // Unsigned integer value.
-    bool bool_val = 4;          // Boolean value.
-    bytes bytes_val = 5;        // Arbitrary byte sequence value.
-    float float_val = 6;        // Floating-point value.
-    Decimal64 decimal_val = 7;  // Decimal value.
-  }
+  // The set of elements within the array. Each TypedValue message should
+  // specify only elements that have a field identifier of 1-7 (i.e., the
+  // values are scalar values).
+  repeated TypedValue element = 1;
 }
 
 // SubscribeRequest is the message sent by the client to the target when
