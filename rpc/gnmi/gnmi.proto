@@ -36,7 +36,7 @@ extend google.protobuf.FileOptions {
 
 // gNMI_service is the current version of the gNMI service, returned through
 // the Capabilities RPC.
-option (gnmi_service) = "0.3.1";
+option (gnmi_service) = "0.3.0";
 
 service gNMI {
   // Capabilities allows the client to retrieve the set of capabilities that
@@ -304,18 +304,14 @@ message SetRequest {
 
 // SetResponse is the response to a SetRequest, sent from the target to the
 // client. It reports the result of the modifications to the data tree that were
-// specified by the client. Errors for this RPC should be reported using the
-// https://github.com/googleapis/googleapis/blob/master/google/rpc/status.proto
-// message in the RPC return. The gnmi.Error message can be used to add additional
-// details where required.
+// specified by the client.
 // Reference: gNMI Specification Section 3.4.2
 message SetResponse {
   Path prefix = 1;                      // Prefix used for paths.
   // A set of responses specifying the result of the operations specified in
   // the SetRequest.
   repeated UpdateResult response = 2;
-  Error message = 3 [deprecated=true]; // The overall status of the transaction.
-  int64 timestamp = 4;                 // Timestamp of transaction (ns since epoch).
+  Error message = 3;                  // The overall status of the transaction.
 }
 
 // UpdateResult is used within the SetResponse message to communicate the
@@ -329,11 +325,7 @@ message UpdateResult {
     REPLACE = 2;          // The result relates to a replace of Path.
     UPDATE = 3;           // The result relates to an update of Path.
   }
-  // Deprecated timestamp for the UpdateResult, this field has been
-  // replaced by the timestamp within the SetResponse message, since
-  // all mutations effected by a set should be applied as a single
-  // transaction.
-  int64 timestamp = 1 [deprecated=true];
+  int64 timestamp = 1;    // Timestamp of generation (ns since epoch).
   Path path = 2;          // Path associated with the update.
   Error message = 3;      // Status of the update operation.
   Operation op = 4;       // Operation type associated with the update.
