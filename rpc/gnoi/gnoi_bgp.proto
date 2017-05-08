@@ -18,7 +18,7 @@ syntax = "proto3";
 
 package gnoi.bgp;
 
-service Service {
+service BGP {
 
   // ClearBGPNeighbor clears a BGP session.
   rpc ClearBGPNeighbor(ClearBGPNeighborRequest) returns (ClearBGPNeighborResponse) {}
