@@ -8,7 +8,7 @@ package gnoi.certificate;
 // The service primarily exports two main RPCs, Install & Rotate which are used
 // for installation of a new certificate, and rotation of an existing
 // certificate on a target, along with a few management related RPCs.
-service CertificateManagementService {
+service CertificateManagement {
 
   // Rotate will replace an existing Certificate on the target by creating a
   // new CSR request and placing the new Certificate based on the CSR on the
