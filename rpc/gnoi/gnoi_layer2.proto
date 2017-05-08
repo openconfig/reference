@@ -35,7 +35,7 @@ service Service {
 
   // PerformBERT will perform a BERT operation on a port. The stream will
   // return the current state of the operation as well as the ID for the
-  // operation.  If the stream is broken
+  // operation.
   rpc PerformBERT(PerformBERTRequest) returns (stream PerformBERTResponse) {}
 
   // ClearLLDPInterface will clear all LLDP adjacencies on the provided
