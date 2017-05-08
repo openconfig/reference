@@ -18,10 +18,10 @@ syntax = "proto3";
 
 package gnoi.layer2;
 
-import "github.com/openconfig/reference/rpc/gnoi/gnoi_types.proto";
+import "github.com/openconfig/reference/rpc/gnoi_types.proto";
 
 
-service Service {
+service Layer2 {
   // ClearNeighborDiscovery will clear either a specific neighbor entry or
   // clear the entire table based on parameters provided.
   // TODO: This method is subject to deprecation once OpenConfig models this

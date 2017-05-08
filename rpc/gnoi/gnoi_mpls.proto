@@ -18,7 +18,7 @@ syntax = "proto3";
 
 package gnoi.mpls;
 
-service Service {
+service MPLS {
   // ClearLSP clears a single tunnel (requests for it's route to be
   // recalculated).
   rpc ClearLSP(ClearLSPRequest) returns (ClearLSPResponse) {}

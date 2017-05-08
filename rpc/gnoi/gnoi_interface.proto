@@ -20,7 +20,7 @@ package gnoi.interface;
 
 import "github.com/openconfig/reference/rpc/gnoi_types.proto";
 
-service Service {
+service Interface {
   // SetLoopbackMode is used to set the mode of loopback on a interface.
   rpc SetLoopbackMode(SetLoopbackModeRequest) returns (SetLoopbackModeResponse) {}
 
