@@ -1,13 +1,13 @@
 # gRPC Network Management Interface (gNMI)
 
-**Contributors:**  
+**Contributors:**
 Paul Borman, Marcus Hines, Carl Lebsack, Chris Morrow, Anees Shaikh, Rob Shakir
 
-**Date:**  
+**Date:**
 November 7th, 2016
 
-**Version:**  
-0.2.2
+**Version:**
+0.3.1
 
 # Table of Contents
 
@@ -108,7 +108,7 @@ The fields of the Notification message are as follows:
 *   `update` - a list of update messages that indicate changes in the underlying data of the target. Both modification and creation of data is expressed through the update message.
     *   An `Update` message has two subfields:
         *   `path` - a path encoded as per [2.2.2](#222-paths).
-        *   `value` - a value encoded as per [2.2.3](#223-node-values).
+        *   `val` - a value encoded as per [2.2.3](#223-node-values).
     *   The set of paths that are specified within the list of updates MUST be unique. In this context, the path is defined to be the fully resolved path (including the prefix). In the case that there is a duplicate path specified within an update, only the final update should be processed by the receiving entity.
 *   `delete` -  a list of paths (encoded as per [2.2.2](#222-paths)) that indicate the deletion of data nodes on the target.
 
@@ -157,27 +157,45 @@ path: <
 ```
 
 
-The root node (`/`) is indicated by encoding a single path element which is an empty string, as per the following example:
+The root node (`/`) is encoded as a zero-length array (slice) of path elements:
 
 
 ```
 path: <
-  element: ""
 >
 ```
+
+Note this is *not* the same as a path consisting of a single empty string elements.
 
 
 Paths (defined to be the concatenation of the `Prefix` and `Path` within the message) specified within a message MUST be absolute - no messages with relative paths should be generated.
 
 ### 2.2.3 Node Values
 
-The value of a data node is encoded as a two-field message:
+The value of a data node is encoded in a `TypedValue` message as a `[oneof](https://developers.google.com/protocol-buffers/docs/proto3#oneof)` field to allow selection of the data type by setting exactly one of the member fields.  The possible data types include scalar types, data encoded based on one of the supported gNMI encodings (per <a href="#23-encoding-data-in-an-update-message">2.3</a>"), and additional definitions to respresent types used in some schema languages.
 
 
+Several native scalar protobuf types are included:
 
-*   `bytes` - an arbitrary series of bytes which indicates the value of the node referred to within the message context.
-*   `type` - a field indicating the type of data contained in the bytes field. Currently defined types are:
+*   `string`
+*   `int64`
+*   `uint64`
+*   `bool`
+*   `bytes` (see <a href="#232-bytes">2.3.2</a>)
+*   `float`
 
+Additional defined data types include:
+
+*   `Decimal64` -- a message encoding a floating point decimal number consisting of a total number of digits and a precision
+    indicating the number of digits following the decimal point.  It has two subfields:
+  *   `digits` -- the set of digits
+  *   `precision` -- number of digits following the decimal point
+
+* `ScalarArray` -- a message encoding a mixed-type scalar array; it has a single repeated subfield:
+  *   `element` -- a `TypedValue` element within the array.  The type of each element MUST be a scalar type (i.e., one of the
+      native scalar types or `Decimal64`).
+
+The remaining fields in the `TypedValue` message define data values that are encoded according to types in the `Encoding` enumeration.
 
 <table>
   <tr>
@@ -185,7 +203,7 @@ The value of a data node is encoded as a two-field message:
    </td>
    <td><strong>Description</strong>
    </td>
-   <td><strong>Value</strong>
+   <td><strong>`Encoding` Value</strong>
    </td>
   </tr>
   <tr>
@@ -207,7 +225,7 @@ The value of a data node is encoded as a two-field message:
   <tr>
    <td>Proto
    </td>
-   <td>A <a href="https://developers.google.com/protocol-buffers/">Protobuf</a> encoded message, as per <a href="#2-3-3-protobuf">2.3.3</a>  
+   <td>A <a href="https://developers.google.com/protocol-buffers/">Protobuf</a> encoded message, as per <a href="#2-3-3-protobuf">2.3.3</a>
    </td>
    <td>2
    </td>
@@ -223,7 +241,7 @@ The value of a data node is encoded as a two-field message:
   <tr>
    <td>JSON_IETF
    </td>
-   <td>A JSON encoded string as per <a href="#231-json-and-json_ietf">2.3.1</a> using JSON encoding compatible with [draft-ietf-netmod-yang-json](https://tools.ietf.org/html/draft-ietf-netmod-yang-json)
+   <td>A JSON encoded string as per <a href="#231-json-and-json_ietf">2.3.1</a> using JSON encoding compatible with [RFC 7951](https://tools.ietf.org/html/rfc7951)
    </td>
    <td>4
    </td>
@@ -235,10 +253,9 @@ The value of a data node is encoded as a two-field message:
 
 ### 2.3.1 JSON and JSON_IETF
 
-The `JSON` type indicates that the value included within the `bytes` field of the node value message is encoded as a JSON string. This format utilises the specification in [RFC7159](https://tools.ietf.org/html/rfc7159). Additional types (e.g., `JSON_IETF`) are utilised to indicate specific additional characteristics of the encoding of the JSON data (particularly where they relate to serialisation of  YANG-modeled data).
+The `JSON` type indicates that the value included within the `bytes` field of the node value message is encoded as a JSON string. This format utilises the specification in [RFC7159](https://tools.ietf.org/html/rfc7159). Additional types (e.g., `JSON_IETF`) are utilised to indicate specific additional characteristics of the encoding of the JSON data (particularly where they relate to serialisation of YANG-modeled data).
 
 For any JSON encoding:
-
 
 
 *   In the case that the data item at the specified path is a leaf node (i.e., has no children) the value of that leaf is encoded directly - i.e., the "bare" value is specified (i.e., a JSON object is not required, and a bare JSON value is included).
@@ -275,7 +292,7 @@ update: <
     element: "d"
   >
   value: <
-    value: "AStringValue"
+    val: AStringValue"
     type: JSON
   >
 >
@@ -455,7 +472,7 @@ A re-usable `Error` message MUST be used when sending errors in response to an R
 
 *   `code` - an unsigned 32-bit integer value corresponding to the canonical gRPC error code.
 *   `message `- a human-readable string describing the error condition in more detail. This string is not expected to be machine-parsable, but rather provide contextual information which may be passed to upstream systems.
-*   `data `-  an arbitrary sequence of bytes (encoded as <code>[proto.Any](https://github.com/google/protobuf/blob/master/src/google/protobuf/any.proto)</code>) which provides further contextual information relating to the error.
+*   `data `-  an arbitrary sequence of bytes (encoded as `[proto.Any](https://github.com/google/protobuf/blob/master/src/google/protobuf/any.proto)`) which provides further contextual information relating to the error.
 
 ## 2.6 Schema Definition Models
 
@@ -528,7 +545,7 @@ The `CapabilityResponse` message has the following fields:
 
 ## 3.3 Retrieving Snapshots of State Information
 
-In some cases, a client may require a snapshot of the state that exists on the target. In such cases, a client desires some subtree of the data tree to be serialized by the target and transmitted to it. It is expected that the values that are retrieved (whether writeable by the client or not) are collected immediately and provided to the client.  
+In some cases, a client may require a snapshot of the state that exists on the target. In such cases, a client desires some subtree of the data tree to be serialized by the target and transmitted to it. It is expected that the values that are retrieved (whether writeable by the client or not) are collected immediately and provided to the client.
 
 The `Get` RPC provides an interface by which a client can request a set of paths to be serialized and transmitted to it by the target. The client sends a `GetRequest` message to the target, specifying the data that is to be retrieved. The fields of the `GetRequest` message are described in [Section 3.3.1](#331-the-getrequest-message).
 
@@ -779,10 +796,10 @@ A `STREAM` subscription is created by sending a `SubscribeRequest` message with 
 *   **On Change (`ON_CHANGE`)** - when a subscription is defined to be "on change", data updates are only sent when the value of the data item changes.
     * For all `ON_CHANGE` subscriptions, the target MUST first generate updates for all paths that match the subscription path(s), and transmit them. Following this initial set of updates, updated values SHOULD only be transmitted when their value changes.
     * A heartbeat interval MAY be specified along with an "on change" subscription - in this case, the value of the data item(s) MUST be re-sent once per heartbeat interval regardless of whether the value has changed or not.
-*   **Sampled (`SAMPLE`)** - a subscription that is defined to be sampled MUST be specified along with a <code>sample_interval</code> encoded as an unsigned 64-bit integer representing nanoseconds.  The value of the data item(s) is sent once per sample interval to the client.  If the target is unable to support the desired <code>sample_interval</code> it MUST reject the subscription by returning a <code>SubscribeResponse</code> message with the error field set to an error message indicating the <code>InvalidArgument (3)</code> error code. If the <code>sample_interval</code> is set to 0, the target MUST create the subscription and send the data with the lowest interval possible for the target.
-    *   Optionally, the <code>suppress_redundant</code> field of the `Subscription` message may be set for a sampled subscription. In the case that it is set to `true`, the target SHOULD NOT generate a telemetry update message unless the value of the path being reported on has changed since the last update was generated. Updates MUST only be generated for those individual leaf nodes in the subscription that have changed. That is to say that for a subscription to <code>/a/b</code> - where there are leaves <code>c</code> and <code>d</code> branching from the <code>b</code> node - if the value of <code>c</code> has changed, but <code>d</code> remains unchanged, an update for <code>d</code> MUST NOT be generated, whereas an update for <code>c</code> MUST be generated.
-    *   A <code>heartbeat_interval</code> MAY be specified to modify the behavior of <code>suppress_redundant</code> in a sampled subscription.  In this case, the target MUST generate one telemetry update  per heartbeat interval, regardless of whether the `suppress_redundant` flag is set to `true`. This value is specified as an unsigned 64-bit integer in nanoseconds.
-*   <strong>Target Defined <code>(TARGET_DEFINED)</code> - </strong>when a client creates a subscription specifying the target defined mode, the target SHOULD determine the best type of subscription to be created on a per-leaf basis. That is to say, if the path specified within the message refers to some leaves which are event driven (e.g., the changing of state of an entity based on an external trigger) then an <code>ON_CHANGE</code> subscription may be created, whereas if other data represents counter values, a <code>SAMPLE</code> subscription may be created.
+*   **Sampled (`SAMPLE`)** - a subscription that is defined to be sampled MUST be specified along with a `sample_interval` encoded as an unsigned 64-bit integer representing nanoseconds.  The value of the data item(s) is sent once per sample interval to the client.  If the target is unable to support the desired `sample_interval` it MUST reject the subscription by returning a `SubscribeResponse` message with the error field set to an error message indicating the `InvalidArgument (3)` error code. If the `sample_interval` is set to 0, the target MUST create the subscription and send the data with the lowest interval possible for the target.
+    *   Optionally, the `suppress_redundant` field of the `Subscription` message may be set for a sampled subscription. In the case that it is set to `true`, the target SHOULD NOT generate a telemetry update message unless the value of the path being reported on has changed since the last update was generated. Updates MUST only be generated for those individual leaf nodes in the subscription that have changed. That is to say that for a subscription to `/a/b` - where there are leaves `c` and `d` branching from the `b` node - if the value of `c` has changed, but `d` remains unchanged, an update for `d` MUST NOT be generated, whereas an update for `c` MUST be generated.
+    *   A `heartbeat_interval` MAY be specified to modify the behavior of `suppress_redundant` in a sampled subscription.  In this case, the target MUST generate one telemetry update  per heartbeat interval, regardless of whether the `suppress_redundant` flag is set to `true`. This value is specified as an unsigned 64-bit integer in nanoseconds.
+*   <strong>Target Defined `(TARGET_DEFINED)` - </strong>when a client creates a subscription specifying the target defined mode, the target SHOULD determine the best type of subscription to be created on a per-leaf basis. That is to say, if the path specified within the message refers to some leaves which are event driven (e.g., the changing of state of an entity based on an external trigger) then an `ON_CHANGE` subscription may be created, whereas if other data represents counter values, a `SAMPLE` subscription may be created.
 
 ##### 3.5.1.5.3 POLL Subscriptions
 
@@ -899,7 +916,7 @@ When an update for a subscribed telemetry path is to be sent, a `SubscribeRespon
 
 Where a leaf node's value has changed, or a new node has been created, an `Update` message specifying the path and value for the updated data item MUST be appended to the `update` field of the message.
 
-Where a node within the subscribed paths has been removed, the `delete` field of the `Notification` message MUST have the path of the node that has been removed appended to it.  
+Where a node within the subscribed paths has been removed, the `delete` field of the `Notification` message MUST have the path of the node that has been removed appended to it.
 
 When the target has transmitted the initial updates for all paths specified within the subscription, a `SubscribeResponse` message with the `sync_response` field set to `true` MUST be transmitted to the client to indicate that the initial transmission of updates has concluded.  This provides an indication to the client that all of the existing data for the subscription has been sent at least once.  For `STREAM` subscriptions, such messages are not required for subsequent updates. For `POLL` subscriptions, after each set of updates for  individual poll request, a `SubscribeResponse` message with the `sync_response` field set to `true` MUST be generated.
 
