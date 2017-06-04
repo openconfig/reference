@@ -18,7 +18,7 @@ November 7th, 2016
      * [2.2.1 Timestamps](#221-timestamps)
      * [2.2.2 Paths](#222-paths)
      * [2.2.3 Node Values](#223-node-values)
-  * [2.3 Encoding Data in an Update Message](#23-encoding-data-in-an-update-message)
+  * [2.3 Structured data types](#23-structured-data-types)
      * [2.3.1 JSON and JSON_IETF](#231-json-and-json_ietf)
      * [2.3.2 Bytes](#232-bytes)
      * [2.3.3 Protobuf](#233-protobuf)
@@ -100,8 +100,6 @@ When a target wishes to communicate data relating to the state of its internal d
 
 The fields of the Notification message are as follows:
 
-
-
 *   `timestamp` - The time at which the data was collected by the device from the underlying source, or the time that the target generated the Notification message (in the case that the data does not reflect an underlying data source). This value is always represented according to the definition in [2.2.1](#221-timestamps).
 *   `prefix` - a prefix which is applied to all path fields (encoded as per [2.2.2](#222-paths)) included in the `Notification` message. The paths expressed within the message are formed by the concatenation of `prefix + path`. The `prefix` always precedes the `path` elements. Further semantics of prefixes are described in [2.4.1](#24-1-path-prefixes).
 *   `alias `- a string providing an alias for the prefix specified within the notification message. The encoding of an alias, and the procedure for their creation  is described in [2.4.2](#242-path-aliases)`.`
@@ -125,7 +123,6 @@ Timestamp values MUST be represented as the number of nanoseconds since the Unix
 Paths are represented according to [gNMI Path Conventions](https://github.com/openconfig/reference/blob/master/rpc/gnmi/gnmi-path-conventions.md), a simplified form of XPATH. Rather than utilising a single string to represent the path - with the `/` character separating each element of the path, the path is represented by an ordered list of strings, starting at the root node, and ending at the most specific path element.
 
 A path is represented by the `Path` message with the following fields:
-
 
 
 *   `element` -- a set of path elements, encoded as strings (see examples below).
@@ -172,10 +169,12 @@ Paths (defined to be the concatenation of the `Prefix` and `Path` within the mes
 
 ### 2.2.3 Node Values
 
-The value of a data node is encoded in a `TypedValue` message as a `[oneof](https://developers.google.com/protocol-buffers/docs/proto3#oneof)` field to allow selection of the data type by setting exactly one of the member fields.  The possible data types include scalar types, data encoded based on one of the supported gNMI encodings (per <a href="#23-encoding-data-in-an-update-message">2.3</a>"), and additional definitions to respresent types used in some schema languages.
+The value of a data node (or subtree) is encoded in a `TypedValue` message as a `[oneof](https://developers.google.com/protocol-buffers/docs/proto3#oneof)` field to allow selection of the data type by setting exactly one of the member fields.  The possible data types include:
+* scalar types
+* additional types used in some schema languages
+* structured data types (e.g., to encode objects or subtrees)
 
-
-Several native scalar protobuf types are included:
+Several native scalar protobuf types are included in the `TypedValue` message:
 
 *   `string`
 *   `int64`
@@ -186,16 +185,20 @@ Several native scalar protobuf types are included:
 
 Additional defined data types include:
 
-*   `Decimal64` -- a message encoding a floating point decimal number consisting of a total number of digits and a precision
-    indicating the number of digits following the decimal point.  It has two subfields:
-  *   `digits` -- the set of digits
-  *   `precision` -- number of digits following the decimal point
+* `Decimal64` -- a message encoding a floating point decimal number consisting of a total number of digits and a precision indicating the number of digits following the decimal point.  It has two subfields:
+  * `digits` -- the set of digits
+  * `precision` -- number of digits following the decimal point
 
 * `ScalarArray` -- a message encoding a mixed-type scalar array; it has a single repeated subfield:
   *   `element` -- a `TypedValue` element within the array.  The type of each element MUST be a scalar type (i.e., one of the
       native scalar types or `Decimal64`).
 
-The remaining fields in the `TypedValue` message define data values that are encoded according to types in the `Encoding` enumeration.
+The remaining fields in the `TypedValue` message define structured data types.  Section <a href="#23-structured-data-types">2.3</a> describes these further.
+
+
+## 2.3 Structured data types
+
+When structured data is sent by the client or the target in an `Update` message, it MUST be serialized according to one of the supported encodings listed in the `Encoding` enumerations.  The table below lists the supported encodings and their corresponding `TypedValue` fields, followed by further details on each encoding type.
 
 <table>
   <tr>
@@ -203,7 +206,9 @@ The remaining fields in the `TypedValue` message define data values that are enc
    </td>
    <td><strong>Description</strong>
    </td>
-   <td><strong>`Encoding` Value</strong>
+   <td><strong><code>TypedValue</code> field</strong>
+   </td>
+   <td><strong><code>Encoding</code> Value</strong>
    </td>
   </tr>
   <tr>
@@ -211,30 +216,34 @@ The remaining fields in the `TypedValue` message define data values that are enc
    </td>
    <td>A JSON encoded string as per <a href="#231-json-and-json_ietf">2.3.1</a>.
    </td>
+   <td><code>json_val</code></td>
    <td>0
    </td>
   </tr>
   <tr>
    <td>Bytes
    </td>
-   <td>An arbitrary sequence of bytes as per <a href="#2-3-2-bytes">2.3.2</a>.
+   <td>An arbitrary sequence of bytes as per <a href="#232-bytes">2.3.2</a>.
    </td>
+   <td><code>bytes_val</code></td>
    <td>1
    </td>
   </tr>
   <tr>
    <td>Proto
    </td>
-   <td>A <a href="https://developers.google.com/protocol-buffers/">Protobuf</a> encoded message, as per <a href="#2-3-3-protobuf">2.3.3</a>
+   <td>A <a href="https://developers.google.com/protocol-buffers/">Protobuf</a> encoded message using <a href="https://developers.google.com/protocol-buffers/docs/proto3#any"><code>protobuf.any</code></a>, as per <a href="#233-protobuf">2.3.3</a>
    </td>
+   <td><code>any_val</code></td>
    <td>2
    </td>
   </tr>
   <tr>
    <td>ASCII
    </td>
-   <td>An ASCII encoded string representing text formatted according to a target-defined convention (described in <a href="#2-3-4-ascii">Section 2.3.4</a>).
+   <td>An ASCII encoded string representing text formatted according to a target-defined convention (described in <a href="#234-ascii">Section 2.3.4</a>).
    </td>
+   <td><code>ascii_val</code></td>
    <td>3
    </td>
   </tr>
@@ -243,23 +252,21 @@ The remaining fields in the `TypedValue` message define data values that are enc
    </td>
    <td>A JSON encoded string as per <a href="#231-json-and-json_ietf">2.3.1</a> using JSON encoding compatible with [RFC 7951](https://tools.ietf.org/html/rfc7951)
    </td>
+   <td><code>json_ietf_val</code></td>
    <td>4
    </td>
   </tr>
 </table>
 
-
-## 2.3 Encoding Data in an Update Message
-
 ### 2.3.1 JSON and JSON_IETF
 
-The `JSON` type indicates that the value included within the `bytes` field of the node value message is encoded as a JSON string. This format utilises the specification in [RFC7159](https://tools.ietf.org/html/rfc7159). Additional types (e.g., `JSON_IETF`) are utilised to indicate specific additional characteristics of the encoding of the JSON data (particularly where they relate to serialisation of YANG-modeled data).
-
+The `JSON` type indicates that the value is encoded as a JSON string. This format utilises the specification in [RFC7159](https://tools.ietf.org/html/rfc7159). Additional types (e.g., `JSON_IETF`) are utilised to indicate specific additional characteristics of the encoding of the JSON data (particularly where they relate to serialisation of YANG-modeled data)
+.
 For any JSON encoding:
 
 
 *   In the case that the data item at the specified path is a leaf node (i.e., has no children) the value of that leaf is encoded directly - i.e., the "bare" value is specified (i.e., a JSON object is not required, and a bare JSON value is included).
-*   Where the data item referred to has child nodes, the value field contains a serialised JSON entity (object or array) corresponding to the referenced item.
+*   Where the data item referred to has child nodes, the `val` field contains a serialised JSON entity (object or array) corresponding to the referenced item.
 
 Using the following example data tree:
 
@@ -291,9 +298,8 @@ update: <
     element: "c"
     element: "d"
   >
-  value: <
-    val: AStringValue"
-    type: JSON
+  val: <
+    json_val: "AStringValue"
   >
 >
 ```
@@ -310,9 +316,8 @@ update: <
     element: "c"
     element: "e"
   >
-  value: <
-    Value: 10042    // decoded byte array
-    type: JSON
+  val: <
+    json_val: 10042    // decoded byte array
   >
 >
 ```
@@ -329,8 +334,7 @@ update: <
     element: "c"
   >
   value: <
-    value: { "d": "AStringValue", "e": 10042 }
-    type: JSON
+    json_val: { "d": "AStringValue", "e": 10042 }
   >
 >
 ```
@@ -345,7 +349,7 @@ update: <
     element: "a"
   >
   value: <
-    value: `{ "b": [
+    json_ietf_val: `{ "b": [
                       {
                         "name": "b1",
                         "c": {
@@ -355,13 +359,12 @@ update: <
                        }
                    ]
             }`
-    type: JSON_IETF
   >
 >
 ```
 
 
-Note that all JSON values MUST be valid JSON. That is to say, whilst a value or object may be included in the message, the relevant quoting according to the JSON specification in [RFC7159](https://tools.ietf.org/html/rfc7159) must be used. This results in quoted string values, and unquoted number values.
+Note that all JSON values MUST be valid JSON. That is to say, while a value or object may be included in the message, the relevant quoting according to the JSON specification in [RFC7159](https://tools.ietf.org/html/rfc7159) must be used. This results in quoted string values, and unquoted number values.
 
 `JSON_IETF` encoded data MUST conform with the rules for JSON serialisation described in [RFC7951](https://tools.ietf.org/html/rfc7951). Data specified with a type of JSON MUST be valid JSON, but no additional constraints are placed upon it. An implementation MUST NOT serialise data with mixed `JSON` and `JSON_IETF` encodings.
 
@@ -369,15 +372,15 @@ Both the client and target MUST support the JSON encoding as a minimum.
 
 ### 2.3.2 Bytes
 
-The `BYTES` type indicates that the contents of the `bytes` field of the message contains a byte sequence whose semantics is opaque to the protocol.
+The `BYTES` type indicates that the data contains a byte sequence whose semantics is opaque to the protocol.
 
 ### 2.3.3 Protobuf
 
-The `PROTOBUF` type indicates that the contents of the `bytes` field of the message contains a serialised protobuf message. Note that in the case that the sender utilises this type, the receiver must understand the schema (and hence the type of protobuf message that is serialised) in order to decode the value. Such agreement is not guaranteed by the protocol and hence must be established out-of-band.
+The `PROTOBUF` type indicates that the data contains a serialised protobuf message using [protobuf.Any](https://developers.google.com/protocol-buffers/docs/proto3#any). Note that in the case that the sender utilises this type, the receiver must understand the schema (and hence the type of protobuf message that is serialised) in order to decode the value. Such agreement is not guaranteed by the protocol and hence must be established out-of-band.
 
 ### 2.3.4 ASCII
 
-The `ASCII` type indicates that the contents of the `bytes` field of the message contains system-formatted ASCII encoded text.  For configuration data, for example, this may consist of semi-structured CLI configuration data formatted according to the target platform.  The gNMI protocol does not define the format of the text – this must be established out-of-band.
+The `ASCII` type indicates that the data contains system-formatted ASCII encoded text.  For configuration data, for example, this may consist of semi-structured CLI configuration data formatted according to the target platform.  The gNMI protocol does not define the format of the text – this must be established out-of-band.
 
 ## 2.4 Use of Data Schema Paths
 
