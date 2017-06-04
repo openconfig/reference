@@ -465,17 +465,18 @@ In the case that the RPC is modifying the state of data (i.e., a write operation
 
 ## 2.5 Error handling
 
-Where the client or target wishes to indicate an error, an `Error` message is generated. Errors MUST be represented by a canonical gRPC error code ([Java](http://www.grpc.io/grpc-java/javadoc/index.html), [Golang](https://godoc.org/google.golang.org/grpc/codes#Code), [C++](http://www.grpc.io/grpc/cpp/classgrpc_1_1_status.html)) . The entity generating the error MUST specify a free-text string which indicates the context of the error, allowing the receiving entity to generate log entries that allow a human operator to understand the exact error that occurred, and its context. Each RPC defines the meaning of the relevant canonical error codes within the context of the operation it performs.
+Errors MUST be represented by a canonical gRPC error code ([Java](http://www.grpc.io/grpc-java/javadoc/index.html), [Golang](https://godoc.org/google.golang.org/grpc/codes#Code), [C++](http://www.grpc.io/grpc/cpp/classgrpc_1_1_status.html)) . The entity generating the error MUST specify a free-text string which indicates the context of the error, allowing the receiving entity to generate log entries that allow a human operator to understand the exact error that occurred, and its context. Each RPC defines the meaning of the relevant canonical error codes within the context of the operation it performs.
 
 The canonical error code that is chosen MUST consider the expected behavior of the client on receipt of the message. For example, error codes which indicate that a client may subsequently retry SHOULD only be used where retrying the RPC is expected to result in a different outcome.
 
-A re-usable `Error` message MUST be used when sending errors in response to an RPC operation. This message has the following fields:
+Where the client or target wishes to indicate an error, it MUST use the `Status`
+message in the RPC return [trailers](http://www.grpc.io/docs/guides/wire.html).
 
+The `Status` message consists of three fields:
+  * `code` - a 32-bit integer value corresponding to the canonical gRPC error code
+  * `message` - a human-readable string describing the error condition. This string is not expected to be machine-parsable, but rather provide contextual information which may be passed to upstream systems.
+  * `details` - a repeated field of protobuf.Any messages that carry error details.
 
-
-*   `code` - an unsigned 32-bit integer value corresponding to the canonical gRPC error code.
-*   `message `- a human-readable string describing the error condition in more detail. This string is not expected to be machine-parsable, but rather provide contextual information which may be passed to upstream systems.
-*   `data `-  an arbitrary sequence of bytes (encoded as `[proto.Any](https://github.com/google/protobuf/blob/master/src/google/protobuf/any.proto)`) which provides further contextual information relating to the error.
 
 ## 2.6 Schema Definition Models
 
@@ -561,9 +562,9 @@ The target closes the channel established by the `Get` RPC following the transmi
 The `GetRequest` message contains the following fields:
 
 *   `prefix` - a path (specified as per [Section 2.2.2](#222-paths)), and used as described in [Section 2.4.1](#24-1-path-prefixes). The prefix is applied to all paths within the `GetRequest` message.
-*   `path` - a set of paths (expressed as per [Section 2.2.2](#222-paths)) for which the client is requesting a data snapshot from the target. The path specified MAY utilize wildcards. In the case that the path specified is not valid, the target MUST populate the `error` field of the `GetResponse` message indicating an error code of `InvalidArgument` and SHOULD provide information about the invalid path in the error message.
+*   `path` - a set of paths (expressed as per [Section 2.2.2](#222-paths)) for which the client is requesting a data snapshot from the target. The path specified MAY utilize wildcards. In the case that the path specified is not valid, the target MUST populate the status of the `GetResponse` message indicating an error code of `InvalidArgument` and SHOULD provide information about the invalid path in the error message.
 *   `type` - the type of data that is requested from the target. The valid values for type are described below.
-*   `encoding` - the encoding that the target should utilise to serialise the subtree of the data tree requested. The type MUST be one of the encodings specified in [Section 2.3](#23-encoding-data-in-an-update-message). If the `Capabilities` RPC has been utilised, the client SHOULD use an encoding advertised as supported by the target. If the encoding is not specified, JSON MUST be used. If the target does not support the specified encoding, the target MUST populate the error field of the `GetResponse` message, specifying an error of `Unimplemented`. The error message MUST indicate that the specified encoding is unsupported.
+*   `encoding` - the encoding that the target should utilise to serialise the subtree of the data tree requested. The type MUST be one of the encodings specified in [Section 2.3](#23-encoding-data-in-an-update-message). If the `Capabilities` RPC has been utilised, the client SHOULD use an encoding advertised as supported by the target. If the encoding is not specified, JSON MUST be used. If the target does not support the specified encoding, the target MUST populate the status of the `GetResponse` message, specifying an error of `Unimplemented`. The error message MUST indicate that the specified encoding is unsupported.
 *   `use_models` - a set of `ModelData` messages (defined in [Section 2.6.1](#261-the-modeldata-message)) indicating the schema definition modules that define the data elements that should be returned in response to the Get RPC call. The semantics of the `use_models` field are defined in [Section 2.6](#26-schema-definition-models).
 
 Since the data tree stored by the target may consist of different types of data (e.g., values that are operational in nature, such as protocol statistics) - the client MAY specify that a subset of values in the tree are of interest. In order for such filtering to be implemented, the data schema on the target MUST be annotated in a manner which specifies the type of data for individual leaves, or subtrees of the data tree.
@@ -581,7 +582,6 @@ If the `type` field is not specified, the target MUST return CONFIG, STATE  and 
 The `GetResponse` message consists of:
 
 *   `notification` -  a set of `Notification` messages, as defined in [Section 2.1](#21-reusable-notification-message-format). The target MUST generate a `Notification` message for each path specified in the client's `GetRequest`, and hence MUST NOT collapse data from multiple paths into a single `Notification` within the response. The `timestamp` field of the `Notification` message MUST be set to the time at which the target's snapshot of the relevant path was taken.
-*   `error` - an `Error` message encoded as per the specification in [Section 2.5](#25-error-handling), used to indicate errors in the `GetRequest` received by the target from the client.
 
 ### 3.3.3 Considerations for using Get
 
@@ -595,7 +595,7 @@ Modifications to the state of the target are made through the `Set` RPC. A clien
 
 A target receiving a `SetRequest` message processes the operations specified within it - which are treated as a transaction (see [Section 3.4.3](#343-transactions)). The server MUST process deleted paths (within the `delete` field of the `SetRequest`), followed by paths to be replaced (within the `replace` field), and finally updated paths (within the `update` field). The order of the replace and update fields MUST be treated as significant within a single `SetRequest` message.  If a single path is specified multiple times for a single operation (i.e., within `update` or `replace`), then the state of the target MUST reflect the application of all of the operations in order, even if they overwrite each other.
 
-In response to a `SetRequest`, the target MUST respond with a `SetResponse` message. For each operation specified in the `SetRequest` message, an `UpdateResult` message MUST be included in the response field of the `SetResponse`. The order in which the operations are applied MUST be maintained such that `UpdateResult` messages can be correlated to the `SetRequest` operations. In the case of a failure of an operation, the `error` field of the `UpdateResult` message MUST be populated with an `Error` message as per the specification in [Section 3.4.7](#347-error-handling). In addition, the `error` field of the `SetResponse` message MUST be populated with an error message indicating the success or failure of the set of operations within the `SetRequest` message (again using the error handling behavior defined in [Section 3.4.7](#34-7-error-handling)).
+In response to a `SetRequest`, the target MUST respond with a `SetResponse` message. For each operation specified in the `SetRequest` message, an `UpdateResult` message MUST be included in the response field of the `SetResponse`. The order in which the operations are applied MUST be maintained such that `UpdateResult` messages can be correlated to the `SetRequest` operations. In the case of a failure of an operation, the status of the `UpdateResult` message MUST be populated with error information as per the specification in [Section 3.4.7](#347-error-handling). In addition, the status of the `SetResponse` message MUST be populated with an error message indicating the success or failure of the set of operations within the `SetRequest` message (again using the error handling behavior defined in [Section 3.4.7](#34-7-error-handling)).
 
 ### 3.4.1 The SetRequest Message
 
@@ -623,13 +623,12 @@ A `SetResponse` consists of the following fields:
 
 
 
-*   `prefix` - specified as per [Section 2.4.1](#241-path-prefixes). The prefix specified is applied to all paths defined within other fields of the message.
-*   `message` - an error message as specified in [Section 2.5](#25-error-handling). The target SHOULD specify a `message` in the case that the update was successfully applied, in which case an error code of `OK (0)` `MUST` be specified. In cases where an update was not successfully applied, the contents of the error message MUST be specified as per [Section 3.4.7](#347-error-handling).
+*   `prefix` - specified as per [Section 2.4.1](#241-path-prefixes). The prefix specified is applied to all paths defined within other fields of the message. The target MUST specify a status in the case that the update was successfully applied, in which case a status code of `OK (0)` `MUST` be specified. In cases where an update was not successfully applied, the contents of the status message MUST be specified as per [Section 3.4.7](#347-error-handling).
 *   `response`  - containing a list of responses, one per operation specified within the `SetRequest` message. Each response consists of an `UpdateResult` message with the following fields:
     *   `timestamp` - a timestamp (encoded as per [Section 2.2.1](#221-timestamps)) at which the set request message was accepted by the system.
     *   `path` - the path (encoded as per [Section 2.2.2](#222-paths)) specified within the `SetRequest`. In the case that a common prefix was not used within the `SetRequest`, the target MAY specify a `prefix` to reduce repetition of path elements within multiple `UpdateResult` messages in the `request` field.
     *   `op` - the operation corresponding to the path. This value MUST be one of `DELETE`, `REPLACE`, or `UPDATE`.
-    *   `message` - an error message (as specified in [Section 2.5](#25-error-handling)). This field follows the same rules as the message field within the `SetResponse` message specified above.
+    *   `message` - a status message (as specified in [Section 2.5](#25-error-handling)). This field follows the same rules as the status field returned with the `SetResponse` message specified above.
 
 ### 3.4.3 Transactions
 
@@ -643,7 +642,7 @@ As the scope of a "transaction" is a single `SetRequest` message, a client desir
 
 Changes to read-write values on the target are applied based on the `replace` and `update` fields of the `SetRequest` message.
 
-For both replace and update operations, if the path specified does not exist, the target MUST create the data tree element and populate it with the data in the `Update` message, provided the path is valid according to the data tree schema. If invalid values are specified, the target MUST cease processing updates within the `SetRequest` method, return the data tree to the state prior to any changes, and return a `SetResponse` message indicating the error encountered.
+For both replace and update operations, if the path specified does not exist, the target MUST create the data tree element and populate it with the data in the `Update` message, provided the path is valid according to the data tree schema. If invalid values are specified, the target MUST cease processing updates within the `SetRequest` method, return the data tree to the state prior to any changes, and return a `SetResponse` status indicating the error encountered.
 
 For `replace` operations, the behavior regarding omitted data elements in the `Update` depends on whether they refer to non-default values (i.e., set by a previous `SetRequest`), or unmodified defaults.  When the `replace` operation omits values that have been previously set, they MUST be treated as deleted from the data tree.  Otherwise, omitted data elements MUST be created with their default values on the target.
 
@@ -655,9 +654,9 @@ The path convention defined in [Section 2.2.2](#222-paths) allows nodes in the d
 
 
 
-*   In the case that multiple attribute values are required to uniquely address an element - e.g., `/a/f[k1=10][k2=20] `- and a replace or update operation's path specifies  a subset of the attributes (e.g., `/a/f[k1=10]`) then this MUST be considered an error by the target system - and an error code of` InvalidArgument (3)` specified.
+*   In the case that multiple attribute values are required to uniquely address an element - e.g., `/a/f[k1=10][k2=20] `- and a replace or update operation's path specifies  a subset of the attributes (e.g., `/a/f[k1=10]`) then this MUST be considered an error by the target system - and an status code of` InvalidArgument (3)` specified.
 *   Where the path specified refers to a node which itself represents the collection of objects (list, map, or array) a replace operation MUST remove all collection entries that are not supplied in the value provided in the `SetRequest`. An update operation MUST be considered to add new entries to the collection if they do not exist.
-*   In the case that key values are specified both as attributes of a node, and as their own elements within the data tree, update or replace operations that modify instances of the key in conflicting ways MUST be considered an error. The target MUST return an error code of `InvalidArgument (3)`.
+*   In the case that key values are specified both as attributes of a node, and as their own elements within the data tree, update or replace operations that modify instances of the key in conflicting ways MUST be considered an error. The target MUST return an status code of `InvalidArgument (3)`.
 
 For example, consider a tree corresponding to the examples above, as illustrated below.
 
@@ -679,7 +678,7 @@ root +
 ```
 
 
-In this case, nodes `k1` and `k2` are standalone nodes within the schema, but also correspond to attribute values for the node "`f`". In this case, an update or replace message specifying a path of `/a/f[k1=10][k2=20]` setting the value of `k1` to 100 MUST be considered erroneous, and an error code of `InvalidArgument (3)` specified.
+In this case, nodes `k1` and `k2` are standalone nodes within the schema, but also correspond to attribute values for the node "`f`". In this case, an update or replace message specifying a path of `/a/f[k1=10][k2=20]` setting the value of `k1` to 100 MUST be considered erroneous, and an status code of `InvalidArgument (3)` specified.
 
 ### 3.4.6 Deleting Configuration
 
@@ -689,14 +688,14 @@ In the case that a path specifies an element within the data tree that does not 
 
 ### 3.4.7 Error Handling
 
-When a client issues a `SetRequest`, and the target is unable to apply the specified changes, an error MUST be reported to the client. The error is specified in multiple places:
+When a client issues a `SetRequest`, and the target is unable to apply the specified changes, an error status MUST be reported to the client. The error is specified in multiple places:
 
-*   Within a `SetResponse` message, the error field indicates the completion status of the entire transaction.
-*   With a `UpdateResult` message, where the error field indicates the completion status of the individual operation.
+*   The status of the `SetResponse` message indicates the completion status of the entire transaction.
+*   With a `UpdateResult` message, where the message field indicates the completion status of the individual operation.
 
-The target MUST specify the `message` field within a `SetResponse` message such that the overall status of the transaction is reflected. In the case that no error occurs, the target MUST complete this field specifying the `OK (0)` canonical error code.
+The target MUST specify the status of the `SetResponse` message such that the overall result of the transaction is reflected. In the case that no error occurs, the target MUST complete this field specifying the `OK (0)` canonical error code.
 
-In the case that any operation within the `SetRequest` message fails, then (as per [Section 3.4.3](#343-transactions)), the target MUST NOT apply any of the specified changes, and MUST consider the transaction as failed. The target SHOULD set the `message` field of the `SetResponse` message to an error message with the code field set to `Aborted (10)`, and MUST set the `message` field of the `UpdateResult` corresponding to the failed operation to an `Error` message indicating failure.  In the case that the processed operation is not the only operation within the `SetRequest` the target MUST set the `message` field of the `UpdateResult` messages for all other operations, setting the code field to `Aborted (10)`.
+In the case that any operation within the `SetRequest` message fails, then (as per [Section 3.4.3](#343-transactions)), the target MUST NOT apply any of the specified changes, and MUST consider the transaction as failed. The target SHOULD set the status code of the `SetResponse` message to `Aborted (10)`, along with an appropriate error message, and MUST set the `message` field of the `UpdateResult` corresponding to the failed operation to an `Error` message indicating failure.  In the case that the processed operation is not the only operation within the `SetRequest` the target MUST set the `message` field of the `UpdateResult` messages for all other operations, setting the code field to `Aborted (10)`.
 
 For the operation that the target is unable to process, the `message` field MUST be set to a specific error code indicating the reason for failure based on the following mappings to canonical gRPC error codes:
 
@@ -704,7 +703,7 @@ For the operation that the target is unable to process, the `message` field MUST
 *   When the client does not have permission to modify the path specified by the operation - `PermissionDenied (7)`.
 *   When the operation specifies a path that cannot be parsed by the target - `InvalidArgument (3)`. In this case, the `message` field of the `Error` message specified SHOULD specify human-readable text indicating that the path could not be parsed.
 *   When the operation is an update or replace operation that corresponds to a path that is not valid - `NotFound (5)`. In this case the `message` field of the `Error` message specified SHOULD specify human-readable text indicating the path that was invalid.
-*   When the operation is an update or replace operation that includes an invalid value within the `Update` message specified - `InvalidArgument (3)`. This error SHOULD be used in cases where the payload specifies scalar values that do not correspond to the correct schema type,
+*   When the operation is an update or replace operation that includes an invalid value within the `Update` message specified - `InvalidArgument (3)`. This error SHOULD be used in cases where the payload specifies scalar values that do not correspond to the correct schema type.
 * When the client specifies a payload utilising an encoding that is not supported by the target (e.g., JSON) - `Unimplemented (12)` SHOULD be used to indicate that the encoding is not supported.
 
 ## 3.5 Subscribing to Telemetry Updates
@@ -745,9 +744,9 @@ The fields of the `SubscribeRequest` are as follows:
 
 In order to create a new subscription (and its associated channel) a client MUST send a `SubscribeRequest` message, specifying the `subscribe` field. The `SubscriptionList` may create a one-off subscription, a poll-only subscription, or a streaming subscription. In the case of ONCE subscriptions, the channel between client and target MUST be closed following the initial response generation.
 
-Subscriptions are set once, and subsequently not modified by a client. If a client wishes to subscribe to additional paths from a target, it MUST do so by sending an additional `Subscribe` RPC call, specifying a new `SubscriptionList` message. In order to end an existing subscription, a client simply closes the gRPC channel that relates to that subscription.  If a channel is initiated with a `SubscribeRequest` message that does not specify a `SubscriptionList` message with the `request` field, the target MUST consider this an error. If an additional `SubscribeRequest` message specifying a `SubscriptionList` is sent via an existing channel, the target MUST respond to this message with `SubscribeResponse` message indicating an error message, with a contained error message indicating an error code of `InvalidArgument (4)`; existing subscriptions on other gRPC channels MUST not be modified or terminated.
+Subscriptions are set once, and subsequently not modified by a client. If a client wishes to subscribe to additional paths from a target, it MUST do so by sending an additional `Subscribe` RPC call, specifying a new `SubscriptionList` message. In order to end an existing subscription, a client simply closes the gRPC channel that relates to that subscription.  If a channel is initiated with a `SubscribeRequest` message that does not specify a `SubscriptionList` message with the `request` field, the target MUST consider this an error. If an additional `SubscribeRequest` message specifying a `SubscriptionList` is sent via an existing channel, the target MUST respond to this message with `SubscribeResponse` message indicating an error status, with a code of `InvalidArgument (4)`; existing subscriptions on other gRPC channels MUST not be modified or terminated.
 
-If a client initiates a `Subscribe` RPC with a `SubscribeRequest` message which does not contain a `SubscriptionList` message, this is an error.  A `SubscribeResponse` message with the contained `error` message indicating a error code of  `InvalidArgument` MUST be sent. The error text SHOULD indicate that an out-of-order operation was requested on a non-existent subscription. The target MUST subsequently close the channel.
+If a client initiates a `Subscribe` RPC with a `SubscribeRequest` message which does not contain a `SubscriptionList` message, this is an error.  A `SubscribeResponse` message with the status indicating a error code of  `InvalidArgument` MUST be sent. The status message SHOULD indicate that an out-of-order operation was requested on a non-existent subscription. The target MUST subsequently close the channel.
 
 #### 3.5.1.2 The SubscriptionList Message
 
@@ -767,7 +766,7 @@ A client generating a `SubscriptionList` message MUST include the `subscription`
 
 A `Subscription` message generically describes a set of data that is to be subscribed to by a client. It contains a `path`, specified as per the definition in [Section 2.2.2](#222-paths).
 
-There is no requirement for the path that is specified within the message to exist within the current data tree on the server. Whilst the path within the subscription SHOULD be a valid path within the set of schema modules that the target supports, subscribing to any syntactically valid path within such modules MUST be allowed. In the case that a particular path does not (yet) exist, the target MUST NOT close the channel, and instead should continue to monitor for the existence of the path, and transmit telemetry updates should it exist in the future. The target MAY send a `SubscribeResponse` message populating the error field with `NotFound (5)` to inform the client that the path does not exist at the time of subscription creation.
+There is no requirement for the path that is specified within the message to exist within the current data tree on the server. Whilst the path within the subscription SHOULD be a valid path within the set of schema modules that the target supports, subscribing to any syntactically valid path within such modules MUST be allowed. In the case that a particular path does not (yet) exist, the target MUST NOT close the channel, and instead should continue to monitor for the existence of the path, and transmit telemetry updates should it exist in the future. The target MAY send a `SubscribeResponse` message populating the status code with `NotFound (5)` to inform the client that the path does not exist at the time of subscription creation.
 
 For `POLL` and `STREAM` subscriptions, a client may optionally specify additional parameters within the `Subscription` message. The semantics of these additional fields are described in the relevant section of this document.
 
@@ -778,7 +777,6 @@ A `SubscribeResponse` message is transmitted by a target to a client over an est
 *   A set of fields referred to as the `response` fields, only one of which can be specified per `SubscribeResponse` message:
     *   `update` - a `Notification` message providing an update value for a subscribed data entity as described in [Section 3.5.2.3](#3523-sending-telemetry-updates). The `update` field is also utilised when a target wishes to create an alias within a subscription, as described in [Section 3.5.2.2](#3-5-2-2-target-defined-aliases-within-a-subscription).
     *   `sync_response`  - a boolean field indicating that a particular set of data values has been transmitted, used for `POLL` and `STREAM` subscriptions.
-    *   `error` - an `Error` message  transmitted to indicate an error has occurred within a particular `Subscribe` RPC call.
 
 #### 3.5.1.5 Creating Subscriptions
 
@@ -799,7 +797,7 @@ A `STREAM` subscription is created by sending a `SubscribeRequest` message with 
 *   **On Change (`ON_CHANGE`)** - when a subscription is defined to be "on change", data updates are only sent when the value of the data item changes.
     * For all `ON_CHANGE` subscriptions, the target MUST first generate updates for all paths that match the subscription path(s), and transmit them. Following this initial set of updates, updated values SHOULD only be transmitted when their value changes.
     * A heartbeat interval MAY be specified along with an "on change" subscription - in this case, the value of the data item(s) MUST be re-sent once per heartbeat interval regardless of whether the value has changed or not.
-*   **Sampled (`SAMPLE`)** - a subscription that is defined to be sampled MUST be specified along with a `sample_interval` encoded as an unsigned 64-bit integer representing nanoseconds.  The value of the data item(s) is sent once per sample interval to the client.  If the target is unable to support the desired `sample_interval` it MUST reject the subscription by returning a `SubscribeResponse` message with the error field set to an error message indicating the `InvalidArgument (3)` error code. If the `sample_interval` is set to 0, the target MUST create the subscription and send the data with the lowest interval possible for the target.
+*   **Sampled (`SAMPLE`)** - a subscription that is defined to be sampled MUST be specified along with a `sample_interval` encoded as an unsigned 64-bit integer representing nanoseconds.  The value of the data item(s) is sent once per sample interval to the client.  If the target is unable to support the desired `sample_interval` it MUST reject the subscription by returning a `SubscribeResponse` message with the status code set to the `InvalidArgument (3)` error code. If the `sample_interval` is set to 0, the target MUST create the subscription and send the data with the lowest interval possible for the target.
     *   Optionally, the `suppress_redundant` field of the `Subscription` message may be set for a sampled subscription. In the case that it is set to `true`, the target SHOULD NOT generate a telemetry update message unless the value of the path being reported on has changed since the last update was generated. Updates MUST only be generated for those individual leaf nodes in the subscription that have changed. That is to say that for a subscription to `/a/b` - where there are leaves `c` and `d` branching from the `b` node - if the value of `c` has changed, but `d` remains unchanged, an update for `d` MUST NOT be generated, whereas an update for `c` MUST be generated.
     *   A `heartbeat_interval` MAY be specified to modify the behavior of `suppress_redundant` in a sampled subscription.  In this case, the target MUST generate one telemetry update  per heartbeat interval, regardless of whether the `suppress_redundant` flag is set to `true`. This value is specified as an unsigned 64-bit integer in nanoseconds.
 *   <strong>Target Defined `(TARGET_DEFINED)` - </strong>when a client creates a subscription specifying the target defined mode, the target SHOULD determine the best type of subscription to be created on a per-leaf basis. That is to say, if the path specified within the message refers to some leaves which are event driven (e.g., the changing of state of an entity based on an external trigger) then an `ON_CHANGE` subscription may be created, whereas if other data represents counter values, a `SAMPLE` subscription may be created.
@@ -819,7 +817,7 @@ When a client wishes to create an alias that a target should use for a path, the
 *   `path` - the target path for the alias - encoded as per [Section 2.2.2](#222-paths).
 *   `alias` - the (client-defined) alias for the path, encoded as per [Section 2.4.2](#242-path-aliases).
 
-Where a target is unable to support a client-defined alias it SHOULD respond with a `SubscribeResponse` message with the error field indicating an error of the following types:
+Where a target is unable to support a client-defined alias it SHOULD respond with a `SubscribeResponse` message with the status code indicating an error of the following types:
 
 
 
@@ -847,7 +845,6 @@ subscriberequest: <
   >
 >
 ```
-
 
 If the alias is acceptable to the target, subsequent updates are transmitted using the `#shortPath` alias in the same manner as described in [Section 3.5.2.2](#3522-target-defined-aliases-within-a-subscription).
 
