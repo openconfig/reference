@@ -7,7 +7,7 @@ Paul Borman, Marcus Hines, Carl Lebsack, Chris Morrow, Anees Shaikh, Rob Shakir
 November 7th, 2016
 
 **Version:**
-0.3.1
+0.4.0
 
 # Table of Contents
 
@@ -483,7 +483,7 @@ notification: <
     >
     val: <
       json_val: 10042      // converted to int representation
-    > 
+    >
   >
 >
 ```
@@ -802,7 +802,7 @@ In order to create a new subscription (and its associated channel) a client MUST
 
 Subscriptions are set once, and subsequently not modified by a client. If a client wishes to subscribe to additional paths from a target, it MUST do so by sending an additional `Subscribe` RPC call, specifying a new `SubscriptionList` message. In order to end an existing subscription, a client simply cancels the `Subscribe` RPC that relates to that subscription.  If a channel is initiated with a `SubscribeRequest` message that does not specify a `SubscriptionList` message with the `request` field, the target MUST consider this an error. If an additional `SubscribeRequest` message specifying a `SubscriptionList` is sent via an existing channel, the target MUST respond to this message with `SubscribeResponse` message indicating an error status, with a code of `InvalidArgument (4)`; existing `Subscribe` RPCs on the channel, and other gRPC channels MUST not be modified or terminated.
 
-If a client initiates a `Subscribe` RPC with a `SubscribeRequest` message which does not contain a `SubscriptionList` message, this is an error.  A `SubscribeResponse` message with the status indicating a error code of  `InvalidArgument` MUST be sent, and the RPC close. The status message SHOULD indicate that an out-of-order operation was requested on a non-existent subscription.
+If a client initiates a `Subscribe` RPC with a `SubscribeRequest` message which does not contain a `SubscriptionList` message, this is an error.  A `SubscribeResponse` message with the status indicating a error code of  `InvalidArgument` MUST be sent, and the RPC closed. The status message SHOULD indicate that an out-of-order operation was requested on a non-existent subscription.
 
 #### 3.5.1.2 The SubscriptionList Message
 
@@ -822,7 +822,7 @@ A client generating a `SubscriptionList` message MUST include the `subscription`
 
 A `Subscription` message generically describes a set of data that is to be subscribed to by a client. It contains a `path`, specified as per the definition in [Section 2.2.2](#222-paths).
 
-There is no requirement for the path that is specified within the message to exist within the current data tree on the server. Whilst the path within the subscription SHOULD be a valid path within the set of schema modules that the target supports, subscribing to any syntactically valid path within such modules MUST be allowed. In the case that a particular path does not (yet) exist, the target MUST NOT close the channel, and instead should continue to monitor for the existence of the path, and transmit telemetry updates should it exist in the future. 
+There is no requirement that the path specified in the message must exist within the current data tree on the server. While the path within the subscription SHOULD be a valid path within the set of schema modules that the target supports, subscribing to any syntactically valid path within such modules MUST be allowed. In the case that a particular path does not (yet) exist, the target MUST NOT close the channel, and instead should continue to monitor for the existence of the path, and transmit telemetry updates should it exist in the future.
 
 <!-- TODO(robjs): Need a way to be able to send this information. Previously said:
 
@@ -895,7 +895,7 @@ subscriberequest: <
         >
         elem: <
           name: "b"
-        >  
+        >
         elem: <
           name: "c"
         >
@@ -904,7 +904,7 @@ subscriberequest: <
           key: <
             name: "id"
             value: "10"
-          > 
+          >
         elem: <
           name: "e"
         >
@@ -1025,12 +1025,12 @@ limitations under the License
 
 # 7 Revision History
 
-* v0.3.2: June 16, 2017
+* v0.4.0: June 16, 2017
   * Deprecate the old `value` field within the `Update` message, in favour of the new `TypedValue` field.
   * Clarify error handling should use `google/rpc/status.proto` rather than embedded messages within successful response codes.
   * Update references to the `path` message's encoding of the root path.
   * Update encoding of `Path` to use the `PathElem` message rather than to use a repeated `string`.
- 
+
 * v0.2.2: March 7, 2017
   * Add clarifications of `ON_CHANGE` subscriptions and the requirement for an initial sync of matching subscription paths.
   * Correct responses to an unsupported encoding error to be `Unimplemented` (fixes [#36](https://github.com/openconfig/reference/issues/36)).
