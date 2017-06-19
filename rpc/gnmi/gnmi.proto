@@ -36,7 +36,7 @@ extend google.protobuf.FileOptions {
 
 // gNMI_service is the current version of the gNMI service, returned through
 // the Capabilities RPC.
-option (gnmi_service) = "0.3.2";
+option (gnmi_service) = "0.4.0";
 
 service gNMI {
   // Capabilities allows the client to retrieve the set of capabilities that
@@ -125,7 +125,7 @@ message Path {
   // the elem field as a PathElem message.
   repeated string element = 1 [deprecated=true];
   string origin = 2;                              // Label to disambiguate path.
-  repeated PathElem elem = 2;                     // Elements of the path.
+  repeated PathElem elem = 3;                     // Elements of the path.
 }
 
 // PathElem encodes an element of a gNMI path, along ith any attributes (keys)
