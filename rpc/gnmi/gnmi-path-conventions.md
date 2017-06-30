@@ -1,7 +1,7 @@
 ## Schema path encoding conventions for gNMI
 
-**Updated**: June 21, 2017  
-**Version**: 0.4.0  
+**Updated**: June 21, 2017
+**Version**: 0.4.0
 
 This document is a supplement to the [gNMI
 specification](https://github.com/openconfig/reference/blob/master/rpc/gnmi
@@ -21,14 +21,14 @@ apply the configuration.
 
 ### Guidance for implementors
 
-Path encoding in gNMI uses a structured path format. This format consists 
+Path encoding in gNMI uses a structured path format. This format consists
 of a set of elements which consist of a name, and an option map of keys.
 Keys are represented as string values, regardless of their type within the
 schema that describes the data. Some of the examples below assume YANG-
 modeled data since it is a common use case for gNMI, but gNMI has
 applicability to any data modeling where the data can be described in a
 tree structure with hierarchical paths.
- 
+
 #### Constructing paths
 
 gNMI paths are encoded as an ordered list (slice, array, etc.) of `gnmi.PathElem` messages (represented as a repeated field within the protocol buffer definition). Each `PathElem` consists of a name, encoded as a string. An element's name MUST be encoded as a UTF-8 string. Each `PathElem` may optionally specify a set of keys, specified as a `map<string,string>` (dictionary, or map). The key of the `key` map is the name of a key for the element, and the `value` represent the string-encoded value of the key. Both the key and value of the map MUST contain UTF-8 encoded strings.
@@ -45,7 +45,7 @@ gNMI paths are encoded as an ordered list (slice, array, etc.) of `gnmi.PathElem
 *  a human-readable path can be formed by concatenating elements of the prefix
   and path using a `/` separator, and preceded by a leading `/` character.
   For example:
-  
+
   ```
     prefix: <
     	elem: <
@@ -65,7 +65,7 @@ gNMI paths are encoded as an ordered list (slice, array, etc.) of `gnmi.PathElem
 
 *   subscription and data retrieval paths (Subscribe and Get RPCs) are
     recursive, i.e., select the specified element and all of its descendents. For example, the path:
-    
+
   ```
   <
   	  elem: <
@@ -118,11 +118,11 @@ gNMI paths are encoded as an ordered list (slice, array, etc.) of `gnmi.PathElem
   		>
   	>
    ```
-  
-  	selects the entry in the `interface` list with the `name` key specified to be `Ethernet1/2/3`.
-  	
+
+  selects the entry in the `interface` list with the `name` key specified to be `Ethernet1/2/3`.
+
 * Where a list has multiple keys, each key is specified by an additional entry within the `key` map. For example:
-  	
+
   ```
   	<
   		elem: <
@@ -150,10 +150,10 @@ gNMI paths are encoded as an ordered list (slice, array, etc.) of `gnmi.PathElem
   			>
   		>
   	>
-  	```	
+  	```
 
   * To match all entries within a particular list, the key(s) to the list may be omitted, for example to match the `oper-status` value of all interfaces on a device:
-    
+
     ```
     <
     	elem: <
@@ -170,9 +170,9 @@ gNMI paths are encoded as an ordered list (slice, array, etc.) of `gnmi.PathElem
     	>
     >
     ```
-    
+
     In this case, since the `interface` `PathElem` does not specify any keys, it should be interpreted to match all entries within the `interface` list. The same semantics can be specified by utilising an asterisk (`*`) for a particular `key` map entry's value, i.e.:
-    
+
     ```
     <
     	elem: <
@@ -195,7 +195,7 @@ gNMI paths are encoded as an ordered list (slice, array, etc.) of `gnmi.PathElem
     `Get` requests. A single-level wildcard is indicated by specifying the `name` of a `PathElem` to be an asterisk (`*`). A multi-level wildcard is indicated by specifying the `name` of a `PathElem` to be the string `...`.
 
 *  Wildcards may be used in multiple levels of the path, e.g., select all elements named `state` three levels deep:
-  
+
     ```
     <
     	elem: <
@@ -242,7 +242,7 @@ gNMI paths are encoded as an ordered list (slice, array, etc.) of `gnmi.PathElem
 *   A single path element, including keyed fields, maybe be replaced by
     `...` to select all matching descendents.  This is semantically equivalent
     to the empty element notation, `//`, in XPATH.
-    
+
     ```
     <
     	elem: <
@@ -256,7 +256,7 @@ gNMI paths are encoded as an ordered list (slice, array, etc.) of `gnmi.PathElem
     	>
     >
  	```
- 	
+
     *   Select all `state` containers under interface 'eth0'
     ```
     <
