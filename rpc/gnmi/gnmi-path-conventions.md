@@ -1,12 +1,10 @@
 ## Schema path encoding conventions for gNMI
 
 **Updated**: June 21, 2017
+
 **Version**: 0.4.0
 
-This document is a supplement to the [gNMI
-specification](https://github.com/openconfig/reference/blob/master/rpc/gnmi
-/gnmi-specification.md), and provides additional guidelines and examples for
-path encoding.
+This document is a supplement to the [gNMI specification](https://github.com/openconfig/reference/blob/master/rpc/gnmi/gnmi-specification.md), and provides additional guidelines and examples for path encoding.
 
 ### Path encoding
 
