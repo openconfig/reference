@@ -6,7 +6,7 @@ Management Interface**. The gNMI specification can be found in
 and the protobuf service definition and reference code in
 [openconfig/gnmi](https://github.com/openconfig/gnmi).
 
---
+---
 
 The openconfig package defines a [gRPC](http://www.grpc.io/) service for interacting with network devices
 based on OpenConfig models.
