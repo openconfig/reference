@@ -1,12 +1,13 @@
 # gNMI - gRPC Network Management Interface
 
-This directory contains a reference
-[protobuf3](https://github.com/google/protobuf/) service definition for the
-gRPC Network Management Interface (gNMI). This service defines an interface
+This repository contains the specification of the gRPC Network Management 
+Interface (gNMI). This service defines an interface
 for a network management system to interact with a network element.
 
+The protobuf specification is stored in 
+[openconfig/gnmi](https://github.com/openconfig/gnmi/tree/master/proto/gnmi).
+
 The repository contents are as follows:
- * Reference protobuf - [gnmi.proto](gnmi.proto).
  * Specification for gNMI - [gnmi-specification.md](gnmi-specification.md).
    * PDF of specification document
      [gnmi-specification.pdf](gnmi-specification.pdf)
