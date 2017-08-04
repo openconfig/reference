@@ -1,7 +1,7 @@
 ## gNMI Authentication and Encryption
 
 
-**Updated**: October 5, 2016  
+**Updated**: October 5, 2016
 **Version:**: 0.1.0
 
 #### Background
