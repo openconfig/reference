@@ -7,7 +7,7 @@ Paul Borman, Marcus Hines, Carl Lebsack, Chris Morrow, Anees Shaikh, Rob Shakir
 November 7th, 2016
 
 **Version:**
-0.4.1
+0.5.0
 
 # Table of Contents
 
@@ -1034,7 +1034,7 @@ limitations under the License
 
 # 7 Revision History
 
-* v0.4.1: November 14, 2017
+* v0.5.0: November 14, 2017
   * Add `target` field within `Path` message with description in [Section 2.2.2.1](#2221-path-target)
   * Add `updates_only` field within `SubscribeRequest` message.
   * Add `duplicates` field withing `Update` message.
