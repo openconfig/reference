@@ -107,7 +107,7 @@ The fields of the Notification message are as follows:
     *   An `Update` message has three subfields:
         *   `path` - a path encoded as per [2.2.2](#222-paths).
         *   `val` - a value encoded as per [2.2.3](#223-node-values).
-        *   `discards` - a counter value that indicates the number of coalesced duplicates. If a client is unable to keep up with the server, coalescion can occur on a per update (i.e., per path) basis such that the server can discard previous values for a given update and return only the latest. In this case the server SHOULD increment a count associated with the update such that a client can detect that transitions in the state of the path have occurred, but were suppressed due to its inability to keep up.
+        *   `duplicates` - a counter value that indicates the number of coalesced duplicates. If a client is unable to keep up with the server, coalescion can occur on a per update (i.e., per path) basis such that the server can discard previous values for a given update and return only the latest. In this case the server SHOULD increment a count associated with the update such that a client can detect that transitions in the state of the path have occurred, but were suppressed due to its inability to keep up.
     *   The set of paths that are specified within the list of updates MUST be unique. In this context, the path is defined to be the fully resolved path (including the prefix). In the case that there is a duplicate path specified within an update, only the final update should be processed by the receiving entity.
 *   `delete` -  a list of paths (encoded as per [2.2.2](#222-paths)) that indicate the deletion of data nodes on the target.
 
