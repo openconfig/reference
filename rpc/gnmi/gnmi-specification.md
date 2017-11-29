@@ -7,7 +7,7 @@ Paul Borman, Marcus Hines, Carl Lebsack, Chris Morrow, Anees Shaikh, Rob Shakir
 November 7th, 2016
 
 **Version:**
-0.4.0
+0.5.0
 
 # Table of Contents
 
@@ -104,9 +104,10 @@ The fields of the Notification message are as follows:
 *   `prefix` - a prefix which is applied to all path fields (encoded as per [2.2.2](#222-paths)) included in the `Notification` message. The paths expressed within the message are formed by the concatenation of `prefix + path`. The `prefix` always precedes the `path` elements. Further semantics of prefixes are described in [2.4.1](#24-1-path-prefixes).
 *   `alias `- a string providing an alias for the prefix specified within the notification message. The encoding of an alias, and the procedure for their creation  is described in [2.4.2](#242-path-aliases)`.`
 *   `update` - a list of update messages that indicate changes in the underlying data of the target. Both modification and creation of data is expressed through the update message.
-    *   An `Update` message has two subfields:
+    *   An `Update` message has three subfields:
         *   `path` - a path encoded as per [2.2.2](#222-paths).
         *   `val` - a value encoded as per [2.2.3](#223-node-values).
+        *   `duplicates` - a counter value that indicates the number of coalesced duplicates. If a client is unable to keep up with the server, coalescion can occur on a per update (i.e., per path) basis such that the server can discard previous values for a given update and return only the latest. In this case the server SHOULD increment a count associated with the update such that a client can detect that transitions in the state of the path have occurred, but were suppressed due to its inability to keep up.
     *   The set of paths that are specified within the list of updates MUST be unique. In this context, the path is defined to be the fully resolved path (including the prefix). In the case that there is a duplicate path specified within an update, only the final update should be processed by the receiving entity.
 *   `delete` -  a list of paths (encoded as per [2.2.2](#222-paths)) that indicate the deletion of data nodes on the target.
 
@@ -126,6 +127,7 @@ A path is represented by the `Path` message with the following fields:
 
 *   `origin` - a field which MAY be used to disambiguate the path if necessary.  For example, the origin may be used to indicate which organization defined the schema to which the path belongs.
 *   `elem` - an array of `PathElem` messages, each containing the name of the element, and any associated keys.
+*   `target` - the name of the target for which the path is a member. Only set in `prefix` for a path. Elaboration of this field is in [2.2.2.1](#2221-path-target).
 
 Each `Path` element should correspond to a node in the data tree. For example, the path `/a/b/c/d` is encoded as:
 
@@ -181,6 +183,10 @@ path: <
 ```
 
 Paths (defined to be the concatenation of the `prefix` and `path` within the message) specified within a message MUST be absolute - no messages with relative paths should be generated.
+
+#### 2.2.2.1 Path Target
+
+The `target` field within a path is name for the target. This field MUST only ever be present on `prefix` paths in the corresponding request and response messages.  This field is optional for clients. When set in the `prefix` in a request, `GetRequest`, `SetRequest` or `SubscribeRequest`, the field MUST be reflected in the `prefix` of the corresponding `GetResponse`, `SetResponse` or `SubscribeResponse` by a server. This field is used to allow a name to be associated with all the data for a given stream if requested by a client. If a client does not set this field in the `prefix` of a request, it MUST NOT be set in the `prefix` of the corresponding response messages. The value for `target` is tied to the context of a client RPC and not persisted or shared among multiple clients.
 
 ### 2.2.3 Node Values
 
@@ -815,6 +821,7 @@ A `SubscriptionList` message is used to indicate a set of paths for which common
 *   `qos` - a field describing the packet marking that is to be utilised for the responses to the subscription that is being created. This field has a single sub-value, `marking`, which indicates the DSCP value as a 32-bit unsigned integer. If the `qos` field is not specified, the device should export telemetry traffic using its default DSCP marking for management-plane traffic.
 *   `allow_aggregation` - a boolean value used by the client to allow schema elements that are marked as eligible for aggregation to be combined into single telemetry update messages. By default, aggregation MUST NOT be used.
 *   `use_models` - a `ModelData` message (as specified in [Section 2.6.1](#261-the-modeldata-message)) specifying the schema definition modules that the target should use when creating a subscription. When specified, the target MUST only consider data elements within the defined set of schema models as defined in [Section 2.6](#26-schema-definition-models). When `use_models` is not specified, the target MUST consider all data elements that are defined in all schema modules that it supports.
+*   `updates_only` - a boolean that causes the server to send only updates to the current state. When set to true, the target MUST not transmit the current state of the paths that the client has subscribed to, but rather should send only updates to them. For `STREAM` subscriptions, an update occurs upon the next sample (in the case of `SAMPLE` subscriptions), or upon the next value change for `ON_CHANGE` subscriptions. For `POLL` and `ONCE` subscriptions, the target should send only the `sync_response` message, before proceeding to process poll requests (in the case of `POLL`) or closing the RPC (in the case of `ONCE`)."
 
 A client generating a `SubscriptionList` message MUST include the `subscription` field - which MUST be a non-empty set of `Subscription` messages, all other fields are optional.
 
@@ -996,6 +1003,8 @@ To replace the contents of an entire node within the tree, the target populates 
 
 When the target has transmitted the initial updates for all paths specified within the subscription, a `SubscribeResponse` message with the `sync_response` field set to `true` MUST be transmitted to the client to indicate that the initial transmission of updates has concluded.  This provides an indication to the client that all of the existing data for the subscription has been sent at least once.  For `STREAM` subscriptions, such messages are not required for subsequent updates. For `POLL` subscriptions, after each set of updates for  individual poll request, a `SubscribeResponse` message with the `sync_response` field set to `true` MUST be generated.
 
+In the case where the `updates_only` field in the `SubscribeRequest` message has been set, a `sync_response` is sent as the first message on the stream, followed by any updates representing subsequent changes to current state. For a `POLL` or `ONCE` mode, this means that only a `sync_resonse` will be sent. The `updates_only` field allows a client to only watch for changes, e.g. an update to configuration.
+
 # 4 Appendix: Current Protobuf Message and Service Specification
 
 The latest Protobuf IDL gNMI specification is found at https://github.com/openconfig/reference/.
@@ -1024,6 +1033,11 @@ limitations under the License
 ```
 
 # 7 Revision History
+
+* v0.5.0: November 14, 2017
+  * Add `target` field within `Path` message with description in [Section 2.2.2.1](#2221-path-target)
+  * Add `updates_only` field within `SubscribeRequest` message.
+  * Add `duplicates` field withing `Update` message.
 
 * v0.4.0: June 16, 2017
   * Deprecate the old `value` field within the `Update` message, in favour of the new `TypedValue` field.
