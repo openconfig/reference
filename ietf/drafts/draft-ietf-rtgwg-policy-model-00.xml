@@ -1,0 +1,700 @@
+<?xml version="1.0"?>
+<!DOCTYPE rfc SYSTEM "rfc2629.dtd">
+<rfc docName="draft-ietf-rtgwg-policy-model-00" ipr="trust200902" category="info">
+<?rfc toc="yes"?>
+  <front>
+    <title abbrev="Routing Policy Model">Routing Policy Configuration Model for Service Provider Networks</title>
+    <author initials="A." surname="Shaikh" fullname="Anees Shaikh">
+      <organization>Google</organization>
+      <address>
+        <postal>
+          <street>1600 Amphitheatre Pkwy</street>
+          <city>Mountain View</city>
+          <region>CA</region>
+          <code>94043</code>
+          <country>US</country>
+        </postal>
+        <email>aashaikh@google.com</email>
+      </address>
+    </author>
+    <!-- Include Rob Shakir as author -->
+    <?rfc include="http://rob.sh/files/ietf-author.xml"?>
+    <author initials="K." surname="D'Souza" fullname="Kevin D'Souza">
+      <organization>AT&amp;T</organization>
+      <address>
+        <postal>
+          <street>200 S. Laurel Ave</street>
+          <city>Middletown</city>
+          <region>NJ</region>
+          <country>US</country>
+        </postal>
+        <email>kd6913@att.com</email>
+      </address>
+    </author>
+    <author initials="C." surname="Chase" fullname="Chris Chase">
+      <organization>AT&amp;T</organization>
+      <address>
+        <postal>
+          <street>9505 Arboretum Blvd</street>
+          <city>Austin</city>
+          <region>TX</region>
+          <country>US</country>
+        </postal>
+        <email>chase@labs.att.com</email>
+      </address>
+    </author>
+
+    <date month="September" year="2015" />
+
+    <area>Routing</area>
+
+    <abstract>
+      <t>This document defines a YANG data model for configuring and
+        managing routing policies in a vendor-neutral way and based on
+        actual operational practice.  The model provides a generic policy
+        framework which can be augmented with protocol-specific policy
+        configuration.
+      </t>
+    </abstract>
+  </front>
+
+  <middle>
+    <section title="Introduction" anchor="intro">
+      <t>This document describes a <xref target="RFC6020">YANG</xref>
+      data model for routing policy configuration based on operational
+      usage and best practices in a variety of service provider
+      networks.  The model is intended to be vendor-neutral, in order
+      to allow operators to manage policy configuration in a
+      consistent, intuitive way in heterogeneous
+      environments with routers supplied by multiple vendors.
+      </t>
+      <section title = "Goals and approach" anchor="goals">
+      <t>
+      This model does not aim to be feature complete -- it is a
+      subset of the policy configuration parameters available
+      in a variety of vendor implementations, but supports widely
+      used constructs for managing how routes are imported,
+      exported, and modified across different routing protocols.
+      The model development approach has been to examine actual
+      policy configurations in use across a number of operator
+      networks.  Hence the focus is on enabling policy configuration
+      capabilities and structure that are in wide use.
+      </t>
+
+      <t>
+      Despite the differences in details of policy expressions and
+      conventions in various vendor implementations, the model
+      reflects the observation that a relatively simple condition-
+      action approach can be readily mapped to several existing vendor
+      implementations, and also gives operators an intuitive and
+      straightforward way to express policy without sacrificing
+      flexibility.  A side affect of this design decision is that
+      legacy methods for expressing policies are not considered.  Such
+      methods could be added as an augmentation to the model if
+      needed.
+      </t>
+
+     <t>
+      Consistent with the goal to produce a data model that is vendor
+      neutral, only policy expressions that are deemed to be widely
+      available in existing major implementations are included in the
+      model.  Those configuration items that are only available from
+      a single implementation are omitted from the model with the
+      expectation they will be available in separate vendor-provided
+      modules that augment the current model.
+      </t>
+      </section>
+    </section>
+
+    <section title="Model overview" anchor="overview">
+      <t>
+      The routing policy model is defined in two YANG modules, the
+      main policy module, and an auxiliary module providing
+      additional generic types.  The model has three main parts:
+      </t>
+      <t>
+        <list style="symbols">
+          <t>
+          A generic framework to express policies as sets of related
+          conditions and actions. This includes match sets and actions
+          that are useful across many routing protocols.
+          </t>
+          <t>
+          A structure that allows routing protocol models to add
+          protocol-specific policy conditions and actions though
+          YANG augmentations.  There is a complete example of this
+          for <xref target="RFC4271">BGP</xref> policies in the proposed vendor-neutral
+          <xref target="I-D.ietf-idr-bgp-model">BGP data model</xref>.
+          </t>
+          <t>
+          A reusable grouping for attaching import and export rules in
+          the context of routing configuration for different
+          protocols, VRFs, etc.  This also enables creation of policy
+          chains and expressing default policy behavior.
+          </t>
+        </list>
+      </t>
+      <t>
+        These modules make use of the standard Internet types,
+        such as IP addresses, autonomous system numbers, etc.,
+        defined in <xref target="RFC6991">RFC 6991</xref>.
+      </t>
+    </section>
+
+    <section title="Route policy expression" anchor="expression">
+      <t>
+      Policies are expressed as a sequence of top-level policy
+      definitions each of which consists of a sequence of policy statements.
+      Policy statements in turn consist of simple condition-action
+      tuples. Conditions may include multiple match or comparison
+      operations, and similarly, actions may effect multiple changes to
+      route attributes, or indicate a final disposition of accepting
+      or rejecting the route.  This structure is shown below.
+      </t>
+
+      <figure>
+        <artwork>
+   +--rw routing-policy
+      +--rw policy-definitions
+         +--rw policy-definition* [name]
+            +--rw name          string
+            +--rw statements
+               +--rw statement* [name]
+                  +--rw name          string
+                  +--rw conditions
+                  |     ...
+                  +--rw actions
+                        ...
+        </artwork>
+      </figure>
+
+      <section title="Defined sets for policy matching" anchor="sets">
+        <t>
+        The models provides a set of generic sets that can be used for
+        matching in policy conditions.  These sets are applicable across
+        multiple routing protocols, and may be further augmented by
+        protocol-specific models which have their own defined sets.  The
+        supported defined sets include:
+        </t>
+        <t>
+          <list style="symbols">
+          <t>
+            prefix sets - define a set of IP prefixes, each with an
+            associated CIDR netmask range (or exact length)
+          </t>
+          <t>
+            neighbor sets - define a set of neighboring nodes by their
+            IP addresses
+          </t>
+          <t>
+            tag set - define a set of generic tag values that can be used
+            in matches for filtering routes
+          </t>
+          </list>
+        </t>
+        <t>
+          The model structure for defined sets is shown below.
+        </t>
+
+        <figure>
+          <artwork>
+  +--rw routing-policy
+      +--rw defined-sets
+         +--rw prefix-sets
+         |  +--rw prefix-set* [prefix-set-name]
+         |     +--rw prefix-set-name    string
+         |     +--rw prefix* [ip-prefix masklength-range]
+         |        +--rw ip-prefix           inet:ip-prefix
+         |        +--rw masklength-range    string
+         +--rw neighbor-sets
+         |  +--rw neighbor-set* [neighbor-set-name]
+         |     +--rw neighbor-set-name    string
+         |     +--rw neighbor* [address]
+         |        +--rw address    inet:ip-address
+         +--rw tag-sets
+            +--rw tag-set* [tag-set-name]
+               +--rw tag-set-name    string
+               +--rw tag* [value]
+                  +--rw value    pt:tag-type
+          </artwork>
+        </figure>
+      </section>
+
+
+      <section title="Policy conditions" anchor="conditions">
+        <t>
+        Policy statements consist of a set of conditions and actions
+        (either of which may be empty).  Conditions are used to
+        match route attributes against a defined set (e.g., a prefix
+        set), or to compare attributes against a specific value.
+        </t>
+
+        <t>
+        Match conditions may be further modified using the
+        match-set-options configuration which allows operators to
+        change the behavior of a match. Three options are supported:
+        </t>
+        <t>
+          <list style="symbols">
+            <t>ALL - match is true only if the given value matches
+              all members of the set.
+            </t>
+            <t>ANY - match is true if the given value matches any
+              member of the set.
+            </t>
+            <t>INVERT - match is true if the given value does not
+              match any member of the given set.
+            </t>
+          </list>
+        </t>
+        <t>
+        Not all options are appropriate for matching against all
+        defined sets (e.g., match ALL in a prefix set does not make sense).
+        In the model, a restricted set of match options is used where
+        applicable.
+        </t>
+
+        <t>
+        Comparison conditions may similarly use options to change how
+	      route attributes should be tested, e.g., for equality or
+	      inequality, against a given value.
+        </t>
+
+        <t>
+        While most policy conditions will be added by individual
+        routing protocol models via augmentation, this routing policy
+        model includes several generic match conditions and also the
+        ability to test which protocol or mechanism installed a route
+        (e.g., BGP, IGP, static, etc.).  The conditions included in
+        the model are shown below.
+        </t>
+
+        <figure>
+          <artwork>
+    +--rw routing-policy
+      +--rw policy-definitions
+         +--rw policy-definition* [name]
+            +--rw statements
+               +--rw statement* [name]
+                  +--rw conditions
+                     +--rw call-policy?
+                     +--rw match-prefix-set!
+                     |  +--rw prefix-set?
+                     |  +--rw match-set-options?
+                     +--rw match-neighbor-set!
+                     |  +--rw neighbor-set?
+                     |  +--rw match-set-options?
+                     +--rw match-tag-set!
+                     |  +--rw tag-set?
+                     |  +--rw match-set-options?
+                     +--rw install-protocol-eq?
+                     +--rw igp-conditions
+          </artwork>
+        </figure>
+      </section>
+
+      <section title="Policy actions" anchor="actions">
+
+        <t>
+        When policy conditions are satisfied, policy actions are used
+        to set various attributes of the route being processed, or to
+        indicate the final disposition of the route, i.e., accept or
+        reject.
+        </t>
+
+        <t>
+        Similar to policy conditions, the routing policy model includes
+        generic actions in addition to the basic route
+        disposition actions.  These are shown below.
+        </t>
+
+        <figure>
+          <artwork>
+    +--rw routing-policy
+      +--rw policy-definitions
+         +--rw policy-definition* [name]
+            +--rw statements
+               +--rw statement* [name]
+                  +--rw actions
+                     +--rw (route-disposition)?
+                     |  +--:(accept-route)
+                     |  |  +--rw accept-route?   empty
+                     |  +--:(reject-route)
+                     |     +--rw reject-route?   empty
+                     +--rw igp-actions
+                        +--rw set-tag?   pt:tag-type
+          </artwork>
+        </figure>
+
+      </section>
+
+      <section title="Policy subroutines" anchor="subroutines">
+
+        <t>
+        Policy 'subroutines' (or nested policies) are
+        supported by allowing policy statement conditions to reference
+        other policy definitions using the call-policy configuration.
+        Called policies apply their conditions and
+        actions before returning to the calling policy statement and
+        resuming evaluation.  The outcome of the called policy affects
+        the evaluation of the calling policy.  If the called policy
+        results in an accept-route (either explicit or by default),
+        then the subroutine returns an effective boolean true value to
+        the calling policy.  For the calling policy, this is equivalent
+        to a condition statement evaluating to a true value and
+        evaluation of the policy continues
+        (see <xref target="evaluation"></xref>).  Note that
+        the called policy may also modify attributes of the route in
+        its action statements. Similarly, a reject-route action
+        returns false and the calling policy evaluation will be
+        affected accordingly.
+        </t>
+
+      	<t>
+      	Note that the called policy may itself call other policies (subject
+      	to implementation limitations).  The model does not prescribe a
+        nesting depth because this varies among implementations, with
+        some major implementations only supporting a single subroutine,
+        for example.  As with any routing policy construction, care
+        must be taken with nested policies to ensure that the effective
+        return value results in the intended behavior.  Nested policies
+        are a convenience in many routing policy constructions but
+        creating policies nested beyond a small number of levels (e.g., 2-3)
+        should be discouraged.
+        </t>
+
+      </section>
+
+    </section>
+
+    <section title="Policy evaluation" anchor="evaluation">
+
+      <t>
+      Evaluation of each policy definition proceeds by evaluating its
+      corresponding individual policy statements in order.  When a
+      condition statement in a policy statement is satisfied, the
+      corresponding action statement is executed.  If the action
+      statement has either accept-route or reject-route actions,
+      evaluation of the current policy definition stops, and no further
+      policy definitions in the chain are evaluated.
+      </t>
+
+      <t>
+      If the condition is not satisfied, then evaluation proceeds to
+      the next policy statement.  If none of the policy statement
+      conditions are satisfied, then evaluation of the current policy
+      definition stops, and the next policy definition in the chain is
+      evaluated.  When the end of the policy chain is reached, the
+      default route disposition action is performed (i.e., reject-route
+      unless an an alternate default action is specified for the
+      chain).
+      </t>
+
+    </section>
+
+    <section title="Applying routing policy" anchor="usage">
+
+      <t>
+      Routing policy is applied by defining and attaching policy chains
+      in various routing contexts.  Policy chains are sequences of
+      policy definitions (described in <xref target="expression">
+      </xref>) that have an associated direction (import or export)
+      with respect to the routing context in which they are defined.
+      The routing policy model defines an apply-policy grouping that
+      can be imported and used by other models.  As shown below, it
+      allows definition of import and export policy chains, as well as
+      specifying the default route disposition to be used when no
+      policy definition in the chain results in a final decision.
+      </t>
+
+      <figure>
+        <artwork>
+      +--rw apply-policy
+      |  +--rw config
+      |  |  +--rw import-policy*
+      |  |  +--rw default-import-policy?   default-policy-type
+      |  |  +--rw export-policy*
+      |  |  +--rw default-export-policy?   default-policy-type
+        </artwork>
+      </figure>
+
+      <t>
+      The default policy defined by the model is to reject the route for
+      both import and export policies.
+      </t>
+
+      <t>
+      An example of using the apply-policy group in another routing
+      model is shown below for BGP.  Here, import and export policies
+      are applied in the context of a particular BGP peer group.  Note
+      that the policy chains reference policy definitions by name that
+      are defined in the routing policy model.
+      </t>
+
+      <figure>
+        <artwork>
++--rw bgp!
+    +--rw peer-groups
+       +--rw peer-group* [peer-group-name]
+          +--rw peer-group-name
+          +--rw config
+          |  +--rw peer-as?
+          |  +--rw local-as?
+          |  +--rw peer-type?
+          |  +--rw auth-password?
+          |  +--rw remove-private-as?
+          |  +--rw route-flap-damping?
+          |  +--rw send-community?
+          |  +--rw description?
+          |  +--rw peer-group-name?
+          +--ro state
+          |  +--ro peer-as?
+          |  +--ro local-as?
+          |  +--ro peer-type?
+          |  +--ro auth-password?
+          |  +--ro remove-private-as?
+          |  +--ro route-flap-damping?
+          |  +--ro send-community?
+          |  +--ro description?
+          |  +--ro peer-group-name?
+          |  +--ro total-paths?
+          |  +--ro total-prefixes?
+          +--rw apply-policy
+          |  +--rw config
+          |  |  +--rw import-policy*
+          |  |  +--rw default-import-policy?
+          |  |  +--rw export-policy*
+          |  |  +--rw default-export-policy?
+          |  +--ro state
+          |     +--ro import-policy*
+          |     +--ro default-import-policy?
+          |     +--ro export-policy*
+          |     +--ro default-export-policy?
+          ...
+        </artwork>
+      </figure>
+
+
+    </section>
+
+    <section title="Routing protocol-specific policies" anchor="augment">
+
+      <t>
+      Routing models that require the ability to apply routing policy
+      may augment the routing policy model with protocol or other
+      specific policy configuration.  The routing policy model
+      assumes that additional defined sets, conditions, and actions
+      may all be added by other models.
+      </t>
+
+      <t>
+      An example of this is shown below, in which the BGP configuration
+      model in <xref target="I-D.ietf-idr-bgp-model"></xref>
+      adds new defined sets to match on community values or AS paths.
+      The model similarly augments BGP-specific conditions and actions
+      into the corresponding sections of the routing policy model.
+      </t>
+
+
+      <figure>
+        <artwork>
+ +--rw routing-policy
+    +--rw defined-sets
+       +--rw prefix-sets
+       |  +--rw prefix-set* [prefix-set-name]
+       |     +--rw prefix-set-name
+       |     +--rw prefix* [ip-prefix masklength-range]
+       |        +--rw ip-prefix
+       |        +--rw masklength-range
+       +--rw neighbor-sets
+       |  +--rw neighbor-set* [neighbor-set-name]
+       |     +--rw neighbor-set-name
+       |     +--rw neighbor* [address]
+       |        +--rw address
+       +--rw tag-sets
+       |  +--rw tag-set* [tag-set-name]
+       |     +--rw tag-set-name
+       |     +--rw tag* [value]
+       |        +--rw value
+       +--rw bgp-pol:bgp-defined-sets
+          +--rw bgp-pol:community-sets
+          |  +--rw bgp-pol:community-set* [community-set-name]
+          |     +--rw bgp-pol:community-set-name
+          |     +--rw bgp-pol:community-member*
+          +--rw bgp-pol:ext-community-sets
+          |  +--rw bgp-pol:ext-community-set* [ext-community-set-name]
+          |     +--rw bgp-pol:ext-community-set-name
+          |     +--rw bgp-pol:ext-community-member*
+          +--rw bgp-pol:as-path-sets
+             +--rw bgp-pol:as-path-set* [as-path-set-name]
+                +--rw bgp-pol:as-path-set-name
+                +--rw bgp-pol:as-path-set-member*
+        </artwork>
+      </figure>
+
+    </section>
+
+    <section title="Security Considerations">
+
+      <t>Routing policy configuration has a significant impact on network operations,
+      and as such any related model carries potential security risks.
+      </t>
+
+      <t>YANG data models are generally designed to be used with the
+      NETCONF protocol over an SSH transport.  This provides an
+      authenticated and secure channel over which to transfer
+      configuration and operational data.  Note that use of
+      alternate transport or data encoding (e.g., JSON over HTTPS)
+      would require similar mechanisms for authenticating and
+      securing access to configuration data.
+      </t>
+
+      <t>Most of the data elements in the policy model could be
+      considered sensitive from a security standpoint.  Unauthorized
+      access or invalid data could cause major disruption.
+      </t>
+
+    </section>
+
+    <section title="IANA Considerations">
+
+      <t>This YANG data model and the component modules currently use
+      a temporary ad-hoc namespace.  If and when it is placed on redirected for
+      the standards track, an appropriate namespace URI will be
+      registered in the <xref target="RFC3688">IETF XML Registry"</xref>.
+      The routing policy YANG modules will be registered in the
+      "YANG Module Names" registry [RFC6020].
+      </t>
+    </section>
+
+    <section title="YANG modules" anchor="models">
+
+      <t>The routing policy model is described by the YANG modules in the
+      sections below.
+      </t>
+
+      <section title="Routing policy model">
+	<figure>
+	<artwork><![CDATA[
+<CODE BEGINS> file routing-policy.yang
+<?yfile include="https://raw.githubusercontent.com/YangModels/yang/master/experimental/openconfig/policy/routing-policy.yang"?>
+<CODE ENDS>
+ ]]>
+        </artwork>
+        </figure>
+      </section>
+
+      <section title="Routing policy types">
+	     <figure>
+	     <artwork><![CDATA[
+<CODE BEGINS> file policy-types.yang
+<?yfile include="https://raw.githubusercontent.com/YangModels/yang/master/experimental/openconfig/policy/policy-types.yang"?>
+<CODE ENDS>
+ ]]>
+	     </artwork>
+	     </figure>
+      </section>
+
+    </section>
+
+    <section title="Policy examples" anchor="examples">
+
+      <t>
+      Below we show an example of XML-encoded configuration data using
+      the routing policy and BGP models to illustrate both how policies
+      are defined, and also how they can be applied.  Note that the XML
+      has been simplified for readability.
+      </t>
+
+      <figure>
+        <artwork><![CDATA[
+<?yfile include="file:///tmp/routing-policy-example-draft.xml"?>
+ ]]>
+        </artwork>
+      </figure>
+
+    </section>
+
+  </middle>
+
+  <back>
+    <references title="Normative references">
+      <reference anchor="RFC6020">
+        <front>
+          <title>YANG - A Data Modeling Language for
+            the Network Configuration Protocol (NETCONF)</title>
+          <author initials="M." surname="Bjorklund" fullname="Martin
+            Bjorklund">
+            <organization>Tail-f Systems</organization>
+          </author>
+          <date month="October" year="2014" />
+        </front>
+        <seriesInfo name="RFC" value="6020" />
+      </reference>
+      <reference anchor="RFC4271">
+      	<front>
+      	  <title>A Border Gateway Protocol 4 (BGP-4)</title>
+      	  <author initials="Y." surname="Rekhter" fullname="Yakov Rekhter">
+      	    <organization/>
+      	  </author>
+      	  <author initials="T." surname="Li" fullname="Tony Li">
+      	    <organization/>
+      	  </author>
+      	  <author initials="S." surname="Hares" fullname="Susan Hares">
+      	    <organization/>
+      	  </author>
+      	  <date year="2006" month="January"/>
+      	</front>
+      	<seriesInfo name="RFC" value="4271"/>
+      </reference>
+
+      <reference anchor="RFC6991">
+        <front>
+          <title>Common YANG Data Types</title>
+          <author initials="J." surname="Schoenwaelder" fullname="Juergen Schoenwaelder">
+            <organization>Jacobs University</organization>
+          </author>
+          <date month="July" year="2013" />
+        </front>
+        <seriesInfo name="RFC" value="6991" />
+      </reference>
+      <reference anchor="RFC3688">
+        <front>
+          <title>The IETF XML Registry</title>
+          <author initials="M." surname="Mealling" fullname="Michael
+	    Mealling">
+            <organization>Verisign, Inc.</organization>
+          </author>
+          <date month="January" year="2004" />
+        </front>
+        <seriesInfo name="RFC" value="3688" />
+      </reference>
+    </references>
+
+    <references title="Informative references">
+      <?rfc include="http://xml2rfc.ietf.org/public/rfc/bibxml3/reference.I-D.ietf-idr-bgp-model.xml"?>
+      <?rfc include="http://xml2rfc.ietf.org/public/rfc/bibxml3/reference.I-D.openconfig-netmod-opstate.xml"?>
+    </references>
+
+    <section title="Acknowledgements">
+      <t>The authors are grateful for valuable contributions to this
+      document and the associated models from: Ebben Aires, Luyuan Fang,
+      Josh George, Acee Lindem, Stephane Litkowski, Ina Minei,
+      Carl Moberg, Eric Osborne, Steve Padgett, Juergen Schoenwaelder,
+      Jim Uttaro, and Russ White.
+      </t>
+
+    </section>
+    <section title="Change summary">
+      <section title="Changes between revisions draft-shaikh-rtgwg-policy-model and -00">
+      <t>
+        This revision updates the draft name to reflect adoption as a working
+        document in the RTGWG.  Minor changes include updates to references
+        and updated author contact information.
+      </t>
+      </section>
+    </section>
+
+
+  </back>
+</rfc>

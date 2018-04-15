@@ -1,0 +1,658 @@
+<?xml version="1.0"?>
+<!DOCTYPE rfc SYSTEM "rfc2629.dtd">
+<rfc docName="draft-openconfig-netmod-model-catalog-02" ipr="trust200902" category="info">
+<?rfc toc="yes"?>
+  <front>
+    <title abbrev="YANG Model Catalog">Catalog and registry for YANG models</title>
+        <!-- Include Anees Shaikh as author -->
+    <?rfc include="http://ashaikh.com/ashaikh_com/bib/aas-ietf-author.xml"?>
+    <!-- Include Rob Shakir as author -->
+    <!-- <?rfc include="http://rob.sh/files/ietf-author.xml"?> -->
+    <author initials="R." surname="Shakir" fullname="Rob Shakir">
+      <organization>Google</organization>
+      <address>
+        <postal>
+          <street>1600 Amphitheatre Pkwy</street>
+          <city>Mountain View</city>
+          <region>CA</region>
+          <code>94043</code>
+          <country>US</country>
+        </postal>
+        <email>rjs@rob.sh</email>
+      </address>
+    </author>
+    <author initials="K." surname="D'Souza" fullname="Kevin D'Souza">
+      <organization>AT&amp;T</organization>
+      <address>
+        <postal>
+          <street>200 S. Laurel Ave</street>
+          <city>Middletown</city>
+          <region>NJ</region>
+          <country>US</country>
+        </postal>
+        <email>kd6913@att.com</email>
+      </address>
+    </author>
+    <date month="March" year="2017" />
+
+    <area>Operations and Management</area>
+
+    <abstract>
+      <t>
+        This document presents an approach for a YANG model catalog
+        and registry that allows users to find models relevant to
+        their use cases from the large and growing number of YANG
+        modules being published.  The model catalog may also be used
+        to define bundles of YANG modules required to realize a
+        particular service or function.
+      </t>
+    </abstract>
+  </front>
+
+  <middle>
+    <section title="Introduction" anchor="intro">
+      <t>
+        As YANG <xref target="RFC6020" /><xref target="RFC7950" /> adoption and usage
+        grows, the number of YANG models (and corresponding module and
+        submodule files) published is increasing rapidly. This growing
+        collection of modules potentially enables a large set of
+        management use cases, but from a user perspective, it is a
+        daunting task to navigate the largely ad-hoc landscape of
+        models to determine their functionality, compatibility, and
+        available implementations.  For example, the <xref target
+        ="RTG-AD-YANG">IETF Routing Area Coordination page</xref>
+        currently tracks over 150 YANG models related to layer 2 and
+        layer 3 technologies.
+      </t>
+      <t>
+        YANG models are also being developed and published beyond the
+        IETF, for example by open source projects, other standards
+        organizations, and industry forums.  These efforts are
+        generally independent from each other and sometimes result in
+        overlapping models.  While we recognize that models may come
+        from multiple sources, the current approach of having a flat
+        online listing of models is not sufficient to help users find
+        the models they need, along with the information to retrieve
+        and utilize the models in actual operational systems.  There
+        is a need for a wider registry and catalog of available models
+        that provides a central reference for model consumers and
+        developers.
+      </t>
+      <t>
+        The idea of a model catalog is inspired by service catalogs
+        in traditional IT environments.  Service catalogs serve as
+        software-based registries of available services with
+        information needed to discover and invoke them.
+      </t>
+      <t>
+        In <xref target="I-D.openconfig-netmod-model-structure">earlier
+        proposals</xref> we motivated the need for
+        a common structure that allows a set of models to be used
+        together coherently in order to manage, for example, a
+        complete network device.  Other efforts have subsequently
+        proposed further options for modeling the complete <xref
+        target="I-D.rtgyangdt-rtgwg-device-model">device
+        structure</xref>.  We also briefly described the notion of a
+        model catalog to provide a structured view of all of the
+        models available from different organizations. In this
+        document, we further elaborate on some of the details and use
+        cases for a model catalog and registry.
+      </t>
+      <t>
+        There are recent proposals that address related issues in
+        terms of understanding the set of YANG models available on a
+        device <xref target="RFC7895" />, and how to classify models
+        based on their role in describing a multi-layer service <xref
+        target="I-D.ietf-netmod-yang-model-classification" />.  The
+        latter, in particular, describes a taxonomy for classifying
+        YANG models that could also be used in the model catalog,
+        though it does not address the problem of expressing model
+        functionality, which is a key requirement.
+      </t>
+    </section>
+
+    <section title = "Model catalog and registry requirements" anchor="reqs">
+      <t>
+        At a high level, the model catalog must provide enough
+        information for users to determine which YANG modules or
+        module bundles are available to describe a specific service or
+        technology, and attributes of those modules that would help
+        the user select the best model for their scenario.  While this
+        draft does not specifically address selection criteria -- they
+        would be specific to each user -- some examples include:
+      </t>
+      <t>
+        <list style="symbols">
+          <t>
+            model maturity, including availability of server implementations
+            (e.g., native device support)
+          </t>
+          <t>
+            availablility of co-requisite models, and complexity of the model
+            dependencies
+          </t>
+          <t>
+            identity and reputation of the entity or organization publishing
+            the model
+          </t>
+        </list>
+      </t>
+      <t>
+        The model catalog should, therefore, include key information about YANG
+        modules, including:
+      </t>
+      <t>
+        <list style="symbols">
+            <t>
+              organization responsible for publishing and maintaining the
+              module with contact information; organizations may include
+              standards bodies (SDOs), industry forums, open source projects,
+              individuals, etc.
+            </t>
+            <t>
+              classification of the module or model, which could be
+              along several axes, e.g., functional category, service
+              vs. element models, commercial vs. free-to-use, etc.;
+              currently, identities are available for the
+              classifications defined in
+              <xref target="I-D.ietf-netmod-yang-model-classification" />
+            </t>
+            <t>
+              groupings of modules (and their versions) that are
+              compatible with each other, and together provide a
+              defined set of functionality
+            </t>
+            <t>
+              for open models, the license under which the model is distributed; this
+              is important if there are limitations on how the model may be modified
+              or redistributed
+            </t>
+            <t>
+              module dependencies, e.g., a list of all of the YANG modules that
+              are required
+            </t>
+            <t>
+              pointer to the YANG module, e.g., a machine-readable URI
+              and authentication information to allow users to verify that
+              the model they retrieve is authentic and unaltered
+            </t>
+            <t>
+              implementation information, for example, a list of
+              available server implementations that support the module
+            </t>
+          </list>
+        </t>
+        <t>
+          Establishing a globally applicable classification scheme for
+          models is not straightforward -- each organization
+          developing models likely has its own taxonomy or
+          organization strategy for YANG modules. This is an area of
+          the catalog that is likely to require extensibility and
+          customization, e.g., by letting each organization augment
+          the schema with its own categories.  Similarly, users may
+          want to define their own classifications for use by internal
+          systems.
+        </t>
+        <t>
+          The proposed catalog schema should be useful as a local
+          database, deployed by a single user, and also as a global
+          registry that can be used to discover available models.  For
+          example, the local catalog could be used to define the
+          approved set of models for use within an organization, while
+          the registry serves as a channel for all model developers to
+          make information about their models available.  The <xref
+          target="RFC3688">IETF XML Registry</xref>, maintained by
+          IANA serves a similar purpose for XML documents used in IETF
+          protocols, but it is limited to IETF-defined YANG models, is
+          tied to XML encoded data, and has a very limited schema.
+        </t>
+        <t>
+          The registry implementation could be as simple as a metadata
+          database that reflects the proposed catalog schema, along
+          with means for online access and viewing.  A key requirement
+          for the online registry would be a robust query capability
+          that allows users to search for modules meeting a variety of
+          selection criteria, along with an easy way to retrieve
+          modules (where applicable).
+        </t>
+      </section>
+      <section title="Organizing YANG modules" anchor="catalog">
+        <t>
+          We propose a schema for the model catalog defined using YANG
+          (see the modules in <xref target="models" />).  The YANG
+          modules and groupings in the catalog are organized at the
+          top level by the publishing organization and its associated
+          contact information.  The catalog structure is shown below.
+        </t>
+        <figure>
+          <artwork>
+     +--rw organizations
+       +--rw organization* [name]
+          +--rw name               string
+          +--rw type?              identityref
+          +--rw contact?           string
+          +--rw modules
+          |     ...
+          +--rw release-bundles
+          |     ...
+          +--rw feature-bundles
+          |     ...
+          +--rw implementations
+                ...
+          </artwork>
+        </figure>
+        <t>
+          In this model, each organization publishes a list of available
+          modules, each module having associated data describing its
+          version, dependencies, and other basic metadata.  Organizations
+          may also publish release bundles, which are groupings of
+          compatible modules, or feature bundles, which describes
+          specific functionality.
+        </t>
+        <section title="Module information" anchor="module">
+          <t>
+            Each module has several types of information associated with it.
+            These are described below (only node names are shown).
+          </t>
+          <figure>
+            <artwork>
+        +--rw modules
+             +--rw module* [name version]
+                +--rw name
+                +--rw version
+                +--rw namespace?
+                +--rw prefix?
+                +--rw revision?
+                +--rw summary?
+                +--rw classification
+                |  +--rw category?
+                |  +--rw subcategory?
+                |  +--rw deployment-status?
+                +--rw dependencies
+                |  +--rw required-module*
+                +--rw access
+                |  +--rw uri?
+                |  +--rw md5-hash?
+                +--rw submodules
+                   +--rw submodule* [name]
+                      +--rw name
+                      +--rw access
+                         +--rw uri?
+                         +--rw md5-hash?
+            </artwork>
+          </figure>
+          <t>
+            The basic information includes module metadata, such as its
+            version which may be different from the YANG revision
+            statement as in <xref target="OC-SEMVER" />.  Other common
+            information includes the module's prefix, namespace, and a
+            summary of its functionality.
+          </t>
+          <t>
+            The classification data includes some base information but
+            leaves the taxonomy largely to model publishers.  The
+            category and subcategory leaves are identities that are
+            expected to be augmented with additional values.  The
+            current version includes classification categories defined
+            in <xref target="I-D.ietf-netmod-yang-model-classification" />.
+            The classification also includes a
+            status to indicate the development or deployment status of
+            the module, e.g.,  whether it is purely experimental, or
+            mature enough for production use.
+          </t>
+          <t>
+            Module dependencies are represented as a simple list of
+            references to co-requisite modules indicated by 'import'
+            statements in the module.  Only the first-level
+            dependencies are included in the list.  That is, each of
+            the listed dependences can be examined in turn to
+            determine its dependencies.
+          </t>
+          <t>
+            The access data contains information required to retrieve and
+            validate the module.  Specifically, it includes a URI that
+            can be used to download modules directly.  It also
+            includes a simple MD5 checksum to allow checking the data
+            integrity of the module.  Further data for verifying
+            authenticity and origin of the module may be added in future
+            versions of the catalog.
+          </t>
+          <t>
+            For YANG modules that are composed of submodules, the
+            submodules container provides their names and access
+            information.  Note that the submodules are an integral
+            part of their parent modules, and hence are listed
+            together with their parent and corresponding version.
+          </t>
+        </section>
+      </section>
+
+      <section title="Identifying interoperable models" anchor="release">
+        <t>
+          YANG models for configuration and operational state data are
+          under active development and still maturing, especially with
+          regard to their use in production networks.  As models (and
+          their corresponding YANG modules) evolve and are revised,
+          there is a significant challenge for users to identify the
+          set of models that are known, or designed, to work together.
+          This is made more complicated by the fact that models are
+          being sourced by different organizations which may use
+          different modeling conventions. Since there are often cross-
+          dependencies between modules (e.g., interface configuration
+          and various routing protocols), it is critical that users
+          understand which modules can be used together.
+        </t>
+        <t>
+          The model catalog defines the notion of "release" bundles which
+          provide a grouping of YANG modules that are part of a cohesive release.
+          For example, a release bundle can be defined at a granular level to
+          collect all of the modules related to interface configuration that are
+          known to work together.  These bundles can be further grouped into
+          larger releases of models that interoperate, e.g., a release containing
+          interoperable routing, interface, and policy-related modules.
+        </t>
+        <t>
+          Release bundles are also useful for implementors to know
+          which dependencies must have what versions in order to work
+          with a given module.  For example, when an implementor
+          wishes to support a new version of a module, the release
+          bundle provides information about what other modules need to
+          be upgraded in order to be compatible. It is expected that
+          the publisher of the bundle ensures version compatibility of
+          the release, although release bundles and the modules they
+          include do not necessarily need to be from the same
+          organization. We expect, however, that users and publishers
+          of modules would be the primary source of release bundle
+          definitions, and vendors and implementors would be the
+          primary consumers.
+        </t>
+        <section title="Release bundle information" anchor="release-schema">
+          <t>
+            The schema for release bundles is shown below (only node
+            names are shown).
+        </t>
+        <figure>
+          <artwork>
+        +--rw release-bundles
+           +--rw release-bundle* [name version]
+              +--rw name       string
+              +--rw version    oc-cat-types:module-version-type
+              +--rw members
+                 +--rw member* [id]
+                    +--rw id
+                    +--rw type?
+                    +--rw module?
+                    +--rw release-bundle?
+                    +--rw publisher?
+                    +--rw compatible-versions*
+          </artwork>
+        </figure>
+          <t>
+            The release bundle has a name and version assigned to the bundle
+            itself, and a list of members that are part of the bundle.  The
+            list may include a reference to a module or another bundle.  The
+            compatible-versions list indicate which semantic versions
+            <xref target="OC-SEMVER" /> of the
+            respective module or bundle are known to work together.
+          </t>
+        </section>
+      </section>
+      <section title="Specifying functionality with feature bundles" anchor="features">
+        <t>
+          From an operational perspective, the utility of a single
+          module is quite limited.  Most, if not all, use cases
+          require multiple modules that work together coherently.
+          Managing a network device typically requires configuration
+          and operational state models for device-wide services,
+          network protocols, virtual instances, etc. Network services,
+          such as those delivered by many service providers, require
+          not only infrastructure-level management models, such as
+          devices and protocols, but also service-level models that
+          describe service parameters.
+        </t>
+        <t>
+          The model catalog and registry provides a common way to define
+          feature bundles that describe the set of schema paths required
+          to realize a feature or service.  The feature bundle paths are
+          specified against a release bundle that ensures the paths
+          are drawn from a set of compatible modules and/or bundles.
+        </t>
+        <t>
+          Feature bundles are useful for defining specific sets of
+          functionality that can be further composed to build higher
+          level features or services.  For example, a Layer 3 VPN
+          bundle could be composed of more specific features such as
+          interfaces, routing, policy, and QoS.  Note these bundle
+          definitions complement the configuration models for such
+          services, which may focus on providing an abstracted set of
+          configuration or operational state variables.  These
+          variables would then be mapped onto device level variables.
+        </t>
+        <t>
+          Feature bundle definitions can also be used by organizations
+          to identify a canonical set of modules that should be used
+          to build a particular service.  Users within the
+          organization can be assured that the corresponding bundles
+          are known and approved to work together to support the
+          desired service.
+        </t>
+        <t>
+          Finally, a key use case for feature bundles is to define
+          specific units of compliance for an implementation.  Users
+          can define a feature bundle containing only those paths that
+          are required for a given usage, allowing an implementor or
+          vendor to focus their implementation and testing on those
+          paths rather than having to implement the entire contents of
+          a module or bundle.  The implementor may also wish to publish
+          a deviation module that indicates which paths are not supported.
+        </t>
+        <section title="Feature bundle information" anchor="feature-schema">
+          <t>
+            The schema for feature bundles in the catalog is shown below
+            (note only node names are shown).
+          </t>
+          <figure>
+            <artwork>
+          +--rw feature-bundles
+             +--rw feature-bundle* [name version]
+                +--rw name
+                +--rw version
+                +--rw path*
+                +--rw release-bundle
+                |  +--rw name?
+                |  +--rw publisher?
+                |  +--rw version?
+                +--rw feature-bundles
+                   +--rw feature-bundle* [name]
+                      +--rw name
+                      +--rw publisher?
+                      +--rw version?
+            </artwork>
+          </figure>
+          <t>
+            Each feature bundle includes basic information such as the name of the
+            feature or service, the bundle version, and the set of specific
+            schema paths.  The schema paths are based on the release bundle
+            specified as part of the feature bundle.  For simplicity, only
+            one release bundle may be specified.  If the schema paths in a
+            feature bundle cross release bundle boundaries, a new release
+            bundle should be created to include all of the paths needed by
+            the feature bundle.  The feature bundle may itself be composed of more
+            granular feature bundles.  This allows the definition of "base"
+            features that can be reused across feature bundles.
+          </t>
+        </section>
+      </section>
+      <section title="Module implementations" anchor="implementation">
+        <t>
+          Model implementors can use the catalog to indicate the data
+          models they support using the implementation container.
+          An implementation is expected to indicate a set of feature
+          bundles it supports.   The feature bundles may be defined by
+          a user (i.e., a set of compliance units), or by the implementor
+          or vendor to indicate the full list of what is supported.
+        </t>
+        <section title="Implementation information" anchor="impl-schema">
+          <t>
+            The implementation information in the catalog is shown
+            below (only node names are shown):
+        </t>
+        <figure>
+          <artwork>
+            +--rw implementations
+             +--rw implementation* [id]
+                +--rw id
+                +--rw description?
+                +--rw reference?
+                +--rw platform?
+                +--rw platform-version?
+                +--rw status?
+                +--rw feature-bundles
+                   +--rw feature-bundle* [name version]
+                      +--rw name
+                      +--rw publisher?
+                      +--rw version
+          </artwork>
+        </figure>
+        <t>
+          The implementation container provides information about the
+          platform and version on which the feature bundles are supported,
+          as well as the status of the implementation.  It also includes
+          a URI reference to retrieve artifacts or further
+          information on the implementation.  The list of supported
+          feature bundles are references to defined feature bundles in
+          the catalog.
+        </t>
+      </section>
+    </section>
+
+    <section title="Security Considerations">
+
+      <t>
+        The model catalog and registry described in this document do not define actual
+        configuration and state data, hence are not directly responsible for
+        security risks.
+      </t>
+      <t>
+        However, since the model catalog is intended to be an authoritative
+        and authenticated database of published modules, there are security
+        considerations in securing the catalog (both contents and access), and
+        also in authenticating organizations that deposit data into the catalog.
+      </t>
+
+    </section>
+
+    <section title="IANA Considerations">
+      <t>
+        The YANG model catalog is intended to complement the IANA XML
+        Registry.  YANG modules defined in this document may be entered
+        in the XML registry if they are placed or redirected for
+        the standards track, with an appropriate namespace URI.
+      </t>
+    </section>
+
+    <section title="YANG modules" anchor="models">
+
+      <t>The main model catalog and associated types modules are listed below.
+      </t>
+      <figure>
+         <artwork><![CDATA[
+<CODE BEGINS> file "openconfig-catalog-types.yang"
+<?yfile include="file:///tmp/openconfig-catalog-types.yang"?>
+<CODE ENDS>
+ ]]>
+        </artwork>
+      </figure>
+      <figure>
+        <artwork><![CDATA[
+<CODE BEGINS> file "openconfig-module-catalog.yang"
+<?yfile include="file:///tmp/openconfig-module-catalog.yang"?>
+<CODE ENDS>
+ ]]>
+        </artwork>
+      </figure>
+      <t>
+        Required extensions and types modules included below.
+      </t>
+        <figure>
+         <artwork><![CDATA[
+<CODE BEGINS> file "openconfig-extensions.yang"
+<?yfile include="file:///tmp/openconfig-extensions.yang"?>
+<CODE ENDS>
+ ]]>
+        </artwork>
+        </figure>
+      <figure>
+         <artwork><![CDATA[
+<CODE BEGINS> file "openconfig-inet-types.yang"
+<?yfile include="file:///tmp/openconfig-inet-types.yang"?>
+<CODE ENDS>
+ ]]>
+        </artwork>
+        </figure>
+
+    </section>
+
+  </middle>
+
+  <back>
+    <references title="Normative references">
+      <?rfc include="http://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.6020.xml"?>
+      <?rfc include="http://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.7950.xml"?>
+      <?rfc include="http://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.3688.xml"?>
+      <?rfc include="http://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.7895.xml"?>
+    </references>
+
+    <references title="Informative references">
+      <reference anchor="RTG-AD-YANG" target="http://trac.tools.ietf.org/area/rtg/trac/wiki/RtgYangCoordSummary">
+        <front>
+          <title>Routing Area Yang Coordinator's Summary Page</title>
+          <author initials="Q." surname="Wu" fullname="Qin Wu">
+            <organization>Huawei</organization>
+          </author>
+          <author initials="D." surname="Sinicrope" fullname="David Sinicrope">
+            <organization>Ericsson</organization>
+          </author>
+          <date month="October" year="2015" />
+        </front>
+      </reference>
+      <reference anchor="OC-SEMVER" target="http://www.openconfig.net/documentation/semantic-versioning/">
+        <front>
+          <title>Semantic Versioning for OpenConfig models</title>
+          <author><organization>OpenConfig operator working group</organization></author>
+          <date month="September" year="2015" />
+        </front>
+      </reference>
+      <?rfc include="http://xml2rfc.ietf.org/public/rfc/bibxml3/reference.I-D.openconfig-netmod-model-structure"?>
+      <?rfc include="http://xml2rfc.ietf.org/public/rfc/bibxml3/reference.I-D.rtgyangdt-rtgwg-device-model"?>
+      <?rfc include="http://xml2rfc.ietf.org/public/rfc/bibxml3/reference.I-D.ietf-netmod-yang-model-classification"?>
+    </references>
+
+    <section title="Change summary">
+      <section title="Changes between revisions -01 and -02">
+        <t>
+          <list style="symbols">
+            <t>Included additional explanation for release and feature
+              bundles
+            </t>
+            <t>Changed feature bundles to be based on schema paths
+            </t>
+            <t>Included version 0.2.0 of catalog modules.
+            </t>
+          </list>
+        </t>
+      </section>
+      <section title="Changes between revisions -00 and -01">
+        <t>
+          <list style="symbols">
+            <t>Added release bundle definitions. </t>
+            <t>
+              Added IETF module classification identities based on
+              draft-ietf-netmod-yang-model-classification.
+            </t>
+          </list>
+        </t>
+      </section>
+    </section>
+  </back>
+</rfc>

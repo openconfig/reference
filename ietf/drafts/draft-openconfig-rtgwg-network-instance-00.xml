@@ -1,0 +1,363 @@
+<?xml version="1.0"?>
+<!DOCTYPE rfc SYSTEM "rfc2629.dtd">
+<rfc docName="draft-openconfig-rtgwg-network-instance-00" ipr="trust200902" category="info">
+  <front>
+    <title abbrev="Network Instance Model">A Data Model for Network Instances in Service Provider Networks</title>
+    <!-- Include Rob Shakir as author -->
+    <?rfc include="http://rob.sh/files/ietf-author.xml"?>
+    <date month="October" year="2015" />
+
+    <area>Routing</area>
+
+    <abstract>
+      <t>
+          This document defines a YANG data model for configuring and
+          managing forwarding instances on a network device - focused
+          primarily on deployments in service provider networks. The
+          model is vendor-neutral and based on operational
+          requirements expressed by operators. A 'network instance' is
+          defined to be a discrete forwarding table on a network
+          element, which contains Layer 3 and/or Layer 2 forwarding
+          entries. Each network instance may instantiate its own
+          sets of protocols which control installation of
+          forwarding entries into one or more tables (which may be
+          Layer 2 FIBs, or Layer 3 RIBs).
+      </t>
+    </abstract>
+  </front>
+
+  <middle>
+    <section title="Introduction" anchor="intro">
+      <t>
+          Within service provider networks, it is typical for a
+          network element to maintain multiple forwarding tables,
+          allowing the network to support multiple topologies. For
+          instance, a service provider may offer Layer 2 or Layer 3
+          VPN services to its customers - which requires a forwarding
+          table per customer to be maintained on a network element. In
+          other cases, multiple L3 services may be deployed to allow
+          services such as Internet connectivity and private
+          topologies to be maintained on a device.
+      </t>
+      <t>
+          This <xref target="RFC6020">YANG</xref> data model defines a
+          construct which can be used to configure and retrieve
+          operational state related to such instances.
+      </t>
+      <section title="Goals and Approach" anchor="goals">
+        <t>
+            The concept of maintaining multiple Layer 2 virtual switch
+            instances (VSIs) and/or multiple Layer 3 virtual routing
+            and forwarding (VRF) tables is common on network elements
+            that are deployed in service provider networks. However,
+            within such networks there are requirements for a network
+            instance to run both Layer 2 and Layer 3 routing
+            protocols, or contain routed interfaces (e.g., a VPLS
+            service where there is a Layer 3 interface within it, for
+            subscriber termination or to act as a default gateway).
+            For this reason, the intention of the model presented
+            here is to define a generic construct which allows
+            isolation of a forwarding table which may contain Layer 3
+            RIB entries, Layer 2 FIB entries, or a combination both.
+            This differs to the approach taken in other models, which
+            tend to focus on solely L2 VSIs or L3 VRFs. An instance
+            within the model is referred to as network instance - and
+            may be configured to support L3 RIB entries only (i.e., be
+            functionally equivalent to a VRF), L2 FIB entries only
+            (i.e., act as a VSI) or support a combination of both.
+        </t>
+        <t>
+            The model presented in this document is explicitly biased
+            towards deployments on service provider network equipment,
+            as discussed between members of the OpenConfig project.
+        </t>
+      </section>
+    </section>
+    <section title="Model overview" anchor="overview">
+      <figure>
+        <artwork>
+module: openconfig-network-instance
+   +--rw network-instances
+      +--rw network-instance* [name]
+         +--rw name                       -> ../config/name
+         +--rw config
+            ...
+         +--ro state
+            ...
+         +--rw inter-instance-policies
+         |  +--rw apply-policy
+            ...
+         +--rw table-connections
+         |  +--rw table-connection* [src-table dst-table]
+         |     +--rw src-table       -> ../config/src-table
+         |     +--rw dst-table       -> ../config/dst-table
+                ...
+         |     +--rw apply-policy
+                ...
+         +--rw tables
+         |  +--rw table* [table-name]
+                ...
+         +--rw interfaces
+                ....
+         +--rw connection-points
+         |  +--rw connection-point* [connection-point-id]
+              ...
+         +--rw protocols
+            +--rw protocol* [identifier name]
+                ...
+               +--rw static
+                ...
+               +--rw aggregate
+                ...
+        </artwork>
+      </figure>
+      <t>
+        The key elements of the network instance model shown in
+        the above outline tree view are:
+        <list style='symbols'>
+          <t>
+            Type of network instance and key configuration parameters
+            that relate to it (e.g., configuration of a route
+            distinguisher for L3 routing instance).
+          </t>
+          <t>
+            Policies which define how the instance exchanges routes
+            with other instances - for example, allowing forwarding
+            entries to be leaked between a global and private network
+            instance.
+          </t>
+          <t>
+            The individual tables that are maintained by a network
+            instance. This caters for the approach whereby an
+            implementation maintains per-protocol tables - and it is
+            possible to examine these tables separately. The choice to
+            implement this table definition is an open issue - as
+            discussed in <xref target="rib-representation" />. Along
+            with this table definition, a set of policies determining
+            how entries are leaked between the tables is defined.
+          </t>
+          <t>
+            Connections between the different tables that are
+            maintained by the network instance. Where protocols
+            populate individual tables, such connections facilitate
+            leaking of routes between individual protocols (by means
+            of populating entries from one into the table of the
+            other).
+          </t>
+          <t>
+            The interfaces associated with a certain network instance
+            - the current implementation assumption (as demonstrated
+            in the openconfig-interfaces models) is that configuration
+            parameters that relate directly to the interface (e.g.,
+            IP addressing) are configured directly under the interface
+            construct. This requires that a network instance must have
+            a means to be able to associate itself with an interface.
+          </t>
+          <t>
+            A logical grouping of local or remote interfaces into
+            'connection points' utilised by a number of Layer 2
+            forwarding approaches (e.g., redundancy for attachment
+            points for PWE or L2VPN services). This allows interfaces
+            which are associated with the network instance to be
+            associated with one another, and hence referenced as a
+            group. This construct can be used to represent redundant
+            interfaces for a P2P L2VPN - and is extensible to support
+            Ethernet segments for other L2VPN types.
+          </t>
+          <t>
+            A list of the protocols that are instantiated under the
+            network instance. The protocols that are defined in <xref
+            target='I-D.openconfig-rtgwg-local-routing' /> are
+            included directly such that forwarding entries generated
+            as static or aggregate routes can be matched in a routing
+            policy. Other protocols, such as BGP (for which the data
+            model is defined in <xref target='I-D.ietf-idr-bgp-model'
+            /> would augment this list to include their own
+            configuration options). It should be noted that the list
+            of protocols is not keyed directly on the protocol name,
+            but rather also includes an identifier for that instance.
+            This supports cases where a single network instance may
+            run multiple instances of a protocol.
+          </t>
+        </list>
+      </t>
+      <t>
+        It is expected that all devices maintain at least one network
+        instance, which represents the default (or global) forwarding
+        table of the device. Additional instances are intended to
+        support virtual instances, such as VSIs and VRFs.
+      </t>
+      <t>
+        Where base configuration is required for such instances to be
+        utilised (e.g., an route distinguisher value is required) then
+        this is configured globally for each network instance. It
+        expected that additional parameters, such as the encapsulation
+        utilised for the instance will be added in future revisions of
+        the model.
+      </t>
+      <t>
+        Policies for leaking of routes between instances and tables
+        leverage <xref target='I-D.ietf-rtgwg-policy-model' /> as a
+        policy framework. This allows definition of 'import' policies
+        (allowing a pull model) or export policies (allowing a push
+        model) to be utilised for installation of entries into a local
+        or remote network instance. The same framework is utilised to
+        leak prefixes between multiple tables that are instantiated
+        under an individual network instance.
+      </t>
+      <section title="Supporting Layer 2 Forwarding Constructs"
+        anchor='l2forwarding'>
+        <t>
+          Whilst the initial focus of parameters in the
+          model is to allow the instantiation of attributes related to
+          Layer 3 forwarding constructs - it is expected that other
+          configuration parameters, such as the definition of
+          'cross-connections' between local and/or remote interfaces
+          or connection points can be utilised to represent forwarding
+          constructs within the network instance.
+        </t>
+        <t>
+          The addition of this to the model is still a
+          work-in-progress. The inclusion of the connection point
+          configuration and state parameters is intended to
+          demonstrate how L2 and L3 constructs can co-exist with one
+          another within the model.
+        </t>
+      </section>
+    </section>
+    <section title="Open Issues" anchor="open-issues">
+      <section title="Representation of per-protocol tables vs. a
+        single table for all protocols" anchor="rib-representation">
+        <t>
+          Some implementations maintain a single table into which all
+          protocols install entries. Each protocol is then configured
+          to explicitly import entries from that table into their
+          local 'export' table. Others maintain multiple RIBs and
+          require explicit connections to be made between these tables
+          such that entries from one protocol are made available to
+          another.
+        </t>
+        <t>
+          There are essentially two alternatives for how this is
+          modelled in the network-instance model:
+          <list style='numbers'>
+            <t>
+              Allow each protocol to specify a 'target-table' that
+              indicates the table that its entries are to be installed
+              into. In the case that the same target table is
+              specified for multiple protocols, implicit import/export
+              configuration between tables could be created on
+              implementations that implement multiple RIBs. Explicit
+              configuration can be utilised to explicitly allow an
+              operator to leak between tables in the case that
+              multiple target tables are specified. It should be noted
+              that in fact, protocols that support multiple address
+              families need to allow specification of the target table
+              on a per-address-family basis.
+            </t>
+            <t>
+              Assume that all protocols implement their own target
+              tables. In this case, explicit configuration is utilised
+              to leak between them. Implementations that do not
+              support such per-protocol tables could implicitly
+              generate the configuration that results in forwarding
+              entries being leaked between the tables such that the
+              appearance of a single target-table is maintained.
+            </t>
+          </list>
+          As per the discussion in <xref target="overview" />
+          currently,  this model chooses the former implementation
+          approach.
+        </t>
+      </section>
+    </section>
+    <section title="Security Considerations">
+
+      <t>
+      Routing configuration has a significant impact on network operations,
+      and as such any related model carries potential security risks.
+      </t>
+
+      <t>YANG data models are generally designed to be used with the
+      NETCONF protocol over an SSH transport.  This provides an
+      authenticated and secure channel over which to transfer
+      configuration and operational data.  Note that use of
+      alternate transport or data encoding (e.g., JSON over HTTPS)
+      would require similar mechanisms for authenticating and
+      securing access to configuration data.
+      </t>
+
+      <t>
+        Most of the data elements in the network intsance model could
+        be considered sensitive from a security standpoint.
+        Unauthorized access or invalid data could cause major
+        disruption.
+      </t>
+
+    </section>
+
+    <section title="IANA Considerations">
+
+      <t>
+        This YANG data model and the component modules currently use a
+      temporary ad-hoc namespace.  If and when it is placed on
+      redirected for the standards track, an appropriate namespace URI
+      will be registered in the <xref target="RFC3688">IETF XML
+      Registry"</xref>. The routing policy YANG modules will be
+      registered in the "YANG Module Names" registry [RFC6020].
+      </t>
+    </section>
+
+    <section title="YANG module" anchor="models">
+
+      <t>
+        The network instance model is described by the YANG module
+        below.
+      </t>
+
+	<figure>
+	<artwork><![CDATA[
+<CODE BEGINS> file openconfig-network-instance.yang
+<?yfile include="../../yang/network-instance/openconfig-network-instance.yang"?>
+<CODE ENDS>
+ ]]>
+        </artwork>
+        </figure>
+
+  <figure>
+    <artwork><![CDATA[
+      <CODE BEGINS> file openconfig-network-instance-types.yang
+        <?yfile include="../../yang/network-instance/openconfig-network-instance-types.yang"?>
+      <CODE ENDS>
+      ]]>
+    </artwork>
+  </figure>
+    </section>
+  </middle>
+
+  <back>
+    <references title="Normative references">
+      <?rfc include="http://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.6020" ?>
+      <?rfc include="http://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.3688" ?>
+      <?rfc include="http://xml2rfc.ietf.org/public/rfc/bibxml3/reference.I-D.openconfig-rtgwg-local-routing" ?>
+      <?rfc include="http://xml2rfc.ietf.org/public/rfc/bibxml3/reference.I-D.ietf-rtgwg-policy-model"?>
+      <?rfc include="http://xml2rfc.ietf.org/public/rfc/bibxml3/reference.I-D.ietf-idr-bgp-model" ?>
+    </references>
+    <references title="Informative references">
+      <reference anchor="YANG-REPO"
+        target="https://github.com/openconfig/public/releases/network-instance">
+        <front>
+          <title>OpenConfig YANG Data Model Repository -
+            Network Instance</title>
+          <author></author>
+          <date month="October" year="2015" />
+        </front>
+      </reference>
+    </references>
+
+    <section title="Acknowledgements">
+      <t>TODO
+      </t>
+    </section>
+  </back>
+</rfc>

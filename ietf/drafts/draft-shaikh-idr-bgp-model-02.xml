@@ -1,0 +1,701 @@
+<?xml version="1.0"?>
+<!DOCTYPE rfc SYSTEM "rfc2629.dtd" [
+  <!ENTITY draft-shaikh-rtgwg-policy-model SYSTEM "http://xml2rfc.ietf.org/public/rfc/bibxml3/reference.I-D.shaikh-rtgwg-policy-model.xml">
+  <!ENTITY draft-openconfig-netmod-opstate SYSTEM "http://xml2rfc.ietf.org/public/rfc/bibxml3/reference.I-D.openconfig-netmod-opstate.xml">
+]>
+<rfc docName="draft-shaikh-idr-bgp-model-02" ipr="trust200902" category="info">
+  <front>
+    <title abbrev="BGP Model">BGP Model for Service Provider Networks</title>
+    <author role="editor" initials="A." surname="Shaikh" fullname="Anees Shaikh">
+      <organization>Google</organization>
+      <address>
+        <postal>
+          <street>1600 Amphitheatre Pkwy</street>
+          <city>Mountain View</city>
+          <region>CA</region>
+          <code>94043</code>
+          <country>US</country>
+        </postal>
+        <email>aashaikh@google.com</email>
+      </address>
+    </author>
+    <author role="editor" initials = "R." surname="Shakir" fullname="Rob Shakir">
+      <organization abbrev='BT'>BT</organization>
+      <address>
+        <postal>
+          <street>pp. C3L, BT Centre</street>
+          <street>81, Newgate Street</street>
+          <city>London</city>
+          <code>EC1A 7AJ</code>
+          <country>UK</country>
+        </postal>
+        <email>rob.shakir@bt.com</email>
+        <uri>http://www.bt.com/</uri>
+      </address>
+    </author>
+
+    <author role="editor" fullname="Keyur Patel" initials="K.P."
+            surname="Patel">
+      <organization>Cisco</organization>
+      <address>
+        <postal>
+          <street>170 W. Tasman Drive</street>
+          <city>San Jose</city>
+          <region>CA</region>
+          <code>95134</code>
+          <country>USA</country>
+        </postal>
+        <email>keyupate@cisco.com</email>
+      </address>
+    </author>
+
+    <author role="editor" fullname="Susan Hares" initials="S."
+            surname="Hares">
+      <organization>Huawei</organization>
+      <address>
+        <postal>
+          <street>7453 Hickory Hill</street>
+          <city>Saline</city>
+          <region>MI</region>
+          <code>48176</code>
+          <country>USA</country>
+        </postal>
+        <email>shares@ndzh.com</email>
+      </address>
+    </author>
+
+    <author initials="K." surname="D'Souza" fullname="Kevin D'Souza">
+      <organization>AT&amp;T</organization>
+      <address>
+        <postal>
+          <street>200 S. Laurel Ave</street>
+          <city>Middletown</city>
+          <region>NJ</region>
+          <country>US</country>
+        </postal>
+        <email>kd6913@att.com</email>
+      </address>
+    </author>
+    <author initials="D." surname="Bansal" fullname="Deepak Bansal">
+      <organization>Microsoft</organization>
+      <address>
+        <postal>
+          <street>205 108th Ave. NE, Suite 400</street>
+          <city>Bellevue</city>
+          <region>WA</region>
+          <country>US</country>
+        </postal>
+        <email>dbansal@microsoft.com</email>
+      </address>
+    </author>
+
+    <author fullname="Alexander Clemm" initials="A."
+            surname="Clemm">
+      <organization>Cisco</organization>
+      <address>
+        <postal>
+          <street>170 W. Tasman Drive</street>
+          <city>San Jose</city>
+          <region>CA</region>
+          <code>95134</code>
+          <country>USA</country>
+        </postal>
+        <email>alex@cisco.com</email>
+      </address>
+    </author>
+
+    <author fullname="Aleksandr Zhdankin" initials="A."
+            surname="Zhdankin">
+      <organization>Cisco</organization>
+      <address>
+        <postal>
+          <street>170 W. Tasman Drive</street>
+          <city>San Jose</city>
+          <region>CA</region>
+          <code>95134</code>
+          <country>USA</country>
+        </postal>
+        <email>azhdanki@cisco.com</email>
+      </address>
+    </author>
+
+    <author fullname="Mahesh Jethanandani" initials="M."
+            surname="Jethanandani">
+      <organization>Ciena</organization>
+      <address>
+        <postal>
+          <street>1741 Technology Drive</street>
+          <city>San Jose</city>
+          <region>CA</region>
+          <code>95110</code>
+          <country>USA</country>
+        </postal>
+        <email>mjethanandani@gmail.com</email>
+      </address>
+    </author>
+
+    <author fullname="Xyfeng Liu" initials="X."
+            surname="Liu">
+      <organization>Ericsson</organization>
+      <address>
+        <postal>
+          <street>1595 Spring Hill Road, Suite 500</street>
+          <city>Vienna</city>
+          <region>VA</region>
+          <code>22182</code>
+          <country>USA</country>
+        </postal>
+        <email>xufeng.liu@ericsson.com</email>
+      </address>
+    </author>
+
+    <date month="June" year="2015" />
+    <area>Routing</area>
+    <workgroup>Interdomain Routing</workgroup>
+    <keyword>bgp</keyword>
+    <keyword>yang</keyword>
+
+    <abstract>
+      <t>This document defines a YANG data model for configuring and
+        managing BGP, including protocol, policy, and operational
+        aspects based on data center, carrier and content provider operational requirements.
+      </t>
+    </abstract>
+  </front>
+
+  <middle>
+    <section title="Introduction" anchor="intro">
+      <t>
+        YANG <xref target="RFC6020"/> is a data modeling language that was
+        introduced to define the contents of a conceptual data store that allows networked devices to be managed using NETCONF <xref target="RFC6241"/>. YANG is proving relevant beyond its initial confines, as bindings to other interfaces (e.g. ReST) and encodings other than XML (e.g. JSON) are being defined.  Furthermore, YANG data models can be used as the basis of implementation for a number of interfaces, such as CLIs and  programmatic APIs.
+      </t>
+
+      <t>
+        This document describes a YANG data model for the <xref target="RFC4271">BGP</xref> protocol, including various protocol extensions, policy configuration, as well as defining key operational state data.  The model is intended to be vendor-neutral, in order to allow
+      	operators to manage BGP configuration in heterogeneous
+      	environments with routers supplied by multiple vendors.  The
+      	model is also intended to be readily mapped to existing
+      	implementations to facilitate support from as large a
+      	set of routing hardware and software vendors as possible.
+      </t>
+      <section title = "Goals and approach" anchor="goals">
+        <t>
+          The model covers the base BGP features that
+          are deployed across major implementations and the
+          common BGP configurations in use across a number of
+          operator network deployments. In particular,
+          this model attempts to cover BGP features defined in
+          <xref target="RFC4271"></xref>, <xref target="RFC1997"></xref>,
+          <xref target="RFC4456"></xref>, <xref target="RFC4760"></xref>,
+          <xref target="RFC3065"></xref>, <xref target="RFC2439"></xref>,
+          <xref target="RFC4724"></xref>, and <xref target="RFC6811"></xref>.
+        </t>
+
+        <t>
+          Along with configuration of base BGP features, this model also
+          addresses policy configuration, by providing "hooks" for applying
+          policies, and also defining BGP-specific policy features.  The
+          BGP policy features are intended to be used with the general
+          routing policy model defined in <xref target="I-D.shaikh-rtgwg-policy-model" />.  The model also supports operational state data  to enable a common model for reading BGP-related state from a BGP speaker.
+        </t>
+        <t>
+         For the base BGP features, the focus of the model described in this document is on providing configuration and operational state information
+         relating to:
+        <list style="symbols">
+          <t>
+            The global BGP instance, and neighbors whose configuration is
+            specified individually, or templated with the use of peer-groups.
+           </t>
+           <t>
+             The address families that are supported by peers, and the
+             global configuration which relates to them.
+           </t>
+           <t>
+             The policy configuration "hooks" and BGP-specific policy
+             features that relate to a neighbor - controlling the import and export of NLRIs.
+           </t>
+         </list>
+        </t>
+
+      	<t>
+          As mentioned earlier, any configuration items that are
+          deemed to be widely available
+          in existing major BGP implementations are included in the
+          model.  Additional, more esoteric, configuration items that are not commonly used, or only available from
+          a single implementation, are omitted from the model with an
+          expectation that they will be available in companion modules that
+          augment the current model.  This allows clarity in identifying
+          data that is part of the vendor-neutral base model.
+      	</t>
+
+        <t>Where possible, naming in the model follows conventions
+        used in available standards documents, and otherwise tries to
+        be self-explanatory with sufficient descriptions of the
+        intended behavior.  Similarly, configuration data value
+        constraints and default values, where used, are based on
+        recommendations in current standards documentation.  Since
+        implementations vary widely in this respect, this version of
+        the model specifies only a limited set of defaults and ranges
+        with the expectation of being more prescriptive in future
+        versions based on actual operator use.
+        </t>
+      </section>
+    </section>
+
+    <section title="Model overview" anchor="overview">
+      <t>The BGP model is defined across several YANG modules but at a
+      high level is organized into Six elements:
+      </t>
+        <t>
+        <list style="symbols">
+          <t> base protocol configuration -- configuration affecting BGP
+            protocol-related operations, defined at various levels
+            of hierarchy.
+          </t>
+          <t> multiprotocol configuration -- configuration affecting
+            individual address-families within BGP <xref target="RFC4760" />.
+          </t>
+          <t> neighbor configuration -- configuration affecting an
+            individual neighbor within BGP.
+          </t>
+          <t> neighbor multiprotocol configuration -- configuration affecting
+            individual address-families for a neighbor within BGP.
+          </t>
+          <t> policy configuration -- hooks for application of the policies
+	            defined in <xref target="I-D.shaikh-rtgwg-policy-model" />
+              that act on routes sent (received) to (from)
+              peers or other routing protocols and BGP-specific policy features.
+          </t>
+          <t> operational state -- variables used for monitoring,
+            management, etc. of BGP operations.
+          </t>
+        </list>
+      </t>
+      <t>
+        These modules also make use of standard Internet types, such
+        as IP addresses and prefixes, autonomous system numbers, etc., defined in
+        <xref target="RFC6991">RFC 6991</xref>.
+      </t>
+      <t>
+        Throughout the model, the approach described in <xref
+        target="I-D.openconfig-netmod-opstate" /> is used to represent
+        configuration (intended state), operational and derived state data.
+        That is to say, that each container holds a "config" and "state"
+        sub-container - with the config container being used for configurable
+        parameters, and the state container container holding representing
+        both the operational state of configurable leaves, and derived
+        counters and statistical information.
+      </t>
+        <section title="BGP protocol configuration"
+          anchor="overview.protocol">
+          <t>The BGP protocol configuration model is organized
+            hierarchically, much like the majority of router
+            implementations.  That is, configuration items can be
+            specified at multiple levels, as shown below.
+          </t>
+          <figure>
+            <artwork>
+              +--rw bgp!
+                 +--rw global
+                 |  +-- (global-configuration-options)
+                 +--rw neighbors
+                 |  +--rw neighbor* [neighbor-address]
+                 |  +-- (neighbor-configuration-options)
+                 +--rw peer-groups
+                    +--rw peer-group* [peer-group-name]
+                    +-- (neighbor-configuration-options)
+            </artwork>
+          </figure>
+          <t>
+            Users may specify configuration at a higher level and
+            have it apply to all lower-level items, or provide
+            overriding configuration at a lower level of the
+            hierarchy. Overriding configuration items are optional, with
+            neighbor specific configuration being the most specific or lowest
+            level, followed by peer-group, and finally global.
+            Global configuration options reflect a subset of the
+            peer-group or neighbor specific configuration options which
+            are relevant to the entire BGP instance.
+          </t>
+          <t>
+            The model makes the simplifying assumption that most of
+            the configuration items are available at all levels of the
+            hierarchy.  That is, very little configuration is specific
+            to a particular level in the hierarchy, other than obvious
+            items such as "group-name" only being available for the
+            peer group-level config.  A notable exception is for
+            sub-address family configuration where some items are only
+            applicable for a given AFI-SAFI combination.
+          </t>
+          <t>
+            In order to allow common configuration to be applied to
+            a set of neighbors, all neighbor configuration options
+            are available within a peer-group. A neighbor is associated
+            to a particular peer-group through the use of a peer-group
+            leaf (which provides a reference to a configured item in
+            the peer-group list).
+          </t>
+          <t>
+            Address-family configuration is made available in multiple
+            points within the model - primarily within the global container,
+            where instance-wide configuration can be set (for example,
+            global protocol parameters, the BGP best path route selection options,
+            or global policies relating
+            to the address-family); and on a per-neighbor or per-peer-group
+            basis, where address-families can be enabled or disabled, and
+            policy associated with the parent entity applied. Within the afi-safi
+            container, generic configuration that applies to all address-families
+            (e.g., whether the AFI-SAFI is enabled) is presented at the top-level,
+            with address-family specific containers made available for options
+            relating to only that AFI-SAFI. Within the current revision of the model
+            a generic set of address-families, and common configuration and state
+            options are included - further work is expected to add additional parameters
+            to this area of the model.
+          </t>
+          <t>
+            The following address-families are currently supported by the model:
+          </t>
+	  <figure>
+	    <artwork>
+        +--rw bgp!
+          +--rw global
+             +--rw afi-safis
+                +--rw afi-safi* [afi-safi-name]
+                   +--rw afi-safi-name    -> ../config/afi-safi-name
+                   |
+                   +--rw ipv4-unicast
+                   |     ...
+                   +--rw ipv6-unicast
+                   |     ...
+                   +--rw ipv4-labelled-unicast
+                   |     ...
+                   +--rw ipv6-labelled-unicast
+                   |     ...
+                   +--rw l3vpn-ipv4-unicast
+                   |     ...
+                   +--rw l3vpn-ipv6-unicast
+                   |     ...
+                   +--rw l3vpn-ipv4-multicast
+                   |     ...
+                   +--rw l3vpn-ipv6-multicast
+                   |     ...
+                   +--rw l2vpn-vpls
+                   |     ...
+                   +--rw l2vpn-evpn
+                   |     ...
+      </artwork>
+    </figure>
+
+        </section>
+
+        <section title="Policy configuration overview"
+          anchor="overview.policy">
+          <t>
+            The BGP policy configuration model references the generic
+            YANG routing policy model described in <xref
+            target="I-D.shaikh-rtgwg-policy-model" />, which
+            represents a condition-action policy framework for routing. This
+            model adds BGP-specific conditions (e.g., matching on
+            the community attribute), and actions (e.g., setting
+            local preference) to the generic policy framework.
+          </t>
+          <t>
+            Policies that are defined in the routing-policy model
+            are referenced in multiple places within the model:
+            <list style="symbols">
+              <t>within the global instance, where a policy applies to
+                 all address-families for all peers.</t>
+              <t>on a global AFI-SAFI basis, where policies apply to
+                all peers for a particular address-family.</t>
+              <t>on a per-peer-group or per-neighbor basis - where the
+                policy applies to all address-families for the particular
+                parent entity.</t>
+              <t>on a per-afi-safi basis within a neighbor or peer-group
+                context, where the policy is specific to the AFI-SAFI for a
+                a specific neighbor or group.</t>
+            </list>
+          </t>
+          <figure>
+            <artwork>
+           +--rw bgp
+              +--rw global
+              |  +--rw afi-safi
+              |  |  +--rw afi-safi* [afi-safi-name]
+              |  |     +--rw apply-policy
+              |  +--rw apply-policy
+              +--rw neighbors
+              |  +--rw neighbor* [neighbor-address]
+              |     +--rw afi-safi
+              |     |  +--rw afi-safi* [afi-safi-name]
+              |     |     +--rw apply-policy
+              |     +--rw apply-policy
+              +--rw peer-groups
+                 +--rw peer-group* [peer-group-name]
+                    +--rw afi-safi
+                    |  +--rw afi-safi* [afi-safi-name]
+                    |     +--rw apply-policy
+                    +--rw apply-policy
+            </artwork>
+          </figure>
+        </section>
+        <section title="Operational data overview"
+          anchor="overview.operational">
+      	  <t>
+      	    The BGP operational model contains a set of parameters which
+      	    relate to the operational state of the various elements of the
+      	    BGP router. As noted in <xref target="overview" /> - the approach
+      	    described in <xref target='I-D.openconfig-netmod-opstate' /> is
+      	    utilized for the inclusion of operational and statistical data. To
+      	    this end, the "_state" groupings (those that contain derived
+      	    operational parameters) are contained within the BGP operational
+      	    model - and included within the relevant "state" containers throughout
+      	    the core BGP model. In some cases, operational information may be
+      	    relevant to one instance of a common grouping, but not another - for
+      	    example, the number of received, advertised, and installed prefixes is
+      	    relevant on a per-neighbor-basis, but is not required (or meaningful)
+      	    in the peer-group context. To enable state to be added to
+      	    particular contexts, the tree is augmented through the base BGP
+      	    module to add these variables, without requiring separate groupings.
+      	  </t>
+        </section>
+    </section>
+
+    <section title="Security Considerations">
+
+      <t>BGP configuration has a significant impact on network operations,
+      and as such any related protocol or model carries potential
+      security risks.
+      </t>
+
+      <t>YANG data models are generally designed to be used with the
+      NETCONF protocol over an SSH transport.  This provides an
+      authenticated and secure channel over which to transfer BGP
+      configuration and operational data.  Note that use of
+      alternate transport or data encoding (e.g., JSON over HTTPS)
+      would require similar mechanisms for authenticating and
+      securing access to configuration data.
+      </t>
+
+      <t>Most of the data elements in the configuration model could be
+      considered sensitive from a security standpoint.  Unauthorized
+      access or invalid data could cause major disruption.
+      </t>
+
+    </section>
+<!--
+    <section anchor="contributors" title="Contributors">
+      <t>
+    	In addition to the authors listed on the front page, the following
+    	individuals have also helped to shape this document:
+      </t>
+    </section>
+-->
+
+    <section title="IANA Considerations">
+
+      <t>
+      This YANG data model and the component modules currently use
+      a temporary ad-hoc namespace.  If and when it is redirected for
+      the standards track, an appropriate namespace URI will be
+      registered in the <xref target="RFC3688">IETF XML Registry"</xref>.  The BGP YANG modules will be registered in the "YANG Module Names" registry [RFC6020].
+      </t>
+    </section>
+
+    <section title="YANG modules" anchor="models">
+
+      <t>The modules comprising the BGP configuration and
+      operational model are described by the YANG modules in the
+      sections below.  The base module imports the other modules to
+      create the overall model.
+      </t>
+
+      <section title="BGP base items">
+	<figure>
+	  <artwork><![CDATA[
+<CODE BEGINS> file bgp.yang
+<?yfile include="https://raw.githubusercontent.com/YangModels/yang/master/experimental/openconfig/bgp/bgp.yang"?>
+<CODE ENDS>
+ ]]>
+          </artwork>
+        </figure>
+      </section>
+
+    <section title="BGP base types">
+      	<figure>
+      	  <artwork><![CDATA[
+<CODE BEGINS> file bgp-types.yang
+<?yfile include="https://raw.githubusercontent.com/YangModels/yang/master/experimental/openconfig/bgp/bgp-types.yang"?>
+<CODE ENDS>
+       ]]>
+                </artwork>
+              </figure>
+            </section>
+
+      <section title="BGP policy items">
+	<figure>
+	  <artwork><![CDATA[
+<CODE BEGINS> file bgp-policy.yang
+<?yfile include="https://raw.githubusercontent.com/YangModels/yang/master/experimental/openconfig/bgp/bgp-policy.yang"?>
+<CODE ENDS>
+	]]>
+	  </artwork>
+	</figure>
+      </section>
+
+      <section title="BGP multiprotocol items">
+	<figure>
+	  <artwork><![CDATA[
+<CODE BEGINS> file bgp-multiprotocol.yang
+<?yfile include="https://raw.githubusercontent.com/YangModels/yang/master/experimental/openconfig/bgp/bgp-multiprotocol.yang"?>
+<CODE ENDS>
+	]]>
+	  </artwork>
+	</figure>
+      </section>
+
+      <section title="BGP operational data items">
+	<figure>
+	  <artwork><![CDATA[
+<CODE BEGINS> file bgp-operational.yang
+<?yfile include="https://raw.githubusercontent.com/YangModels/yang/master/experimental/openconfig/bgp/bgp-operational.yang"?>
+<CODE ENDS>
+	]]>
+	  </artwork>
+	</figure>
+      </section>
+
+    </section>
+
+  </middle>
+
+  <back>
+    <references title="Normative references">
+      <?rfc include="http://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.6020.xml"?>
+      <?rfc include="http://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.6241.xml"?>
+      <?rfc include="http://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.4271.xml"?>
+      <?rfc include="http://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.1997.xml"?>
+      <?rfc include="http://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.4456.xml"?>
+      <?rfc include="http://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.3065.xml"?>
+      <?rfc include="http://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.2439.xml"?>
+      <?rfc include="http://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.4724.xml"?>
+      <?rfc include="http://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.6811.xml"?>
+      <?rfc include="http://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.4760.xml"?>
+      <?rfc include="http://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.6991.xml"?>
+      <?rfc include="http://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.3688.xml"?>
+    </references>
+    <references title="Informative references">
+      &draft-openconfig-netmod-opstate;
+      &draft-shaikh-rtgwg-policy-model;
+    </references>
+
+    <section title="Acknowledgements">
+      <t>
+      The authors are grateful for valuable contributions to this
+      document and the associated models from: Ebben Aires, Pavan
+      Beeram, Chris Chase, Ed Crabbe, Luyuan Fang, Bill Fenner, Akshay
+      Gattani, Josh George, Vijay Gill, Jeff Haas, Dhanendra Jain, Ina Minei, Carl
+      Moberg, Ashok Narayanan, Einar Nilsen-Nygaard, Adam
+      Simpson, Puneet Sood, Jason Sterne, Jim Uttaro, and Gunter Vandevelde.
+      </t>
+    </section>
+    <section title="Change summary">
+      <section title="Changes between revisions -01 and -02">
+        <t>
+          The -02 revision generally does not affect the structure of the model, but there are a number of changes that improve clarity, or simplify mappings to implementations.
+        </t>
+        <t>
+          <list style="symbols">
+            <t>
+              Reorganized modules to move BGP-specific types, including policy-related types, to the bgp-types module.
+            </t>
+            <t>
+              Added ability to configure route selection options at the global level.  Removed route selection options from per-neighbor AFI-SAFI since it is not widely implemented.
+            </t>
+            <t>
+              Removed a number of presence containers (e.g., in AFI-SAFI, graceful-restart, and multipath).  Presence has been replaced with an explicit 'enabled' leaf to simplify semantics of inheritance and override in other parts of the BGP hieararchy.
+            </t>
+            <t>
+              Fixed inconsistencies with use-multiple-paths config.  Added 'enabled' leaves with default false.
+            </t>
+            <t>
+              Updated top level list key to be a leafref in most lists for consistency with the operational state modeling approach outlined in <xref target="I-D.openconfig-netmod-opstate" />.
+            </t>
+            <t>
+              Some minor renaming / restructuring of routing policy defined-sets and apply-policy container.
+            </t>
+            <t>
+              Added ability to increment/decrement MED value in BGP policy statement actions.
+            </t>
+            <t>
+              Changed local-address leaf to be a union which can specify either an IP address, or be a reference to an interface.
+            </t>
+            <t>
+              Changed ebgp-multihop to add 'enabled' leaf and TTL behavior.
+            </t>
+            <t>
+              Changed BGP well-known communities from a enumeration to a identity.  Also made consistent with IANA-defined standard well-known communities.
+            </t>
+            <t>
+              Remove enumeration values from BGP origin type given the disagreement in RFC 4271 and RFC 4273.
+            </t>
+            <t>
+              Added an additional match-options enumerated type for sets that only support ANY | INVERT, but not ALL behavior.
+            </t>
+            <t>
+              Modified prefix-sets to use inet:ip-prefix type and removed range checking on masklength-range (also added 'exact' specifier for masklength range).
+            </t>
+            <t>
+              Removed send-update-delay timer leaf.  Desired behavior is reflected by minimum-advertisement-interval, i.e., MRAI.
+            </t>
+            <t>
+              Changed allow-own-as leaf to allow specification of a number of occurrences -- some implementations only support 0 or 1, i.e., equivalent of a boolean but several others support multiple occurrences.
+            </t>
+          </list>
+        </t>
+      </section>
+      <section title="Changes between revisions -00 and -01">
+        <t>
+          The -01 revision reflects a number of changes, many based on feedback
+          from implementors of the model on various routing platforms.
+        </t>
+        <t>
+          <list style="symbols">
+            <t>
+              Refactored model to explicitly provide 'config' and 'state'
+              containers at each leaf node to enable consistent and predictable
+              access to operational state data corresponding to configuration
+              data.  This is based on the model design in <xref target="I-D.openconfig-netmod-opstate" />.
+            </t>
+            <t>
+              Refactored multiprotocol module with explicit set of supported
+              AFI-SAFI combinations (using YANG identities) in a flattened list.
+              Focus was on common config with more AFI-SAFI specific
+              configuration forthcoming in future revisions.
+            </t>
+            <t>
+              Refactored BGP policy module to work with a new general routing
+              <xref target="I-D.shaikh-rtgwg-policy-model">policy model</xref> by augmenting it
+              with BGP-specific policy options (conditions, actions, and defined sets).
+            </t>
+            <t>
+              Added enclosing containers to lists (e.g., neighbors, peer-groups,
+              and AFI-SAFI)
+            </t>
+            <t>
+              Removed neighbor configuration from the peer-group hierarchy.
+              Neighbor configuration now has a peer-group leaf which references
+              the peer group to which the neighbor belongs.
+            </t>
+
+            <t>
+              Several new configuration items added to base bgp module, including adding
+              some configuration items to the global hierarchy level.
+            </t>
+          </list>
+        </t>
+      </section>
+    </section>
+
+
+  </back>
+</rfc>

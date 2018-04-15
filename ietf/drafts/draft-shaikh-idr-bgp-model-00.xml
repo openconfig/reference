@@ -1,0 +1,470 @@
+<?xml version="1.0"?>
+<!DOCTYPE rfc SYSTEM "rfc2629.dtd">
+<rfc docName="draft-shaikh-idr-bgp-model-00" ipr="trust200902" category="info">
+  <front>
+    <title abbrev="BGP Configuration Model">BGP Configuration Model for Service Provider Networks</title>
+    <author initials="A." surname="Shaikh" fullname="Anees Shaikh">
+      <organization>Google</organization>
+      <address>
+        <postal>
+          <street>1600 Amphitheatre Pkwy</street>
+          <city>Mountain View</city>
+          <region>CA</region>
+          <code>94043</code>
+          <country>US</country>
+        </postal>
+        <email>aashaikh@google.com</email>
+      </address>
+    </author>
+    <author initials="K." surname="D'Souza" fullname="Kevin D'Souza">
+      <organization>AT&amp;T</organization>
+      <address>
+        <postal>
+          <street>200 S. Laurel Ave</street>
+          <city>Middletown</city>
+          <region>NJ</region>
+          <country>US</country>
+        </postal>
+        <email>kd6913@att.com</email>
+      </address>
+    </author>
+<!--
+    <author initials="J." surname="Uttaro" fullname="James Uttaro">
+      <organization>AT&amp;T</organization>
+      <address>
+        <postal>
+          <street>200 S. Laurel Avenue</street>
+          <city>Middletown</city>
+          <region>NJ</region>
+        </postal>
+	     <email>ju1738@att.com</email>
+      </address>
+    </author>
+    <author initials="C." surname="Chase" fullname="Chris Chase">
+      <organization>AT&amp;T</organization>
+      <address>
+        <postal>
+          <street>9505 Arboretum Blvd</street>
+          <city>Austin</city>
+          <region>TX</region>
+        </postal>
+	<email>chase@labs.att.com</email>
+      </address>
+    </author>
+    <author initials="V." surname="Gill" fullname="Vijay Gill">
+      <organization>Microsoft</organization>
+      <address>
+        <postal>
+          <street>205 108th Ave. NE, Suite 400</street>
+          <city>Bellevue</city>
+          <region>WA</region>
+          <country>US</country>
+        </postal>
+        <email>vgill@microsoft.com</email>
+      </address>
+    </author>
+-->
+    <author initials="D." surname="Bansal" fullname="Deepak Bansal">
+      <organization>Microsoft</organization>
+      <address>
+        <postal>
+          <street>205 108th Ave. NE, Suite 400</street>
+          <city>Bellevue</city>
+          <region>WA</region>
+          <country>US</country>
+        </postal>
+        <email>dbansal@microsoft.com</email>
+      </address>
+    </author>
+    <author initials = 'R.' surname='Shakir' fullname='Rob Shakir'>
+      <organization abbrev='BT'>BT</organization>
+      <address>
+        <postal>
+          <street>pp. C3L, BT Centre</street>
+          <street>81, Newgate Street</street>
+          <city>London</city>
+          <code>EC1A 7AJ</code>
+          <country>UK</country>
+        </postal>
+        <email>rob.shakir@bt.com</email>
+        <uri>http://www.bt.com/</uri>
+      </address>
+    </author>
+      
+    <date month="October" year="2014" />
+
+    <area>Routing</area>
+
+    <abstract>
+      <t>This document defines a YANG data model for configuring and
+        managing BGP, including protocol, policy, and operational
+        aspects based on carrier and content provider operational
+        requirements.
+      </t>
+    </abstract>
+  </front>
+
+  <middle>
+    <section title="Introduction" anchor="intro">
+      <t>This document describes a <xref target="RFC6020">YANG</xref>
+      data model for <xref target="RFC4271">BGP</xref> protocol and policy
+      configuration, as well as defining key operational state data.
+      The model is intended to be vendor-neutral, in order to allow
+      operators to manage BGP configuration in heterogeneous
+      environments with routers supplied by multiple vendors.  The
+      model is also intended to be readily mapped to existing
+      implementations, however, to facilitate support from as large a
+      set of routing hardware and software vendors as possible.
+      </t>
+      <section title = "Goals and approach" anchor="goals">
+        <t>This model does not (in the current iteration) aim to be
+        feature complete (i.e., cover all possible features of a BGP
+        implementation).  Rather its development is driven by
+        examination of BGP configurations in use across a number of
+        operator network deployments.
+	     </t>
+
+       <t>The focus area of the first version of the model is on base
+       BGP protocol configuration and policy configuration with
+       "hooks" to add support for additional address families, as well
+       as operational data to enable a common model for reading
+       BGP-related state from devices.
+        </t>
+
+      	<t>Configuration items that are deemed to be widely available
+      	in existing major BGP implementations are included in the
+      	model.  Those configuration items that are only available from
+      	a single implementation are omitted from the model with the
+      	expectation they will be available in companion modules that
+      	augment the current model.  This allows clarity in identifying
+      	data that is part of the vendor-neutral model.
+      	</t>
+
+        <t>Where possible, naming in the model follows conventions
+        used in available standards documents, and otherwise tries to
+        be self-explanatory with sufficient descriptions of the
+        intended behavior.  Similarly, configuration data value
+        constraints and default values, where used, are based on
+        recommendations in current standards documentation.  Since
+        implementations vary widely in this respect, this version of
+        the model specifies only a limited set of defaults and ranges
+        with the expectation of being more prescriptive in future
+        versions based on actual operator use.
+        </t>
+      </section>
+    </section>
+
+    <section title="Model overview" anchor="overview">
+      <t>The BGP model is defined across several YANG modules but at a
+      high level is organized into three main parts:
+      </t>
+        <t>
+        <list style="symbols">
+          <t> protocol configuration -- configuration affecting BGP
+            protocol-related operations, defined at various levels
+            of hierarchy.
+          </t>
+          <t> policy configuration -- configuration defining the
+            policies that act on routes sent (received) to (from)
+            peers or other routing protocols.
+          </t>
+          <t> operational state -- variables used for monitoring,
+            management, etc. of BGP operations.
+          </t>
+        </list>
+      </t>
+      <t>
+        These modules also make use of the standard Internet types, such as IP addresses, autonomous system numbers, etc., defined in <xref target="RFC6991">RFC 6991</xref>.
+      </t>
+        <section title="BGP protocol configuration"
+          anchor="overview.protocol">
+          <t>The BGP protocol configuration model is organized
+            hierarchically, much like the majority of router
+            implementations.  That is, configuration items can be
+            specified at multiple levels, as shown below.
+          </t>
+          <figure>
+            <artwork>
+   +--rw bgp
+      +--rw global
+      +--rw afi* [afi-name]
+      +--rw peer-group* [group-name]
+      +--rw neighbor* [neighbor-address]
+      +--rw policy
+            </artwork>
+          </figure>
+          <t> Users may specify configuration at a higher level and
+            have it apply to all lower-level items, or provide
+            overriding configuration at a lower level of the
+            hierarchy.  Overriding configuration items are optional.
+          </t>
+          <t>The model makes the simplifying assumption that most of
+          the configuration items are available at all levels of the
+          hierarchy.  That is, very little configuration is specific
+          to a particular level in the hierarchy, other than obvious
+          items such as "group- name" only being available for the
+          peer group-level config.  A notable exception is for
+          sub-address family configuration where some items are only
+          applicable for a given AFI-SAFI combination.
+          </t>
+	  <t>The initial version of the model includes placeholders
+	  (i.e., mount points) for configuring different address
+	  family or sub address family (AFI/SAFI) combinations in
+	  support of <xref target="RFC4760">BGP multiprotocol
+	  extensions</xref>.  The focus, however, is on base IPv4 and
+	  IPv6 configuration, with later versions of the model
+	  providing additional configuration for specific AFI/SAFI
+	  types.  The current scope of AFI/SAFI combinations is
+	  indicated below.  Each of the subtrees are containers for
+	  configuration specific to the corresponding AFI-SAFI
+	  combination.
+	  </t>
+	  <figure>
+	    <artwork>
+   +--rw bgp
+      +--rw afi* [afi-name]
+         +--rw safi* [safi-name]
+            +--rw safi-name               identityref
+            +--rw ipv4-ipv6-unicast
+            +--rw ipv4-l3vpn-unicast
+            +--rw ipv6-l3vpn-unicast
+            +--rw ipv4-labeled-unicast
+            +--rw l2vpn
+            +--rw ipv4-multicast-vpn
+            +--rw ipv6-multicast-vpn
+            +--rw prefix-limit
+            +--rw apply-policy
+	    </artwork>
+	  </figure>
+	  
+        </section>
+
+        <section title="Policy configuration overview"
+          anchor="overview.policy">
+          <t>The BGP policy configuration model is based on a
+            condition-action model in which policies are expressed as
+            a series of conditions, each with a corresponding action.
+            Conditions include testing for membership in a predefined
+            set (e.g., community attribute matches a predefined set
+            of communities), or testing route attributes for specified
+            values.  Actions support setting specific attributes on a
+            route or performing a control flow operation such as 
+            accepting or rejecting a route, or going to the next
+            policy.
+          </t>
+	  <t>The general structure of policy definitions, policy
+	  statements, and condition-action policy rules is shown
+	  below.
+	  </t>
+	  <figure>
+	    <artwork>
+   +--rw bgp
+      +--rw policy
+         +--rw policy-definitions!
+            +--rw policy-definition* [name]
+               +--rw name          string
+               +--rw statements* [name]
+                  +--rw name          string
+                  +--rw conditions
+                  +--rw actions
+	    </artwork>
+	  </figure>
+	  <t>The policy model supports policy subroutines
+	  through the use of the condition statement call-policy which
+	  applies the conditions from another named policy
+	  definition.  It also supports policy chaining using the
+	  action statements goto-next and  goto-policy, which allow
+	  policy evaluation to immediately move to the next policy
+	  statement in the current policy definition, or move to
+	  another named policy definition, respectively.  Using
+	  multiple policy statements in a policy definition is also a
+	  form of policy chaining which will evaluate each policy
+	  statement in turn.
+	  </t>
+	  
+        </section>
+        <section title="Operational data overview"
+          anchor="overview.operational">
+	  <t>The BGP operational data model contains an initial set of
+	  state variable definitions that would be required in most
+	  service provider deployments for management, monitoring, and
+	  fault detection.
+	  </t>
+        </section>
+    </section>
+
+    <section title="Security Considerations">
+      
+      <t>BGP configuration has a significant impact on network operations,
+      and as such any related protocol or model carries potential
+      security risks.
+      </t>
+
+      <t>YANG data models are generally designed to be used with the
+      NETCONF protocol over an SSH transport.  This provides an
+      authenticated and secure channel over which to transfer BGP
+      configuration and operational data.  Note that use of
+      alternate transport or data encoding (e.g., JSON over HTTPS)
+      would require similar mechanisms for authenticating and
+      securing access to configuration data.
+      </t>
+
+      <t>Most of the data elements in the configuration model could be
+      considered sensitive from a security standpoint.  Unauthorized
+      access or invalid data could cause major disruption.
+      </t>
+
+    </section>
+
+    <section title="IANA Considerations">
+
+      <t>This YANG data model and the component modules currently use
+      a temporary ad-hoc namespace.  If and when it is placed on redirected for
+      the standards track, an appropriate namespace URI will be
+      registered in the <xref target="RFC3688">IETF XML Registry"</xref>.  The BGP YANG
+      modules will be registered in the "YANG Module Names" registry
+      [RFC6020].
+      </t>
+    </section>
+
+    <section title="YANG modules" anchor="models">
+
+      <t>The modules comprising the BGP configuration and
+      operational model are described by the YANG modules in the
+      sections below.  The base module imports the other modules to
+      create the overall model.
+      </t>
+    
+      <section title="BGP base model">
+	<figure>
+	  <artwork><![CDATA[	
+<CODE BEGINS> file bgp.yang
+<?rfc include="bgp.yang"?>
+<CODE ENDS>
+ ]]>
+          </artwork>
+        </figure>
+      </section>
+
+      <section title="BGP policy model">
+	<figure>
+	  <artwork><![CDATA[
+<CODE BEGINS> file bgp-policy.yang
+<?rfc include="bgp-policy.yang"?>
+<CODE ENDS>
+	]]>
+	  </artwork>
+	</figure>
+      </section>
+
+      <section title="BGP multiprotocol model">
+	<figure>
+	  <artwork><![CDATA[
+<CODE BEGINS> file bgp-multiprotocol.yang
+<?rfc include="bgp-multiprotocol.yang"?>
+<CODE ENDS>
+	]]>
+	  </artwork>
+	</figure>
+      </section>
+
+      <section title="BGP operational data model">
+	<figure>
+	  <artwork><![CDATA[
+<CODE BEGINS> file bgp-operational.yang
+<?rfc include="bgp-operational.yang"?>
+<CODE ENDS>
+	]]>
+	  </artwork>
+	</figure>
+      </section>
+
+    </section>
+
+  </middle>
+
+  <back>
+    <references>
+      <reference anchor="RFC6020">
+        <front>
+          <title>YANG - A Data Modeling Language for
+            the Network Configuration Protocol (NETCONF)</title>
+          <author initials="M." surname="Bjorklund" fullname="Martin
+            Bjorklund">
+            <organization>Tail-f Systems</organization>
+          </author>
+          <date month="October" year="2014" />
+        </front>
+        <seriesInfo name="RFC" value="6020" />
+      </reference>
+      <reference anchor="RFC4271">
+	<front>
+	  <title>A Border Gateway Protocol 4 (BGP-4)</title>
+	  <author initials="Y." surname="Rekhter" fullname="Yakov Rekhter">
+	    <organization/>
+	  </author>
+	  <author initials="T." surname="Li" fullname="Tony Li">
+	    <organization/>
+	  </author>
+	  <author initials="S." surname="Hares" fullname="Susan Hares">
+	    <organization/>
+	  </author>
+	  <date year="2006" month="January"/>
+	</front>
+	<seriesInfo name="RFC" value="4271"/>
+      </reference>
+      <reference anchor="RFC4760">
+	<front>
+	  <title>Multiprotocol Extensions for BGP-4</title>
+	  <author initials="T." surname="Bates" fullname="Tony Bates">
+	    <organization/>
+	  </author>
+	  <author initials="R." surname="Chandra" fullname="Ravi Chandra">
+	    <organization/>
+	  </author>
+	  <author initials="D." surname="Katz" fullname="Dave Katz">
+	    <organization/>
+	  </author>
+	  <author initials="Y." surname="Rekhter" fullname="Yakov Rekhter">
+	    <organization/>
+	  </author>
+	  <date year="2007" month="January"/>
+	</front>
+	<seriesInfo name="RFC" value="4760"/>
+      </reference>
+
+      <reference anchor="RFC6991">
+        <front>
+          <title>Common YANG Data Types</title>
+          <author initials="J." surname="Schoenwaelder" fullname="Juergen Schoenwaelder">
+            <organization>Jacobs University</organization>
+          </author>
+          <date month="July" year="2013" />
+        </front>
+        <seriesInfo name="RFC" value="6991" />
+      </reference>
+      <reference anchor="RFC3688">
+        <front>
+          <title>The IETF XML Registry</title>
+          <author initials="M." surname="Mealling" fullname="Michael
+	    Mealling">
+            <organization>Verisign, Inc.</organization>
+          </author>
+          <date month="January" year="2004" />
+        </front>
+        <seriesInfo name="RFC" value="3688" />
+      </reference>
+    </references>
+
+    <section title="Acknowledgements">
+      <t>The authors are grateful for valuable contributions to this
+      document and the associated models from: Chris Chase, Ed Crabbe,
+      Josh George, Vijay Gill, Ina Minei, Ashok Narayanan, Steve
+      Padgett, Puneet Sood, and Jim Uttaro.
+      </t>
+<!--
+ other folks who have provided feedback: Carl Moberg (Cisco), Keyur Patel (Cisco), Jeff Haas (Juniper), Adam Simpson (ALU), Mike Leske (Cisco), Stephane Litkowski (Orange), Martin Bjorklund (Cisco), Jason Sterne (ALU), Marcus Hines (Google)
+-->
+    </section>
+  </back>
+</rfc>
