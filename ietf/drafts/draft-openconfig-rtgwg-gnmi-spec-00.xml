@@ -1,0 +1,957 @@
+<?xml version="1.0"?>
+<!DOCTYPE rfc SYSTEM "rfc2629.dtd">
+<rfc docName="draft-openconfig-rtgwg-gnmi-spec-00" ipr="trust200902" category="info">
+<?rfc toc="yes"?>
+  <front>
+    <title abbrev="gNMI specification">gRPC Network Management Interface (gNMI)</title>
+    <!-- Include Rob Shakir as author -->
+    <?rfc include="http://rob.sh/files/ietf-author.xml"?>
+    <!-- Include Anees Shaikh as author -->
+    <?rfc include="http://ashaikh.com/ashaikh_com/bib/aas-ietf-author.xml"?>
+    <author initials="P." surname="Borman" fullname="Paul Borman">
+      <organization>Google</organization>
+      <address>
+        <postal>
+          <street>1600 Amphitheatre Pkwy</street>
+          <city>Mountain View</city>
+          <region>CA</region>
+          <code>94043</code>
+          <country>US</country>
+        </postal>
+        <email>borman@google.com</email>
+      </address>
+    </author>
+    <author initials="M." surname="Hines" fullname="Marcus Hines">
+      <organization>Google</organization>
+      <address>
+        <postal>
+          <street>1600 Amphitheatre Pkwy</street>
+          <city>Mountain View</city>
+          <region>CA</region>
+          <code>94043</code>
+          <country>US</country>
+        </postal>
+        <email>hines@google.com</email>
+      </address>
+    </author>
+    <author initials="C." surname="Lebsack" fullname="Carl Lebsack">
+      <organization>Google</organization>
+      <address>
+        <postal>
+          <street>1600 Amphitheatre Pkwy</street>
+          <city>Mountain View</city>
+          <region>CA</region>
+          <code>94043</code>
+          <country>US</country>
+        </postal>
+        <email>csl@google.com</email>
+      </address>
+    </author>
+    <author initials="C." surname="Morrow" fullname="Chris Morrow">
+      <organization>Google</organization>
+      <address>
+        <email>christopher.morrow@gmail.com</email>
+      </address>
+    </author>
+    <date month="March" year="2017" />
+
+    <area>Routing</area>
+
+    <abstract>
+      <t>
+        This document describes the gRPC Network Management Interface (gNMI), a network management protocol based on the
+        gRPC RPC framework.  gNMI supports retrieval and manipuation of state from network elements where the data is
+        represented by a tree structure, and addressable by paths.  The gNMI service defines operations for configuration
+        management, operational state retrieval, and bulk data collection via streaming telemtry.
+      </t>
+    </abstract>
+  </front>
+
+<middle>
+<section anchor="introduction" title="Introduction">
+<t>This document defines a <eref target="http://grpc.io">gRPC</eref>-based protocol for the modification and retrieval of configuration from a network element, as well as the control and generation of telemetry streams from a network element to a data collection system. The intention is that a single gRPC service definition can cover both configuration and telemetry - allowing a single implementation on the network element, as well as a single NMS element to interact with the device via telemetry and configuration RPCs.
+</t>
+<t>All messages within the gRPC service definition are defined as <eref target="https://developers.google.com/protocol-buffers/">protocol buffers</eref> (specifically proto3).  gRPC service definitions are expected to be described using the relevant features of the protobuf IDL.  A reference protobuf definition is maintained in <eref target="https://github.com/openconfig/reference/blob/master/rpc/gnmi/gnmi.proto">[REFERENCE-PROTO]</eref>.  The current, authoritative version of this specification is available at <eref target="https://github.com/openconfig/reference/blob/master/rpc/gnmi/gnmi-specification.md">[GNMI-SPEC]</eref>.
+</t>
+<t>The service defined within this document is assumed to carry payloads that contain data instances of <eref target="http://www.openconfig.net/">OpenConfig</eref> YANG schemas, but can be used for any data with the following characteristics:
+</t>
+<t>
+<list style="numbers">
+<t>structure can be represented by a tree structure where nodes can be uniquely identified by a path consisting of node names, or node names coupled with attributes;</t>
+<t>values can be serialised into a scalar object.</t>
+</list>
+</t>
+<t>Currently, values may be serialised to a scalar object through encoding as a JSON string, a byte-array, or a serialised protobuf object - although the definition of new serialisations is possible.
+</t>
+<t>Throughout this specification the following terminology is used:
+</t>
+<t>
+<list style="symbols">
+<t><spanx style="emph">Telemetry</spanx> - refers to streaming data relating to underlying characteristics of the device - either operational state or configuration.</t>
+<t><spanx style="emph">Configuration</spanx> - elements within the data schema which are read/write and can be manipulated by the client.</t>
+<t><spanx style="emph">Target</spanx> - the device within the protocol which acts as the owner of the data that is being manipulated or reported on. Typically this will be a network device.</t>
+<t><spanx style="emph">Client</spanx> - the device or system using the protocol described in this document to query/modify data on the target, or act as a collector for streamed data. Typically this will be a network management system.</t>
+</list>
+</t>
+</section>
+
+<section anchor="common-message-types-and-encodings" title="Common Message Types and Encodings">
+
+<section anchor="reusable-notification-message-format" title="Reusable Notification Message Format">
+<t>When a target wishes to communicate data relating to the state of its internal database to an interested client, it does so via means of a common <spanx style="verb">Notification</spanx> message.  Notification messages are reused in other higher-layer messages for various purposes. The exact use of the Notification message is described on a per-RPC basis.
+</t>
+<t>The fields of the Notification message are as follows:
+</t>
+<t>
+<list style="symbols">
+<t><spanx style="verb">timestamp</spanx> - The time at which the data was collected by the device from the underlying source, or the time that the target generated the Notification message (in the case that the data does not reflect an underlying data source). This value is always represented according to the definition in <xref target="timestamps"/>.</t>
+<t><spanx style="verb">prefix</spanx> - a prefix which is applied to all path fields (encoded as per <xref target="paths"/>) included in the <spanx style="verb">Notification</spanx> message. The paths expressed within the message are formed by the concatenation of <spanx style="verb">prefix + path</spanx>. The <spanx style="verb">prefix</spanx> always precedes the <spanx style="verb">path</spanx> elements. Further semantics of prefixes are described in <xref target="path-prefixes"/>.</t>
+<t><spanx style="verb">alias</spanx>- a string providing an alias for the prefix specified within the notification message. The encoding of an alias, and the procedure for their creation  is described in <xref target="path-aliases"/><spanx style="verb">.</spanx></t>
+<t><spanx style="verb">update</spanx> - a list of update messages that indicate changes in the underlying data of the target. Both modification and creation of data is expressed through the update message.
+<list style="symbols">
+<t>An <spanx style="verb">Update</spanx> message has two subfields:
+<list style="symbols">
+<t><spanx style="verb">path</spanx> - a path encoded as per <xref target="paths"/>.</t>
+<t><spanx style="verb">value</spanx> - a value encoded as per <xref target="node-values"/>.</t>
+</list></t>
+<t>The set of paths that are specified within the list of updates MUST be unique. In this context, the path is defined to be the fully resolved path (including the prefix). In the case that there is a duplicate path specified within an update, only the final update should be processed by the receiving entity.</t>
+</list></t>
+<t><spanx style="verb">delete</spanx> -  a list of paths (encoded as per <xref target="paths"/>) that indicate the deletion of data nodes on the target.</t>
+</list>
+</t>
+<t>The creator of a Notification message MUST include the <spanx style="verb">timestamp</spanx> field. All other fields are optional.
+</t>
+</section>
+
+<section anchor="common-data-types" title="Common Data Types">
+
+<section anchor="timestamps" title="Timestamps">
+<t>Timestamp values MUST be represented as the number of nanoseconds since the Unix epoch (January 1st 1970 00:00:00 UTC). The value MUST be encoded as a signed 64-bit integer (<spanx style="verb">int64</spanx>).
+</t>
+</section>
+
+<section anchor="paths" title="Paths">
+<t>Paths are represented according to <eref target="https://github.com/openconfig/reference/blob/master/rpc/gnmi/gnmi-path-conventions.md">gNMI Path Conventions</eref>, a simplified form of XPATH. Rather than utilising a single string to represent the path - with the <spanx style="verb">/</spanx> character separating each element of the path, the path is represented by an ordered list of strings, starting at the root node, and ending at the most specific path element.
+</t>
+<t>A path is represented by the <spanx style="verb">Path</spanx> message with the following fields:
+</t>
+<t>
+<list style="symbols">
+<t><spanx style="verb">element</spanx> -- a set of path elements, encoded as strings (see examples below).</t>
+<t><spanx style="verb">origin</spanx> - field which MAY be used to disambiguate the path if necessary.  For example, the origin may be used to indicate which organization defined the schema to which the path belongs.</t>
+</list>
+</t>
+<t>Each <spanx style="verb">Path</spanx> element should correspond to a node in the data tree. For example, the path <spanx style="verb">/a/b/c/d</spanx> is encoded as:
+</t>
+
+<figure align="center"><artwork align="center">
+path: &lt;
+  element: "a"
+  element: "b"
+  element: "c"
+  element: "d"
+&gt;
+</artwork></figure>
+<t>Where attributes are to be specified, these are encoded alongside the node name within the path element, for example a node specified by <spanx style="verb">/a/e[key=k1]/f/g</spanx> would have the path encoded as:
+</t>
+
+<figure align="center"><artwork align="center">
+path: &lt;
+  element: "a"
+  element: "e[key=k1]"
+  element: "f"
+  element: "g"
+&gt;
+</artwork></figure>
+<t>The root node (<spanx style="verb">/</spanx>) is indicated by encoding a single path element which is an empty string, as per the following example:
+</t>
+
+<figure align="center"><artwork align="center">
+path: &lt;
+  element: ""
+&gt;
+</artwork></figure>
+<t>Paths (defined to be the concatenation of the <spanx style="verb">Prefix</spanx> and <spanx style="verb">Path</spanx> within the message) specified within a message MUST be absolute - no messages with relative paths should be generated.
+</t>
+</section>
+
+<section anchor="node-values" title="Node Values">
+<t>The value of a data node is encoded as a two-field message:
+</t>
+<t>
+<list style="symbols">
+<t><spanx style="verb">bytes</spanx> - an arbitrary series of bytes which indicates the value of the node referred to within the message context.</t>
+<t><spanx style="verb">type</spanx> - a field indicating the type of data contained in the bytes field. Currently defined types are:</t>
+</list>
+</t>
+</section>
+</section>
+
+<section anchor="encoding-data-in-an-update-message" title="Encoding Data in an Update Message">
+
+<section anchor="json-and-json_ietf" title="JSON and JSON_IETF">
+<t>The <spanx style="verb">JSON</spanx> type indicates that the value included within the <spanx style="verb">bytes</spanx> field of the node value message is encoded as a JSON string. This format utilises the specification in <eref target="https://tools.ietf.org/html/rfc7159">RFC7159</eref>. Additional types (e.g., <spanx style="verb">JSON_IETF</spanx>) are utilised to indicate specific additional characteristics of the encoding of the JSON data (particularly where they relate to serialisation of  YANG-modeled data).
+</t>
+<t>For any JSON encoding:
+</t>
+<t>
+<list style="symbols">
+<t>In the case that the data item at the specified path is a leaf node (i.e., has no children) the value of that leaf is encoded directly - i.e., the "bare" value is specified (i.e., a JSON object is not required, and a bare JSON value is included).</t>
+<t>Where the data item referred to has child nodes, the value field contains a serialised JSON entity (object or array) corresponding to the referenced item.</t>
+</list>
+</t>
+<t>Using the following example data tree:
+</t>
+
+<figure align="center"><artwork align="center">
+ root +
+      |
+      +-- a +
+            |
+            +-- b[name=b1] +
+                           |
+                           +-- c +
+                                 |
+                                 +-- d (string)
+                                 +-- e (uint32)
+</artwork></figure>
+<t>The following serialisations would be used (note that the examples below follow the conventions for textproto, and Golang-style backticks are used for string literals that would otherwise require escaping):
+</t>
+<t>For <spanx style="verb">/a/b[name=b1]/c/d</spanx>:
+</t>
+
+<figure align="center"><artwork align="center">
+update: &lt;
+  path: &lt;
+    element: "a"
+    element: "b[name=b1]"
+    element: "c"
+    element: "d"
+  &gt;
+  value: &lt;
+    value: "AStringValue"
+    type: JSON
+  &gt;
+&gt;
+</artwork></figure>
+<t>For <spanx style="verb">/a/b[name=b1]/c/e</spanx>:
+</t>
+
+<figure align="center"><artwork align="center">
+update: &lt;
+  path: &lt;
+    element: "a"
+    element: "b[name=b1]"
+    element: "c"
+    element: "e"
+  &gt;
+  value: &lt;
+    Value: 10042    // decoded byte array
+    type: JSON
+  &gt;
+&gt;
+</artwork></figure>
+<t>For <spanx style="verb">/a/b[name=b1]/c</spanx>:
+</t>
+
+<figure align="center"><artwork align="center">
+update: &lt;
+  path: &lt;
+    element: "a"
+    element: "b[name=b1]"
+    element: "c"
+  &gt;
+  value: &lt;
+    value: { "d": "AStringValue", "e": 10042 }
+    type: JSON
+  &gt;
+&gt;
+</artwork></figure>
+<t>For <spanx style="verb">/a</spanx> :
+</t>
+
+<figure align="center"><artwork align="center">
+update: &lt;
+  path: &lt;
+    element: "a"
+  &gt;
+  value: &lt;
+    value: `{ "b": [
+                      {
+                        "name": "b1",
+                        "c": {
+                        "d": "AStringValue",
+                          "e": 10042
+                        }
+                       }
+                   ]
+            }`
+    type: JSON_IETF
+  &gt;
+&gt;
+</artwork></figure>
+<t>Note that all JSON values MUST be valid JSON. That is to say, whilst a value or object may be included in the message, the relevant quoting according to the JSON specification in <eref target="https://tools.ietf.org/html/rfc7159">RFC7159</eref> must be used. This results in quoted string values, and unquoted number values.
+</t>
+<t><spanx style="verb">JSON_IETF</spanx> encoded data MUST conform with the rules for JSON serialisation described in <eref target="https://tools.ietf.org/html/rfc7951">RFC7951</eref>. Data specified with a type of JSON MUST be valid JSON, but no additional constraints are placed upon it. An implementation MUST NOT serialise data with mixed <spanx style="verb">JSON</spanx> and <spanx style="verb">JSON_IETF</spanx> encodings.
+</t>
+<t>Both the client and target MUST support the JSON encoding as a minimum.
+</t>
+</section>
+
+<section anchor="bytes" title="Bytes">
+<t>The <spanx style="verb">BYTES</spanx> type indicates that the contents of the <spanx style="verb">bytes</spanx> field of the message contains a byte sequence whose semantics is opaque to the protocol.
+</t>
+</section>
+
+<section anchor="protobuf" title="Protobuf">
+<t>The <spanx style="verb">PROTOBUF</spanx> type indicates that the contents of the <spanx style="verb">bytes</spanx> field of the message contains a serialised protobuf message. Note that in the case that the sender utilises this type, the receiver must understand the schema (and hence the type of protobuf message that is serialised) in order to decode the value. Such agreement is not guaranteed by the protocol and hence must be established out-of-band.
+</t>
+</section>
+
+<section anchor="ascii" title="ASCII">
+<t>The <spanx style="verb">ASCII</spanx> type indicates that the contents of the <spanx style="verb">bytes</spanx> field of the message contains system-formatted ASCII encoded text.  For configuration data, for example, this may consist of semi-structured CLI configuration data formatted according to the target platform.  The gNMI protocol does not define the format of the text – this must be established out-of-band.
+</t>
+</section>
+</section>
+
+<section anchor="use-of-data-schema-paths" title="Use of Data Schema Paths">
+
+<section anchor="path-prefixes" title="Path Prefixes">
+<t>In a number of messages, a prefix can be specified to reduce the lengths of path fields within the message. In this case, a <spanx style="verb">prefix</spanx> field is specified within a message - comprising of a valid path encoded according to Section <xref target="paths"/> In the case that a prefix is specified, the absolute path is comprised of the concatenation of the list of path elements representing the prefix and the list of path elements in the <spanx style="verb">path</spanx> field.
+</t>
+<t>For example, again considering the data tree shown in Section <xref target="json-and-json_ietf"/> if a <spanx style="verb">Notification</spanx> message updating values, a prefix could be used to refer to the <spanx style="verb">/a/b[name=b1]/c/d</spanx> and <spanx style="verb">/a/b[name=b1]/c/e</spanx>data nodes:
+</t>
+
+<figure align="center"><artwork align="center">
+notification: &lt;
+    timestamp: (timestamp)      // timestamp as int64
+    prefix: &lt;
+     element: "a"
+      element: "b[name=b1]"
+      element: "c"
+    &gt;
+  update: &lt;
+    path: &lt;
+      element: "d"
+    &gt;
+    value: &lt;
+      value: "AStringValue"
+      type: JSON
+    &gt;
+  &gt;
+  update: &lt;
+    path: &lt;
+      element: "e"
+    &gt;
+    value: &lt;
+      value: 10042      // converted to int representation
+      type: JSON
+    &gt;
+  &gt;
+&gt;
+</artwork></figure>
+</section>
+
+<section anchor="path-aliases" title="Path Aliases">
+<t>In some cases, a client or target MAY desire to utilises aliases for a particular path - such that subsequent messages can be compressed by utilising the alias, rather than using a complete representation of the path. Doing so reduces total message length, by ensuring that redundant information can be removed.
+</t>
+<t>Support for path aliases MAY be provided by a target. In a case where a target does not support aliases, the maximum message length SHOULD be considered, especially in terms of bandwidth utilisation, and the efficiency of message generation.
+</t>
+<t>A path alias is encoded as a string. In order to avoid valid data paths clashing with aliases (e.g., <spanx style="verb">a</spanx> in the above example), an alias name MUST be prefixed with a <spanx style="verb">#</spanx> character.
+</t>
+<t>The means by which an alias is created is defined on a per-RPC basis. In order to delete an alias, the alias name is sent with the path corresponding to the alias empty.
+</t>
+<t>Aliases MUST be specified as a fully expanded path, and hence MUST NOT reference other aliases within their definition, such that a single alias lookup is sufficient to resolve the absolute path.
+</t>
+</section>
+
+<section anchor="interpretation-of-paths-used-in-rpcs" title="Interpretation of Paths Used in RPCs">
+<t>When a client specifies a path within an RPC message which indicates a read, or retrieval of data, the path MUST be interpreted such that it refers to the node directly corresponding with the path <spanx style="strong">and</spanx> all its children.  The path refers to the direct node and all descendent branches which originate from the node, recursively down to each leaf element.  If specific nodes are expected to be excluded then an RPC MAY provide means to filter nodes, such as regular-expression based filtering, lists of excluded paths, or metadata-based filtering (based on annotations of the data schema being manipulated, should such annotations be available and understood by both client and target).
+</t>
+<t>For example, consider the following data tree:
+</t>
+
+<figure align="center"><artwork align="center">
+root +
+     |
+     +-- childA +
+     |          |
+     |          +-- leafA1
+     |          +-- leafA2
+     |          +-- childA3 --+
+     |                        |
+     |                        +-- leafA31
+     |                        +-- leafA32
+     |
+     +-- childB +
+                |
+                +-- leafB1
+                +-- leafB2
+</artwork></figure>
+<t>A path referring to "root" (which is represented by a Path consisting of a single element specifying an empty string) should result in the nodes <spanx style="verb">childA</spanx> and <spanx style="verb">childB</spanx> and all of their children (<spanx style="verb">leafA1, leafA2, leafB1, leafB2, childA3, leafA31</spanx> and <spanx style="verb">leafA32</spanx>) being considered by the relevant operation.
+</t>
+<t>In the case that the RPC is modifying the state of data (i.e., a write operation), such recursion is not required - rather the modification operation should be considered to be targeted at the node within the schema that is specified by the path, and the value should be deserialized such that it modifies the content of any child nodes if required to do so.
+</t>
+</section>
+</section>
+
+<section anchor="error-handling" title="Error handling">
+<t>Where the client or target wishes to indicate an error, an <spanx style="verb">Error</spanx> message is generated. Errors MUST be represented by a canonical gRPC error code (<eref target="http://www.grpc.io/grpc-java/javadoc/index.html">Java</eref>, <eref target="https://godoc.org/google.golang.org/grpc/codes#Code">Golang</eref>, <eref target="http://www.grpc.io/grpc/cpp/classgrpc_1_1_status.html">C++</eref>) . The entity generating the error MUST specify a free-text string which indicates the context of the error, allowing the receiving entity to generate log entries that allow a human operator to understand the exact error that occurred, and its context. Each RPC defines the meaning of the relevant canonical error codes within the context of the operation it performs.
+</t>
+<t>The canonical error code that is chosen MUST consider the expected behavior of the client on receipt of the message. For example, error codes which indicate that a client may subsequently retry SHOULD only be used where retrying the RPC is expected to result in a different outcome.
+</t>
+<t>A re-usable <spanx style="verb">Error</spanx> message MUST be used when sending errors in response to an RPC operation. This message has the following fields:
+</t>
+<t>
+<list style="symbols">
+<t><spanx style="verb">code</spanx> - an unsigned 32-bit integer value corresponding to the canonical gRPC error code.</t>
+<t><spanx style="verb">message</spanx>- a human-readable string describing the error condition in more detail. This string is not expected to be machine-parsable, but rather provide contextual information which may be passed to upstream systems.</t>
+<t><spanx style="verb">data</spanx>-  an arbitrary sequence of bytes (encoded as <spanx style="verb">[proto.Any](https://github.com/google/protobuf/blob/master/src/google/protobuf/any.proto)</spanx>) which provides further contextual information relating to the error.</t>
+</list>
+</t>
+</section>
+
+<section anchor="schema-definition-models" title="Schema Definition Models">
+<t>The data tree supported by the target is expected to be defined by a set of schemas. The definition and format of these models is out of scope of this specification (YANG-modeled data is one example). In the case that such schema definitions are used, the client  should be able to determine the models that are supported by the target, so that  it can generate valid modifications to the data tree, and interpret the data returned by <spanx style="verb">Get</spanx> and <spanx style="verb">Subscribe</spanx> RPC calls.
+</t>
+<t>Additionally, the client may wish to restrict the set of models that are utilised by the target so that it can validate the data returned to it against a specific set of data models.  This is particularly relevant where the target may otherwise add new values to restricted value data elements (e.g., those representing an enumerated type), or augment new data elements into the data tree.
+</t>
+<t>In order to allow the client to restrict the set of data models to be used when interacting with the target, the client MAY discover the set of models that are supported by the target using the <spanx style="verb">Capabilities</spanx> RPC described in <xref target="capability-discovery"/>. For subsequent <spanx style="verb">Get</spanx> and <spanx style="verb">Subscribe</spanx> RPCs, the client MAY specify the models to be used by the target.   The set of models to use is expressed as a <spanx style="verb">ModelData</spanx> message, as specified in <xref target="the-modeldata-message"/>.
+</t>
+<t>If the client specifies a set of models in a <spanx style="verb">Get</spanx> or <spanx style="verb">Subscribe</spanx> RPC, the target MUST NOT utilize data tree elements that are defined in schema modules outside the specified set.  In addition, where there are data tree elements that have restricted value sets (e.g., enumerated types), and the set is extended by a module which is outside of the set, such values MUST NOT be used in data instances that are sent to the client. Where there are other elements of the schema that depend on the existence of such enumerated values, the target MUST NOT include such values in data instances sent to the client.
+</t>
+
+<section anchor="the-modeldata-message" title="The ModelData message">
+<t>The <spanx style="verb">ModelData</spanx> message describes a specific model that is supported by the target and used by the client.   The fields of the <spanx style="verb">ModelData</spanx> message identify a data model registered in a model catalog, as described in <eref target="https://datatracker.ietf.org/doc/draft-openconfig-netmod-model-catalog/">[MODEL_CATALOG_DOC]</eref>  (the schema of the catalog itself - expressed in YANG - is described in [<eref target="https://tools.ietf.org/html/draft-openconfig-netmod-model-catalog-01">MODEL_CATALOG_YANG</eref>]).  Each model specified by a <spanx style="verb">ModelData</spanx> message may refer to a specific schema module, a bundle of modules, or an augmentation or deviation, as described by the catalog entry.
+</t>
+<t>Each <spanx style="verb">ModelData</spanx> message contains the following fields:
+</t>
+<t>
+<list style="symbols">
+<t><spanx style="verb">name</spanx> - name of the model expressed as a string.</t>
+<t><spanx style="verb">organization</spanx> - the organization publishing the model, expressed as a string.</t>
+<t><spanx style="verb">version</spanx> - the supported (or requested) version of the model, expressed as a string which represents the semantic version of the catalog entry.</t>
+</list>
+</t>
+<t>The combination of <spanx style="verb">name</spanx>,  <spanx style="verb">organization</spanx>, and <spanx style="verb">version</spanx> uniquely identifies an entry in the model catalog.
+</t>
+</section>
+</section>
+</section>
+
+<section anchor="service-definition" title="Service Definition">
+<t>A single gRPC service is defined - future revisions of this specification MAY result in additional services being introduced, and hence an implementation MUST NOT make assumptions that limit to a single service definition.
+</t>
+<t>The service consists of the following RPCs:
+</t>
+<t>
+<list style="symbols">
+<t><spanx style="verb">Capabilities</spanx> - defined in <xref target="capability-discovery"/> and used by the client and target as an initial handshake to exchange capability information</t>
+<t><spanx style="verb">Get</spanx> - defined in <xref target="retrieving-snapshots-of-state-information"/>, used to retrieve snapshots of the data on the target by the client.</t>
+<t><spanx style="verb">Set</spanx> - defined in <xref target="modifying-state"/> and used by the client to modify the state of the target.</t>
+<t><spanx style="verb">Subscribe</spanx> - defined in <xref target="subscribing-to-telemetry-updates"/> and used to control subscriptions to data on the target by the client.</t>
+</list>
+</t>
+
+<section anchor="session-security-authentication-and-rpc-authorization" title="Session Security, Authentication and RPC Authorization">
+<t>The session between the client and server MUST be encrypted using TLS - and a target or client MUST NOT fall back to unencrypted channels.
+</t>
+<t>New connections are mutually authenticated -- each entity validates the X.509 certificate of the remote entity to ensure that the remote entity is both known, and authorized to connect to the local system.
+</t>
+<t>If the target is expected to authenticate an RPC operation, the client MUST supply a username and password in the metadata of the RPC message (e.g., <spanx style="verb">SubscribeRequest</spanx>, <spanx style="verb">GetRequest</spanx> or <spanx style="verb">SetRequest</spanx>).  If the client supplies username/password credentials, the target MUST authenticate the RPC per its local authentication functionality.
+</t>
+<t>Authorization is also performed per-RPC by the server, through validating client-provided metadata. The client MAY include the appropriate AAA metadata, which MUST contain a username, and MAY include a password in the context of each RPC call it generates.  If the client includes both username and password, the target MUST authenticate and authorize the request.  If the client only supplies the username, the target MUST authorize the RPC request.
+</t>
+<t>A more detailed discussion of the requirements for authentication and encryption used for gNMI is in <eref target="https://github.com/openconfig/reference/blob/master/rpc/gnmi/gnmi-authentication.md">[GNMI-AUTH]</eref>.
+</t>
+</section>
+
+<section anchor="capability-discovery" title="Capability Discovery">
+<t>A client MAY discover the  capabilities of the target using the <spanx style="verb">Capabilities</spanx> RPC.  The <spanx style="verb">CapabilityRequest</spanx> message is sent by the client to interrogate the target.   The target MUST reply with a <spanx style="verb">CapabilityResponse</spanx> message that includes its gNMI service version, the versioned data models it supports, and the supported data encodings.   This information is used in subsequent RPC messages from the client to indicate the set of models that the client will use (for <spanx style="verb">Get</spanx>, <spanx style="verb">Subscribe</spanx> as described in <xref target="schema-definition-models"/>) , and the encoding to be used for the data.
+</t>
+<t>When the client does not specify the models it is using, the target SHOULD use all data schema modules that it supports when considering the data tree to be addressed.  If the client does not specify the encoding in an RPC message, it MUST send JSON encoded values (the default encoding).
+</t>
+
+<section anchor="the-capabilityrequest-message" title="The CapabilityRequest message">
+<t>The <spanx style="verb">CapabilityRequest</spanx> message is sent by the client to request capability information from the target.  The <spanx style="verb">CapabilityRequest</spanx> message carries no additional fields.
+</t>
+</section>
+
+<section anchor="the-capabilityresponse-message" title="The CapabilityResponse message">
+<t>The <spanx style="verb">CapabilityResponse</spanx> message has the following fields:
+</t>
+<t>
+<list style="symbols">
+<t><spanx style="verb">supported_models</spanx> - a set of <spanx style="verb">ModelData</spanx> messages (as defined in <xref target="the-modeldata-message"/>) describing each of the models supported by the target</t>
+<t><spanx style="verb">supported_encodings</spanx> - an enumeration field describing the data encodings supported by the target, as described in <xref target="encoding-data-in-an-update-message"/>.</t>
+<t><spanx style="verb">gNMI_version</spanx> - the semantic version of the gNMI service supported by the target, specified as a string. The version should be interpreted as per [<eref target="http://www.openconfig.net/documentation/semantic-versioning/">OPENCONFIG-SEMVER</eref>].</t>
+</list>
+</t>
+</section>
+</section>
+
+<section anchor="retrieving-snapshots-of-state-information" title="Retrieving Snapshots of State Information">
+<t>In some cases, a client may require a snapshot of the state that exists on the target. In such cases, a client desires some subtree of the data tree to be serialized by the target and transmitted to it. It is expected that the values that are retrieved (whether writeable by the client or not) are collected immediately and provided to the client.
+</t>
+<t>The <spanx style="verb">Get</spanx> RPC provides an interface by which a client can request a set of paths to be serialized and transmitted to it by the target. The client sends a <spanx style="verb">GetRequest</spanx> message to the target, specifying the data that is to be retrieved. The fields of the <spanx style="verb">GetRequest</spanx> message are described in <xref target="the-getrequest-message"/>.
+</t>
+<t>Upon reception of a <spanx style="verb">GetRequest</spanx>, the target serializes the requested paths, and returns a <spanx style="verb">GetResponse</spanx> message. The target MUST reflect the values of the specified leaves at a particular collection time, which MAY be different for each path specified within the <spanx style="verb">GetRequest</spanx> message.
+</t>
+<t>The target closes the channel established by the <spanx style="verb">Get</spanx> RPC following the transmission of the <spanx style="verb">GetResponse</spanx> message.
+</t>
+
+<section anchor="the-getrequest-message" title="The GetRequest Message">
+<t>The <spanx style="verb">GetRequest</spanx> message contains the following fields:
+</t>
+<t>
+<list style="symbols">
+<t><spanx style="verb">prefix</spanx> - a path (specified as per <xref target="paths"/>), and used as described in <xref target="path-prefixes"/>. The prefix is applied to all paths within the <spanx style="verb">GetRequest</spanx> message.</t>
+<t><spanx style="verb">path</spanx> - a set of paths (expressed as per <xref target="paths"/>) for which the client is requesting a data snapshot from the target. The path specified MAY utilize wildcards. In the case that the path specified is not valid, the target MUST populate the <spanx style="verb">error</spanx> field of the <spanx style="verb">GetResponse</spanx> message indicating an error code of <spanx style="verb">InvalidArgument</spanx> and SHOULD provide information about the invalid path in the error message.</t>
+<t><spanx style="verb">type</spanx> - the type of data that is requested from the target. The valid values for type are described below.</t>
+<t><spanx style="verb">encoding</spanx> - the encoding that the target should utilise to serialise the subtree of the data tree requested. The type MUST be one of the encodings specified in <xref target="encoding-data-in-an-update-message"/>. If the <spanx style="verb">Capabilities</spanx> RPC has been utilised, the client SHOULD use an encoding advertised as supported by the target. If the encoding is not specified, JSON MUST be used. If the target does not support the specified encoding, the target MUST populate the error field of the <spanx style="verb">GetResponse</spanx> message, specifying an error of <spanx style="verb">InvalidArgument</spanx>. The error message MUST indicate that the specified encoding is unsupported.</t>
+<t><spanx style="verb">use_models</spanx> - a set of <spanx style="verb">ModelData</spanx> messages (defined in <xref target="the-modeldata-message"/>) indicating the schema definition modules that define the data elements that should be returned in response to the Get RPC call. The semantics of the <spanx style="verb">use_models</spanx> field are defined in <xref target="schema-definition-models"/>.</t>
+</list>
+</t>
+<t>Since the data tree stored by the target may consist of different types of data (e.g., values that are operational in nature, such as protocol statistics) - the client MAY specify that a subset of values in the tree are of interest. In order for such filtering to be implemented, the data schema on the target MUST be annotated in a manner which specifies the type of data for individual leaves, or subtrees of the data tree.
+</t>
+<t>The types of data currently defined are:
+</t>
+<t>
+<list style="symbols">
+<t><spanx style="verb">CONFIG</spanx> - specified to be data that the target considers to be read/write. If the data schema is described in YANG, this corresponds to the "config true" set of leaves on the target.</t>
+<t><spanx style="verb">STATE</spanx> - specified to be the read-only data on the target. If the data schema is described in YANG, <spanx style="verb">STATE</spanx> data is the "config false" set of leaves on the target.</t>
+<t><spanx style="verb">OPERATIONAL</spanx> - specified to be the read-only data on the target that is related to software processes operating on the device, or external interactions of the device.</t>
+</list>
+</t>
+<t>If the <spanx style="verb">type</spanx> field is not specified, the target MUST return CONFIG, STATE  and OPERATIONAL data fields in the tree resulting from the client's query.
+</t>
+</section>
+
+<section anchor="the-getresponse-message" title="The GetResponse message">
+<t>The <spanx style="verb">GetResponse</spanx> message consists of:
+</t>
+<t>
+<list style="symbols">
+<t><spanx style="verb">notification</spanx> -  a set of <spanx style="verb">Notification</spanx> messages, as defined in <xref target="reusable-notification-message-format"/>. The target MUST generate a <spanx style="verb">Notification</spanx> message for each path specified in the client's <spanx style="verb">GetRequest</spanx>, and hence MUST NOT collapse data from multiple paths into a single <spanx style="verb">Notification</spanx> within the response. The <spanx style="verb">timestamp</spanx> field of the <spanx style="verb">Notification</spanx> message MUST be set to the time at which the target's snapshot of the relevant path was taken.</t>
+<t><spanx style="verb">error</spanx> - an <spanx style="verb">Error</spanx> message encoded as per the specification in <xref target="error-handling"/>, used to indicate errors in the <spanx style="verb">GetRequest</spanx> received by the target from the client.</t>
+</list>
+</t>
+</section>
+
+<section anchor="considerations-for-using-get" title="Considerations for using Get">
+<t>The <spanx style="verb">Get</spanx> RPC is intended for clients to retrieve relatively small sets of data as complete objects, for example a part of the configuration. Such requests are not expected to put a significant resource burden on the target. Since the target is expected to return the entire snapshot in the <spanx style="verb">GetResponse</spanx> message,  <spanx style="verb">Get</spanx> is not well-suited for retrieving very large data sets, such as the full contents of the routing table, or the entire component inventory. For such operations, the <spanx style="verb">Subscribe</spanx> RPC is the recommended mechanism, e.g. using the <spanx style="verb">ONCE</spanx> mode as described in <xref target="subscribing-to-telemetry-updates"/>.
+</t>
+<t>Another consideration for <spanx style="verb">Get</spanx> is that the timestamp returned is associated with entire set of data requested, although individual data items may have been sampled by the target at different times.  If the client requires higher accuracy for individual data items, the <spanx style="verb">Subscribe</spanx> RPC is recommended to request a telemetry stream (see <xref target="sending-telemetry-updates"/>).
+</t>
+</section>
+</section>
+
+<section anchor="modifying-state" title="Modifying State">
+<t>Modifications to the state of the target are made through the <spanx style="verb">Set</spanx> RPC. A client sends a <spanx style="verb">SetRequest</spanx> message to the target indicating the modifications it desires.
+</t>
+<t>A target receiving a <spanx style="verb">SetRequest</spanx> message processes the operations specified within it - which are treated as a transaction (see <xref target="transactions"/>). The server MUST process deleted paths (within the <spanx style="verb">delete</spanx> field of the <spanx style="verb">SetRequest</spanx>), followed by paths to be replaced (within the <spanx style="verb">replace</spanx> field), and finally updated paths (within the <spanx style="verb">update</spanx> field). The order of the replace and update fields MUST be treated as significant within a single <spanx style="verb">SetRequest</spanx> message.  If a single path is specified multiple times for a single operation (i.e., within <spanx style="verb">update</spanx> or <spanx style="verb">replace</spanx>), then the state of the target MUST reflect the application of all of the operations in order, even if they overwrite each other.
+</t>
+<t>In response to a <spanx style="verb">SetRequest</spanx>, the target MUST respond with a <spanx style="verb">SetResponse</spanx> message. For each operation specified in the <spanx style="verb">SetRequest</spanx> message, an <spanx style="verb">UpdateResult</spanx> message MUST be included in the response field of the <spanx style="verb">SetResponse</spanx>. The order in which the operations are applied MUST be maintained such that <spanx style="verb">UpdateResult</spanx> messages can be correlated to the <spanx style="verb">SetRequest</spanx> operations. In the case of a failure of an operation, the <spanx style="verb">error</spanx> field of the <spanx style="verb">UpdateResult</spanx> message MUST be populated with an <spanx style="verb">Error</spanx> message as per the specification in <xref target="error-handling"/>. In addition, the <spanx style="verb">error</spanx> field of the <spanx style="verb">SetResponse</spanx> message MUST be populated with an error message indicating the success or failure of the set of operations within the <spanx style="verb">SetRequest</spanx> message (again using the error handling behavior defined in <xref target="error-handling"/>).
+</t>
+
+<section anchor="the-setrequest-message" title="The SetRequest Message">
+<t>A <spanx style="verb">SetRequest</spanx> message consists of the following fields:
+</t>
+<t>
+<list style="symbols">
+<t><spanx style="verb">prefix</spanx> - specified as per <xref target="path-prefixes"/>. The prefix specified is applied to all paths defined within other fields of the message.</t>
+<t><spanx style="verb">delete</spanx> - A set of paths, specified as per <xref target="paths"/>, which are to be removed from the data tree. A specification of the behavior of a delete is defined in <xref target="deleting-configuration"/>.</t>
+<t><spanx style="verb">replace</spanx>  - A set of <spanx style="verb">Update</spanx> messages indicating elements of the data tree whose content is to be replaced.</t>
+<t><spanx style="verb">update</spanx> - A set of <spanx style="verb">Update</spanx> messages indicating elements of the data tree whose content is to be updated.</t>
+</list>
+</t>
+<t>The semantics of "updating" versus "replacing" content are defined in <xref target="modes-of-update-replace-versus-update"/>
+</t>
+<t>A re-usable <spanx style="verb">Update</spanx> message is utilised to indicate changes to paths where a new value is required. The <spanx style="verb">Update</spanx> message contains two fields:
+</t>
+<t>
+<list style="symbols">
+<t><spanx style="verb">path</spanx> - a path encoded as per <xref target="paths"/> indicating the path of the element to be modified.</t>
+<t><spanx style="verb">value</spanx> - a value encoded as per <xref target="node-values"/> indicating the value applied to the specified node. The semantics of how the node is updated is dependent upon the context of the update message, as specified in <xref target="modes-of-update-replace-versus-update"/>.</t>
+</list>
+</t>
+</section>
+
+<section anchor="the-setresponse-message" title="The SetResponse Message">
+<t>A <spanx style="verb">SetResponse</spanx> consists of the following fields:
+</t>
+<t>
+<list style="symbols">
+<t><spanx style="verb">prefix</spanx> - specified as per <xref target="path-prefixes"/>. The prefix specified is applied to all paths defined within other fields of the message.</t>
+<t><spanx style="verb">message</spanx> - an error message as specified in <xref target="error-handling"/>. The target SHOULD specify a <spanx style="verb">message</spanx> in the case that the update was successfully applied, in which case an error code of <spanx style="verb">OK (0)</spanx> <spanx style="verb">MUST</spanx> be specified. In cases where an update was not successfully applied, the contents of the error message MUST be specified as per <xref target="error-handling"/>.</t>
+<t><spanx style="verb">response</spanx>  - containing a list of responses, one per operation specified within the <spanx style="verb">SetRequest</spanx> message. Each response consists of an <spanx style="verb">UpdateResult</spanx> message with the following fields:
+<list style="symbols">
+<t><spanx style="verb">timestamp</spanx> - a timestamp (encoded as per <xref target="timestamps"/>) at which the set request message was accepted by the system.</t>
+<t><spanx style="verb">path</spanx> - the path (encoded as per <xref target="paths"/>) specified within the <spanx style="verb">SetRequest</spanx>. In the case that a common prefix was not used within the <spanx style="verb">SetRequest</spanx>, the target MAY specify a <spanx style="verb">prefix</spanx> to reduce repetition of path elements within multiple <spanx style="verb">UpdateResult</spanx> messages in the <spanx style="verb">request</spanx> field.</t>
+<t><spanx style="verb">op</spanx> - the operation corresponding to the path. This value MUST be one of <spanx style="verb">DELETE</spanx>, <spanx style="verb">REPLACE</spanx>, or <spanx style="verb">UPDATE</spanx>.</t>
+<t><spanx style="verb">message</spanx> - an error message (as specified in <xref target="error-handling"/>). This field follows the same rules as the message field within the <spanx style="verb">SetResponse</spanx> message specified above.</t>
+</list></t>
+</list>
+</t>
+</section>
+
+<section anchor="transactions" title="Transactions">
+<t>All changes to the state of the target that are included in an individual <spanx style="verb">SetRequest</spanx> message are considered part of a transaction. That is, either all modifications within the request are applied, or the target MUST rollback the state changes to reflect its state before any changes were applied. The state of the target MUST NOT appear to be changed until such time as all changes have been accepted successfully.  Hence, telemetry update messages  MUST NOT reflect a change in state  until such time as the intended modifications have been accepted.
+</t>
+<t>As per the specification in <xref target="modifying-state"/>, within an individual transaction (<spanx style="verb">SetRequest</spanx>) the order of operations is <spanx style="verb">delete</spanx>, <spanx style="verb">replace</spanx>, <spanx style="verb">update</spanx>.
+</t>
+<t>As the scope of a "transaction" is a single <spanx style="verb">SetRequest</spanx> message, a client desiring a set of changes to be applied together MUST ensure that they are encapsulated within a single <spanx style="verb">SetRequest</spanx> message.
+</t>
+</section>
+
+<section anchor="modes-of-update-replace-versus-update" title="Modes of Update: Replace versus Update">
+<t>Changes to read-write values on the target are applied based on the <spanx style="verb">replace</spanx> and <spanx style="verb">update</spanx> fields of the <spanx style="verb">SetRequest</spanx> message.
+</t>
+<t>For both replace and update operations, if the path specified does not exist, the target MUST create the data tree element and populate it with the data in the <spanx style="verb">Update</spanx> message, provided the path is valid according to the data tree schema. If invalid values are specified, the target MUST cease processing updates within the <spanx style="verb">SetRequest</spanx> method, return the data tree to the state prior to any changes, and return a <spanx style="verb">SetResponse</spanx> message indicating the error encountered.
+</t>
+<t>For <spanx style="verb">replace</spanx> operations, the behavior regarding omitted data elements in the <spanx style="verb">Update</spanx> depends on whether they refer to non-default values (i.e., set by a previous <spanx style="verb">SetRequest</spanx>), or unmodified defaults.  When the <spanx style="verb">replace</spanx> operation omits values that have been previously set, they MUST be treated as deleted from the data tree.  Otherwise, omitted data elements MUST be created with their default values on the target.
+</t>
+<t>For <spanx style="verb">update</spanx> operations, only the value of those data elements that are specified explicitly should be treated as changed.
+</t>
+</section>
+
+<section anchor="modifying-paths-identified-by-attributes" title="Modifying Paths Identified by Attributes">
+<t>The path convention defined in <xref target="paths"/> allows nodes in the data tree to be identified by a unique set of node names (e.g.,<spanx style="verb">/a/b/c/d</spanx>) or paths that consist of node names coupled with attributes (e.g., <spanx style="verb">/a/e[key=10]</spanx>). In the case where where a node name plus attribute name is required to uniquely identify an element (i.e., the path within the schema represents a list, map, or array), the following considerations apply:
+</t>
+<t>
+<list style="symbols">
+<t>In the case that multiple attribute values are required to uniquely address an element - e.g., <spanx style="verb">/a/f[k1=10][k2=20]</spanx>- and a replace or update operation's path specifies  a subset of the attributes (e.g., <spanx style="verb">/a/f[k1=10]</spanx>) then this MUST be considered an error by the target system - and an error code of<spanx style="verb">InvalidArgument (3)</spanx> specified.</t>
+<t>Where the path specified refers to a node which itself represents the collection of objects (list, map, or array) a replace operation MUST remove all collection entries that are not supplied in the value provided in the <spanx style="verb">SetRequest</spanx>. An update operation MUST be considered to add new entries to the collection if they do not exist.</t>
+<t>In the case that key values are specified both as attributes of a node, and as their own elements within the data tree, update or replace operations that modify instances of the key in conflicting ways MUST be considered an error. The target MUST return an error code of <spanx style="verb">InvalidArgument (3)</spanx>.</t>
+</list>
+</t>
+<t>For example, consider a tree corresponding to the examples above, as illustrated below.
+</t>
+
+<figure align="center"><artwork align="center">
+root +
+     |
+     + a --+
+             |
+             +-- f[k1=10][k2=20] --+
+             |                     |
+             |                     +-- k1 = 10
+             |                     +-- k2 = 20
+             |
+             +-- f[k1=10][k2=21] --+
+                                   |
+                                   +-- k1 = 10
+                                   +-- k2 = 21
+</artwork></figure>
+<t>In this case, nodes <spanx style="verb">k1</spanx> and <spanx style="verb">k2</spanx> are standalone nodes within the schema, but also correspond to attribute values for the node "<spanx style="verb">f</spanx>". In this case, an update or replace message specifying a path of <spanx style="verb">/a/f[k1=10][k2=20]</spanx> setting the value of <spanx style="verb">k1</spanx> to 100 MUST be considered erroneous, and an error code of <spanx style="verb">InvalidArgument (3)</spanx> specified.
+</t>
+</section>
+
+<section anchor="deleting-configuration" title="Deleting Configuration">
+<t>Where a path is contained within the <spanx style="verb">delete</spanx> field of the <spanx style="verb">SetRequest</spanx> message, it should be removed from the target's data tree. In the case that the path specified is to an element that has children, these children MUST be recursively deleted. If a wildcard path is utilised, the wildcards MUST be expanded by the target, and the corresponding elements of the data tree deleted. Such wildcards MUST support paths specifying a subset of attributes required to identify entries within a collection (list, array, or map) of the data schema.
+</t>
+<t>In the case that a path specifies an element within the data tree that does not exist, these deletes MUST be silently accepted.
+</t>
+</section>
+
+<section anchor="error-handling-1" title="Error Handling">
+<t>When a client issues a <spanx style="verb">SetRequest</spanx>, and the target is unable to apply the specified changes, an error MUST be reported to the client. The error is specified in multiple places:
+</t>
+<t>
+<list style="symbols">
+<t>Within a <spanx style="verb">SetResponse</spanx> message, the error field indicates the completion status of the entire transaction.</t>
+<t>With a <spanx style="verb">UpdateResult</spanx> message, where the error field indicates the completion status of the individual operation.</t>
+</list>
+</t>
+<t>The target MUST specify the <spanx style="verb">message</spanx> field within a <spanx style="verb">SetResponse</spanx> message such that the overall status of the transaction is reflected. In the case that no error occurs, the target MUST complete this field specifying the <spanx style="verb">OK (0)</spanx> canonical error code.
+</t>
+<t>In the case that any operation within the <spanx style="verb">SetRequest</spanx> message fails, then (as per <xref target="transactions"/>), the target MUST NOT apply any of the specified changes, and MUST consider the transaction as failed. The target SHOULD set the <spanx style="verb">message</spanx> field of the <spanx style="verb">SetResponse</spanx> message to an error message with the code field set to <spanx style="verb">Aborted (10)</spanx>, and MUST set the <spanx style="verb">message</spanx> field of the <spanx style="verb">UpdateResult</spanx> corresponding to the failed operation to an <spanx style="verb">Error</spanx> message indicating failure.  In the case that the processed operation is not the only operation within the <spanx style="verb">SetRequest</spanx> the target MUST set the <spanx style="verb">message</spanx> field of the <spanx style="verb">UpdateResult</spanx> messages for all other operations, setting the code field to <spanx style="verb">Aborted (10)</spanx>.
+</t>
+<t>For the operation that the target is unable to process, the <spanx style="verb">message</spanx> field MUST be set to a specific error code indicating the reason for failure based on the following mappings to canonical gRPC error codes:
+</t>
+<t>
+<list style="symbols">
+<t>When the client has specified metadata requiring authentication (see <xref target="session-security-authentication-and-rpc-authorization"/>), and the authentication fails -  <spanx style="verb">Unauthenticated (16)</spanx>.</t>
+<t>When the client does not have permission to modify the path specified by the operation - <spanx style="verb">PermissionDenied (7)</spanx>.</t>
+<t>When the operation specifies a path that cannot be parsed by the target - <spanx style="verb">InvalidArgument (3)</spanx>. In this case, the <spanx style="verb">message</spanx> field of the <spanx style="verb">Error</spanx> message specified SHOULD specify human-readable text indicating that the path could not be parsed.</t>
+<t>When the operation is an update or replace operation that corresponds to a path that is not valid - <spanx style="verb">NotFound (5)</spanx>. In this case the <spanx style="verb">message</spanx> field of the <spanx style="verb">Error</spanx> message specified SHOULD specify human-readable text indicating the path that was invalid.</t>
+<t>When the operation is an update or replace operation that includes an invalid value within the <spanx style="verb">Update</spanx> message specified - <spanx style="verb">InvalidArgument (3)</spanx>. This error SHOULD be used in cases where the payload specifies scalar values that do not correspond to the correct schema type, and in the case that multiple values are specified using a particular encoding (e.g., JSON) which cannot be decoded by the target.</t>
+</list>
+</t>
+</section>
+</section>
+
+<section anchor="subscribing-to-telemetry-updates" title="Subscribing to Telemetry Updates">
+<t>When a client wishes to receive updates relating to the state of data instances on a target, it creates a subscription via the <spanx style="verb">Subscribe</spanx> RPC. A subscription consists of one or more paths, with a specified subscription mode. The mode of each subscription determines the triggers for  updates for data sent from the target to the client.
+</t>
+<t>All requests for new subscriptions are encapsulated within a <spanx style="verb">SubscribeRequest</spanx> message - which itself has a mode which describes the longevity of the subscription. A client may create a subscription which has a dedicated stream to return one-off data (<spanx style="verb">ONCE</spanx>); a subscription that utilizes a stream to periodically request a set of data (<spanx style="verb">POLL</spanx>); or a long-lived subscription that streams data according to the triggers specified within the individual subscription's mode (<spanx style="verb">STREAM</spanx>).
+</t>
+<t>The target generates messages according to the type of subscription that has been created, at the frequency requested by the client. The methods to create subscriptions are described in <xref target="managing-subscriptions"/>.
+</t>
+<t>Subscriptions are created for a set of paths - which cannot be modified throughout the lifetime of the subscription. In order to cancel a subscription, the client closes the gRPC channel over which the <spanx style="verb">Subscribe</spanx> RPC was initiated, or terminates the entire gRPC session.
+</t>
+<t>Subscriptions are fundamentally a set of independent update messages relating to the state of the data tree. That is, it is not possible for a client requesting a subscription to assume that the set of update messages received represent a snapshot of the data tree at a particular point in time. Subscriptions therefore allow a client to:
+</t>
+<t>
+<list style="symbols">
+<t>Receive ongoing updates from a target which allow synchronization between the client and target for the state of elements within the data tree. In this case (i.e., a <spanx style="verb">STREAM</spanx> subscription), a client creating a subscription receives an initial set of updates, terminated by a message indicating that initial synchronisation has completed, and then receives subsequent updates indicating changes to the initial state of those elements.</t>
+<t>Receive a single view (polled, or one-off) for elements of the data tree on a per-data element basis according to the state that they are in at the time that the message is transmitted.  This can be more resource efficient for both target and client than a <spanx style="verb">GetRequest</spanx> for large subtrees within the data tree.  The target does not need to coalesce values into a single snapshot view, or create an in-memory representation of the subtree at the time of the request, and subsequently transmit this entire view to the client.</t>
+</list>
+</t>
+<t>Based on the fact that subsequent update messages are considered to be independent, and to ensure that the efficiencies described above can be achieved, by default a target MUST NOT aggregate values within an update message.
+</t>
+<t>In some cases, however, elements of the data tree may be known to change together, or need to be interpreted by the subscriber together. Such data MUST be explicitly marked in the schema as being eligible to be aggregated when being published. Additionally, the subscribing client MUST explicitly request aggregation of eligible schema elements for the subscription - by means of the <spanx style="verb">allow_aggregation</spanx> flag within a <spanx style="verb">SubscriptionList</spanx> message. For elements covered by a subscription that are not explicitly marked within the schema as being eligible for aggregation the target MUST NOT coalesce these values, regardless of the value of the <spanx style="verb">allow_aggregation</spanx> flag.
+</t>
+<t>When aggregation is not permitted by the client or the schema each update message MUST contain a (key, value) pair - where the key MUST be a path to a single leaf element within the data tree (encoded according to <xref target="paths"/>). The value MUST encode only the value of the leaf specified. In most cases, this will be a scalar value (i.e., a JSON value if a JSON encoding is utilised), but in some cases, where an individual leaf element within the schema represents an object, it MAY represent a set of values (i.e.,  a JSON or Protobuf object).
+</t>
+<t>Where aggregation is permitted by both the client and schema, each update message MUST contain a key value pair, where the key MUST be the path to the element within the data tree which is explicitly marked as being eligible for aggregation. The value MUST be an object which encodes the children of the data tree element specified. For JSON, the value is therefore a JSON object, and for Protobuf is a series of binary-encoded Protobuf messages.
+</t>
+
+<section anchor="managing-subscriptions" title="Managing Subscriptions">
+
+<section anchor="the-subscriberequest-message" title="The SubscribeRequest Message">
+<t>A <spanx style="verb">SubscribeRequest</spanx> message is sent by a client to request updates from the target for a specified set of paths.
+</t>
+<t>The fields of the <spanx style="verb">SubscribeRequest</spanx> are as follows:
+</t>
+<t>
+<list style="symbols">
+<t>A group of fields, only one of which may be specified, which indicate the type of operation that the <spanx style="verb">SubscribeRequest</spanx> relates to. These are:
+<list style="symbols">
+<t><spanx style="verb">subscribe</spanx> - a <spanx style="verb">SubscriptionList</spanx> message specifying a new set of paths that the client wishes to subscribe to.</t>
+<t><spanx style="verb">poll</spanx>- a <spanx style="verb">Poll</spanx> message used to specify (on an existing channel) that the client wishes to receive a polled update for the paths specified within the subscription.  The semantics of the <spanx style="verb">Poll</spanx> message are described in <xref target="poll-subscriptions"/>.</t>
+<t><spanx style="verb">aliases</spanx> - used by a client to define (on an existing channel) a new path alias (as described in <xref target="path-aliases"/>). The use of the aliases message is described in <xref target="client-defined-aliases-within-a-subscription"/>.</t>
+</list></t>
+</list>
+</t>
+<t>In order to create a new subscription (and its associated channel) a client MUST send a <spanx style="verb">SubscribeRequest</spanx> message, specifying the <spanx style="verb">subscribe</spanx> field. The <spanx style="verb">SubscriptionList</spanx> may create a one-off subscription, a poll-only subscription, or a streaming subscription. In the case of ONCE subscriptions, the channel between client and target MUST be closed following the initial response generation.
+</t>
+<t>Subscriptions are set once, and subsequently not modified by a client. If a client wishes to subscribe to additional paths from a target, it MUST do so by sending an additional <spanx style="verb">Subscribe</spanx> RPC call, specifying a new <spanx style="verb">SubscriptionList</spanx> message. In order to end an existing subscription, a client simply closes the gRPC channel that relates to that subscription.  If a channel is initiated with a <spanx style="verb">SubscribeRequest</spanx> message that does not specify a <spanx style="verb">SubscriptionList</spanx> message with the <spanx style="verb">request</spanx> field, the target MUST consider this an error. If an additional <spanx style="verb">SubscribeRequest</spanx> message specifying a <spanx style="verb">SubscriptionList</spanx> is sent via an existing channel, the target MUST respond to this message with <spanx style="verb">SubscribeResponse</spanx> message indicating an error message, with a contained error message indicating an error code of <spanx style="verb">InvalidArgument (4)</spanx>; existing subscriptions on other gRPC channels MUST not be modified or terminated.
+</t>
+<t>If a client initiates a <spanx style="verb">Subscribe</spanx> RPC with a <spanx style="verb">SubscribeRequest</spanx> message which does not contain a <spanx style="verb">SubscriptionList</spanx> message, this is an error.  A <spanx style="verb">SubscribeResponse</spanx> message with the contained <spanx style="verb">error</spanx> message indicating a error code of  <spanx style="verb">InvalidArgument</spanx> MUST be sent. The error text SHOULD indicate that an out-of-order operation was requested on a non-existent subscription. The target MUST subsequently close the channel.
+</t>
+</section>
+
+<section anchor="the-subscriptionlist-message" title="The SubscriptionList Message">
+<t>A <spanx style="verb">SubscriptionList</spanx> message is used to indicate a set of paths for which common subscription behavior are required. The fields of the message are:
+</t>
+<t>
+<list style="symbols">
+<t><spanx style="verb">subscription</spanx> - a set of <spanx style="verb">Subscription</spanx> messages that indicate the set of paths associated with the subscription list.</t>
+<t><spanx style="verb">mode</spanx> -  the type of subscription that is being created. This may be <spanx style="verb">ONCE</spanx> (described in <xref target="once-subscriptions"/>); <spanx style="verb">STREAM</spanx> (described in <xref target="stream-subscriptions"/>); or <spanx style="verb">POLL</spanx> (described in <xref target="poll-subscriptions"/>). The default value for the mode field is <spanx style="verb">STREAM</spanx>.</t>
+<t><spanx style="verb">prefix</spanx>-  a common prefix that is applied to all paths specified within the message as per the definition in <xref target="path-prefixes"/>. The default prefix is null.</t>
+<t><spanx style="verb">use_aliases</spanx>- a boolean flag indicating whether the client accepts target aliases via the subscription channel. In the case that such aliases are accepted, the logic described in <xref target="path-aliases"/> is utilised.  By default, path aliases created by the target are not supported.</t>
+<t><spanx style="verb">qos</spanx> - a field describing the packet marking that is to be utilised for the responses to the subscription that is being created. This field has a single sub-value, <spanx style="verb">marking</spanx>, which indicates the DSCP value as a 32-bit unsigned integer. If the <spanx style="verb">qos</spanx> field is not specified, the device should export telemetry traffic using its default DSCP marking for management-plane traffic.</t>
+<t><spanx style="verb">allow_aggregation</spanx> - a boolean value used by the client to allow schema elements that are marked as eligible for aggregation to be combined into single telemetry update messages. By default, aggregation MUST NOT be used.</t>
+<t><spanx style="verb">use_models</spanx> - a <spanx style="verb">ModelData</spanx> message (as specified in <xref target="the-modeldata-message"/>) specifying the schema definition modules that the target should use when creating a subscription. When specified, the target MUST only consider data elements within the defined set of schema models as defined in <xref target="schema-definition-models"/>. When <spanx style="verb">use_models</spanx> is not specified, the target MUST consider all data elements that are defined in all schema modules that it supports.</t>
+</list>
+</t>
+<t>A client generating a <spanx style="verb">SubscriptionList</spanx> message MUST include the <spanx style="verb">subscription</spanx> field - which MUST be a non-empty set of <spanx style="verb">Subscription</spanx> messages, all other fields are optional.
+</t>
+</section>
+
+<section anchor="the-subscription-message" title="The Subscription Message">
+<t>A <spanx style="verb">Subscription</spanx> message generically describes a set of data that is to be subscribed to by a client. It contains a <spanx style="verb">path</spanx>, specified as per the definition in <xref target="paths"/>.
+</t>
+<t>There is no requirement for the path that is specified within the message to exist within the current data tree on the server. Whilst the path within the subscription SHOULD be a valid path within the set of schema modules that the target supports, subscribing to any syntactically valid path within such modules MUST be allowed. In the case that a particular path does not (yet) exist, the target MUST NOT close the channel, and instead should continue to monitor for the existence of the path, and transmit telemetry updates should it exist in the future. The target MAY send a <spanx style="verb">SubscribeResponse</spanx> message populating the error field with <spanx style="verb">NotFound (5)</spanx> to inform the client that the path does not exist at the time of subscription creation.
+</t>
+<t>For <spanx style="verb">POLL</spanx> and <spanx style="verb">STREAM</spanx> subscriptions, a client may optionally specify additional parameters within the <spanx style="verb">Subscription</spanx> message. The semantics of these additional fields are described in the relevant section of this document.
+</t>
+</section>
+
+<section anchor="the-subscriberesponse-message" title="The SubscribeResponse Message">
+<t>A <spanx style="verb">SubscribeResponse</spanx> message is transmitted by a target to a client over an established channel created by the <spanx style="verb">Subscribe</spanx> RPC. The message contains the following fields:
+</t>
+<t>
+<list style="symbols">
+<t>A set of fields referred to as the <spanx style="verb">response</spanx> fields, only one of which can be specified per <spanx style="verb">SubscribeResponse</spanx> message:
+<list style="symbols">
+<t><spanx style="verb">update</spanx> - a <spanx style="verb">Notification</spanx> message providing an update value for a subscribed data entity as described in <xref target="sending-telemetry-updates"/>. The <spanx style="verb">update</spanx> field is also utilised when a target wishes to create an alias within a subscription, as described in <xref target="target-defined-aliases-within-a-subscription"/>.</t>
+<t><spanx style="verb">sync_response</spanx>  - a boolean field indicating that a particular set of data values has been transmitted, used for <spanx style="verb">POLL</spanx> and <spanx style="verb">STREAM</spanx> subscriptions.</t>
+<t><spanx style="verb">error</spanx> - an <spanx style="verb">Error</spanx> message  transmitted to indicate an error has occurred within a particular <spanx style="verb">Subscribe</spanx> RPC call.</t>
+</list></t>
+</list>
+</t>
+</section>
+
+<section anchor="creating-subscriptions" title="Creating Subscriptions">
+
+<section anchor="once-subscriptions" title="ONCE Subscriptions">
+<t>A subscription operating in the <spanx style="verb">ONCE</spanx> mode acts as a single request/response channel. The target creates the relevant update messages, transmits them, and subsequently closes the channel.
+</t>
+<t>In order to create a one-off subscription, a client sends a <spanx style="verb">SubscribeRequest</spanx> message to the target. The <spanx style="verb">subscribe</spanx> field within this message specifies a <spanx style="verb">SubscriptionList</spanx> with the mode field set to <spanx style="verb">ONCE</spanx>. Updates corresponding to the subscription are generated as per the semantics described in <xref target="sending-telemetry-updates"/>.
+</t>
+<t>Following the transmission of all updates which correspond to data items within the set of paths specified within the subscription list, a <spanx style="verb">SubscribeResponse</spanx> message with the <spanx style="verb">sync_response</spanx> field set to <spanx style="verb">true</spanx> MUST be transmitted, and the channel over which the <spanx style="verb">SubscribeRequest</spanx> was received MUST be closed.
+</t>
+</section>
+
+<section anchor="stream-subscriptions" title="STREAM Subscriptions">
+<t>Stream subscriptions are long-lived subscriptions which continue to transmit updates relating to the set of paths that are covered within the subscription indefinitely.
+</t>
+<t>A <spanx style="verb">STREAM</spanx> subscription is created by sending a <spanx style="verb">SubscribeRequest</spanx> message with the subscribe field containing a <spanx style="verb">SubscriptionList</spanx> message with the type specified as <spanx style="verb">STREAM</spanx>. Each entry within the <spanx style="verb">Subscription</spanx> message is specified with one of the following <spanx style="verb">modes</spanx>:
+</t>
+<t>
+<list style="symbols">
+<t>On Change (<spanx style="verb">ON_CHANGE</spanx>) - when a subscription is defined to be "on change", data updates are only sent when the value of the data item changes. A heartbeat interval MAY be specified along with an "on change" subscription - in this case, the value of the data item(s) MUST be re-sent once per heartbeat interval regardless of whether the value has changed or not.</t>
+<t>Sampled (<spanx style="verb">SAMPLE</spanx>) - a subscription that is defined to be sampled MUST be specified along with a <spanx style="verb">sample_interval</spanx> encoded as an unsigned 64-bit integer representing nanoseconds.  The value of the data item(s) is sent once per sample interval to the client.  If the target is unable to support the desired <spanx style="verb">sample_interval</spanx> it MUST reject the subscription by returning a <spanx style="verb">SubscribeResponse</spanx> message with the error field set to an error message indicating the <spanx style="verb">InvalidArgument (3)</spanx> error code. If the <spanx style="verb">sample_interval</spanx> is set to 0, the target MUST create the subscription and send the data with the lowest interval possible for the target.
+<list style="symbols">
+<t>Optionally, the <spanx style="verb">suppress_redundant</spanx> field of the <spanx style="verb">Subscription</spanx> message may be set for a sampled subscription. In the case that it is set to <spanx style="verb">true</spanx>, the target SHOULD NOT generate a telemetry update message unless the value of the path being reported on has changed since the last update was generated. Updates MUST only be generated for those individual leaf nodes in the subscription that have changed. That is to say that for a subscription to <spanx style="verb">/a/b</spanx> - where there are leaves <spanx style="verb">c</spanx> and <spanx style="verb">d</spanx> branching from the <spanx style="verb">b</spanx> node - if the value of <spanx style="verb">c</spanx> has changed, but <spanx style="verb">d</spanx> remains unchanged, an update for <spanx style="verb">d</spanx> MUST NOT be generated, whereas an update for <spanx style="verb">c</spanx> MUST be generated.</t>
+<t>A <spanx style="verb">heartbeat_interval</spanx> MAY be specified to modify the behavior of <spanx style="verb">suppress_redundant</spanx> in a sampled subscription.  In this case, the target MUST generate one telemetry update  per heartbeat interval, regardless of whether the <spanx style="verb">suppress_redundant</spanx> flag is set to <spanx style="verb">true</spanx>. This value is specified as an unsigned 64-bit integer in nanoseconds.</t>
+</list></t>
+<t>Target Defined <spanx style="verb">(TARGET_DEFINED)</spanx> - when a client creates a subscription specifying the target defined mode, the target SHOULD determine the best type of subscription to be created on a per-leaf basis. That is to say, if the path specified within the message refers to some leaves which are event driven (e.g., the changing of state of an entity based on an external trigger) then an <spanx style="verb">ON_CHANGE</spanx> subscription may be created, whereas if other data represents counter values, a <spanx style="verb">SAMPLE</spanx> subscription may be created.</t>
+</list>
+</t>
+</section>
+
+<section anchor="poll-subscriptions" title="POLL Subscriptions">
+<t>Polling subscriptions are used for on-demand retrieval of statistics via long-lived channels. A poll subscription relates to a certain set of subscribed paths, and is initiated by sending a <spanx style="verb">SubscribeRequest</spanx> message with encapsulated <spanx style="verb">SubscriptionList</spanx>. <spanx style="verb">Subscription</spanx> messages contained within the <spanx style="verb">SubscriptionList</spanx> indicate the set of paths that are of interest to the polling client.
+</t>
+<t>To retrieve data from the target, a client sends a <spanx style="verb">SubscribeRequest</spanx>  message to the target, containing a <spanx style="verb">poll</spanx> field, specified to be an empty <spanx style="verb">Poll</spanx> message. On reception of such a message, the target MUST generate updates for all the corresponding paths within the <spanx style="verb">SubscriptionList</spanx>. Updates MUST be generated according to <xref target="sending-telemetry-updates"/>.
+</t>
+</section>
+</section>
+
+<section anchor="client-defined-aliases-within-a-subscription" title="Client-defined Aliases within a Subscription">
+<t>When a client wishes to create an alias that a target should use for a path, the client should send a <spanx style="verb">SubscribeRequest</spanx> message specifying the <spanx style="verb">aliases</spanx> field. The <spanx style="verb">aliases</spanx> field consists of an <spanx style="verb">AliasList</spanx> message. An <spanx style="verb">AliasList</spanx> specifies a list of aliases, each of which consists of:
+</t>
+<t>
+<list style="symbols">
+<t><spanx style="verb">path</spanx> - the target path for the alias - encoded as per <xref target="paths"/>.</t>
+<t><spanx style="verb">alias</spanx> - the (client-defined) alias for the path, encoded as per <xref target="path-aliases"/>.</t>
+</list>
+</t>
+<t>Where a target is unable to support a client-defined alias it SHOULD respond with a <spanx style="verb">SubscribeResponse</spanx> message with the error field indicating an error of the following types:
+</t>
+<t>
+<list style="symbols">
+<t><spanx style="verb">InvalidArgument (3)</spanx> where the specified alias is not acceptable to the target.</t>
+<t><spanx style="verb">AlreadyExists (6)</spanx> where the alias defined is a duplicate of an existing alias for the client.</t>
+<t><spanx style="verb">ResourceExhausted (8)</spanx> where the target has insufficient memory or processing resources to support the alias.</t>
+<t><spanx style="verb">Unknown (2)</spanx> in all other cases.</t>
+</list>
+</t>
+<t>Thus, for a client to create an alias corresponding to the path<spanx style="verb">/a/b/c/d[id=10]/e</spanx> with the name <spanx style="verb">shortPath</spanx>, it sends a <spanx style="verb">SubscribeRequest</spanx> message with the following fields specified:
+</t>
+
+<figure align="center"><artwork align="center">
+subscriberequest: &lt;
+  aliases: &lt;
+    alias: &lt;
+      path: &lt;
+        element: "a"
+        element: "b"
+        element: "c"
+        element: "d[id=10]"
+        element: "e"
+      &gt;
+      alias: "#shortPath"
+    &gt;
+  &gt;
+&gt;
+</artwork></figure>
+<t>If the alias is acceptable to the target, subsequent updates are transmitted using the <spanx style="verb">#shortPath</spanx> alias in the same manner as described in <xref target="target-defined-aliases-within-a-subscription"/>.
+</t>
+</section>
+</section>
+
+<section anchor="sending-telemetry-updates" title="Sending Telemetry Updates">
+
+<section anchor="bundling-of-telemetry-updates" title="Bundling of Telemetry Updates">
+<t>Since multiple <spanx style="verb">Notification</spanx> messages can be included in the update field of a <spanx style="verb">SubscribeResponse</spanx> message, it is possible for a target to bundle messages such that fewer messages are sent to the client. The advantage of such bundling is clearly to reduce the number of bytes on the wire (caused by message overhead). Since <spanx style="verb">Notification</spanx> messages contain the timestamp at which an event occurred, or a sample was taken, such bundling does not affect the sample accuracy to the client. However, bundling does have a negative impact on the freshness of the data in the client - and on the client's ability to react to events on the target.
+</t>
+<t>Since it is not possible for the target to infer whether its clients are sensitive to the latency introduced by bundling, if a target implements optimizations such that multiple <spanx style="verb">Notification</spanx> messages are bundled together, it MUST provide an ability to disable this functionality within the configuration of the gNMI service. Additionally, a target SHOULD provide means by which the operator can control the maximum number of updates that are to be bundled into a single message,  This configuration is expected to be implemented out-of-band to the gNMI protocol itself.
+</t>
+</section>
+
+<section anchor="target-defined-aliases-within-a-subscription" title="Target-defined Aliases within a Subscription">
+<t>Where the <spanx style="verb">use_aliases</spanx> field of a <spanx style="verb">SubscriptionList</spanx> message has been set to <spanx style="verb">true</spanx>, a target MAY create aliases for paths within a subscription. A target-defined alias MUST be created separately from an update to the corresponding data item(s).
+</t>
+<t>To create a target-defined alias, a <spanx style="verb">SubscribeResponse</spanx> message is generated with the <spanx style="verb">update</spanx> field set to a <spanx style="verb">Notification</spanx> message. The <spanx style="verb">Notification</spanx> message specifies the aliased path within the <spanx style="verb">prefix</spanx> field, and a non-null <spanx style="verb">alias</spanx> field, specified according to <xref target="path-aliases"/>.
+</t>
+<t>Thus, a target wishing to create an alias relating to the path <spanx style="verb">/a/b/c[id=10]</spanx> and subsequently update children of the <spanx style="verb">c[id=10]</spanx>entity must:
+</t>
+<t>
+<list style="numbers">
+<t>Generate a <spanx style="verb">SubscribeResponse</spanx> message and transmit it over the channel to the client:</t>
+</list>
+</t>
+
+<figure align="center"><artwork align="center">
+subscriberesponse: &lt;
+  update: &lt;
+    timestamp: (timestamp)
+    prefix: &lt;
+      element: "a"
+      element: "b"
+      element: "c[id=10]"
+    &gt;
+    alias: "#42"
+  &gt;
+&gt;
+</artwork></figure>
+<t>
+<list style="numbers">
+<t>Subsequently, this alias can be used to provide updates for the <spanx style="verb">child1</spanx> leaf corresponding to <spanx style="verb">/a/b/c[id=10]/child1</spanx>:</t>
+</list>
+</t>
+
+<figure align="center"><artwork align="center">
+subscriberesponse: &lt;
+  update: &lt;
+    timestamp: (timestamp)
+    prefix: &lt;
+      element: "#42"
+    &gt;
+    update: &lt;
+      path: &lt;
+        element: "child1"
+      &gt;
+      value: &lt;
+        value: 102                      // integer representation
+        type: JSON_IETF
+      &gt;
+    &gt;
+  &gt;
+&gt;
+</artwork></figure>
+</section>
+
+<section anchor="sending-telemetry-updates-1" title="Sending Telemetry Updates">
+<t>When an update for a subscribed telemetry path is to be sent, a <spanx style="verb">SubscribeResponse</spanx> message is sent from the target to the client, on the channel associated with the subscription. The <spanx style="verb">update</spanx> field of the message contains a <spanx style="verb">Notification</spanx> message as per the description in <xref target="reusable-notification-message-format"/>. The <spanx style="verb">timestamp</spanx> field of the <spanx style="verb">Notification</spanx> message MUST be set to the time at which the value of the path that is being updated was collected.
+</t>
+<t>Where a leaf node's value has changed, or a new node has been created, an <spanx style="verb">Update</spanx> message specifying the path and value for the updated data item MUST be appended to the <spanx style="verb">update</spanx> field of the message.
+</t>
+<t>Where a node within the subscribed paths has been removed, the <spanx style="verb">delete</spanx> field of the <spanx style="verb">Notification</spanx> message MUST have the path of the node that has been removed appended to it.
+</t>
+<t>When the target has transmitted the initial updates for all paths specified within the subscription, a <spanx style="verb">SubscribeResponse</spanx> message with the <spanx style="verb">sync_response</spanx> field set to <spanx style="verb">true</spanx> MUST be transmitted to the client to indicate that the initial transmission of updates has concluded.  This provides an indication to the client that all of the existing data for the subscription has been sent at least once.  For <spanx style="verb">STREAM</spanx> subscriptions, such messages are not required for subsequent updates. For <spanx style="verb">POLL</spanx> subscriptions, after each set of updates for  individual poll request, a <spanx style="verb">SubscribeResponse</spanx> message with the <spanx style="verb">sync_response</spanx> field set to <spanx style="verb">true</spanx> MUST be generated.
+</t>
+</section>
+</section>
+</section>
+</section>
+
+</middle>
+
+<back>
+
+<section anchor="appendix-current-protobuf-message-and-service-specification" title="Appendix: Current Protobuf Message and Service Specification">
+<t>The latest Protobuf IDL gNMI specification is found at <eref target="https://github.com/openconfig/reference/blob/master/rpc/gnmi/gnmi.proto"/>.
+</t>
+</section>
+
+<section anchor="appendix-current-outstanding-issuesfuture-features" title="Appendix: Current Outstanding Issues/Future Features">
+<t>
+<list style="symbols">
+<t>Ability for the client to exclude paths from a subscription or get.</t>
+<t>"Dial out" for the target to register with an NMS and publish pre-configured subscriptions.</t>
+</list>
+</t>
+</section>
+
+</back>
+
+
+
+
+
+</rfc>

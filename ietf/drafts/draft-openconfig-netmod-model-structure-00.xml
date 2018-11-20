@@ -1,0 +1,733 @@
+<?xml version="1.0"?>
+<!DOCTYPE rfc SYSTEM "rfc2629.dtd">
+<rfc docName="draft-openconfig-netmod-model-structure-00" ipr="trust200902" category="info">
+  <front>
+    <title abbrev="Operational Model Structure">Operational Structure and Organization of YANG Models</title>
+    <author initials="A." surname="Shaikh" fullname="Anees Shaikh">
+      <organization>Google</organization>
+      <address>
+        <postal>
+          <street>1600 Amphitheatre Pkwy</street>
+          <city>Mountain View</city>
+          <region>CA</region>
+          <code>94043</code>
+          <country>US</country>
+        </postal>
+        <email>aashaikh@google.com</email>
+      </address>
+    </author>
+    <!-- Include Rob Shakir as author -->
+    <?rfc include="http://rob.sh/files/ietf-author.xml"?>
+    <author initials="K." surname="D'Souza" fullname="Kevin D'Souza">
+      <organization>AT&amp;T</organization>
+      <address>
+        <postal>
+          <street>200 S. Laurel Ave</street>
+          <city>Middletown</city>
+          <region>NJ</region>
+          <country>US</country>
+        </postal>
+        <email>kd6913@att.com</email>
+      </address>
+    </author>
+    <author initials="L." surname="Fang" fullname="Luyuan Fang">
+      <organization>Microsoft</organization>
+      <address>
+        <postal>
+          <street>205 108th Ave. NE, Suite 400</street>
+          <city>Bellevue</city>
+          <region>WA</region>
+          <country>US</country>
+        </postal>
+        <email>lufang@microsoft.com</email>
+      </address>
+    </author>
+    <date month="March" year="2015" />
+
+    <area>Operations and Management</area>
+
+    <abstract>
+      <t>
+        This document presents an approach for organizing YANG models in a
+        comprehensive structure that defines how individual models may be
+        composed to configure and operate network infrastructure and services.
+        The structure is itself represented as a YANG model rooted at a device,
+        with all of the related component models logically organized in a way
+        that is operationally intuitive.
+      </t>
+    </abstract>
+  </front>
+
+  <middle>
+    <section title="Introduction" anchor="intro">
+      <t>
+        The large number of configuration models recently published cover much
+        of networking protocols and technology and, in theory, enable a
+        programmatic, model-driven approach for configuring network devices.
+        These models have been largely developed individually and in isolation,
+        however, making it challenging to use them together to fully configure a device,
+        or manage a set of devices comprising a service.  For example, standard
+        models for <xref target="RFC7223">interface management</xref> and <xref
+        target="RFC7317">system management</xref> are available but there is no
+        guidance for how they should be used together, or combined with other
+        models for routing protocols, ACLs, etc. to form a complete model.
+        Recently, some frameworks (e.g., <xref target="RTG-CFG"></xref>  and
+        <xref target="RTG-POLICY"></xref>) that tie models together have been
+        developed, but they are incomplete, covering only a subset of related
+        models.
+      </t>
+      <section title = "Goals and approach" anchor="goals">
+      <t>
+      In this document, we describe a structure for organizing <xref
+      target="RFC6020">YANG</xref> models that is broadly applicable to physical
+      and virtual devices.  Individual models are composed such that the data
+      they define can be accessed in a predictable and operationally intuitive
+      way that is common across implementations.  This organization enables
+      several important capabilities:
+      </t>
+      <t>
+        <list style="symbols">
+          <t>
+            a common schema to access data related to all aspects of a
+            device
+          </t>
+          <t>
+            an extensible structure that makes it clear where additional
+            models or data should be fit (e.g., using YANG
+            augmentation or imports)
+          </t>
+          <t>
+            a place for including metadata that provides useful
+            information about the corresponding individual models,
+            such as which organization provides them, which vendors
+            support them, or which version of the model is deployed
+          </t>
+          <t>
+            a common infrastructure model layer on which higher layer
+            service models can be built, for example by specifying
+            which models are needed to provide the service
+          </t>
+          <t>
+            an ability to express an instance of the structure consisting of
+            models that have been validated to work together (i.e., with
+            information about sources of the models, their versions, etc.), so
+            that operators can easily identify a set of models that is known to
+            be mutually consistent
+          </t>
+        </list>
+      </t>
+
+      <t>
+        Our approach is to organize the models describing various aspects of
+        network infrastructure, including devices and their subsystems, and
+        relevant protocols operating at the link and network layers.  The
+        proposal does not consider a common model for higher level network
+        services, nor does it specify details of how hardware-related data
+        should be organized. Both of these are challenging to standardize --
+        services are subject to operational and business considerations that
+        vary across network operators, and hardware models are necessarily
+        dependent on specific platform features and architecture -- and are
+        thus out of scope of this document.  We instead consider the set of
+        models that are commonly used by network operators, and suggest a
+        corresponding organization.
+      </t>
+
+       <t>
+        As with other models developed from an operator perspective, the intent
+        is not to be exhaustive by including all possible models in the overall
+        structure, whether currently available or not.  We focus on components
+        that are deemed most useful for network operators across a variety of
+        use cases.  We recognize, however, that additional models will be needed
+        in some cases, and this structure is useful for describing how new
+        models can be fit into the overall structure.
+        </t>
+      </section>
+    </section>
+
+    <section title="Model overview" anchor="overview">
+      <t>
+        The model organization can itself be thought of as a “meta-
+        model”, in that it describes the relationships between
+        individual models.  We choose to represent it also as simple
+        YANG model consisting of lists and containers to serve as anchor
+        points for the corresponding individual models.
+      </t>
+
+      <t>
+        As shown below, our model is rooted at a “device”, which
+        represents a network router, switch, or similar device.  The model is
+        applicable to both physical, hardware-based devices, as well as
+        software-based devices such as virtual network functions (VNFs). It
+        does not follow the hierarchy of any particular
+        implementation, and hence is vendor-neutral.
+        Nevertheless, the structure should be familiar to network
+        operators and also readily mapped to vendor implementations.
+      </t>
+      <figure>
+        <artwork>
++--rw device
+      +--rw info
+      |  +--rw device-type?
+      |     ...
+      +--rw hardware
+      +--rw system
+      |     ...
+      +--rw interfaces
+      |     ...
+      +--rw acl
+      +--rw qos
+      +--rw logical-routers
+            ...
+        </artwork>
+      </figure>
+
+      <t>
+        The key subsystems are represented at the top level of the device,
+        including, system-wide configuration, interfaces, and routing instances.
+        The info section can be used for basic device information such as its
+        type (e.g., physical or virtual), vendor, and model.  For physical
+        devices, the hardware container is intended to be a placeholder for
+        platform-specific configuration and operational state data.  For
+        example, a common structure for the hardware model might include
+        chassis, linecards, and ports, but we leave this unspecified.
+      </t>
+
+      <section title="System model components" anchor="system">
+        <t>
+          The system container includes a number of subsystems that are
+          typically configured globally for the device.  Some of these, such as
+          DHCP, Ethernet CFM, or sampling configuration also may have data that
+          is associated with an interface.  For simplicity, these relationships
+          are not represented in this structural model.  The currently defined
+          subsystems are shown below:
+        </t>
+        <figure>
+          <artwork>
+   +--rw device
+      +--rw system
+         +--rw dns
+         +--rw ntp
+         +--rw dhcp
+         +--rw syslog
+         +--rw ssh
+         +--rw stat-coll
+         +--rw oam
+         |  +--rw snmp
+         |  +--rw cfm
+         |  +--rw twamp
+         +--rw aaa
+         |  +--rw tacacs
+         |  +--rw radius
+         +--rw users
+          </artwork>
+        </figure>
+      </section>
+
+      <section title="Interface model components" anchor="interfaces">
+        <t>
+          Interfaces are a crucial part of any network device’s configuration
+          and operational state.  They generally include a combination of raw
+          physical interfaces, link-layer interfaces, addressing
+          configuration, and logical interfaces that may not be tied to any
+          physical interface.  Several system services, and layer 2 and layer
+          3 protocols may also associate configuration or operational state
+          data with different types of interfaces (these relationships are not
+          shown for simplicity). The interfaces container includes a number of
+          commonly used components as examples:
+        </t>
+        <figure>
+          <artwork>
+   +--rw device
+      +--rw interfaces
+         +--rw ethernet
+         |  +--rw aggregates
+         |  +--rw vlans
+         |  +--rw lfm
+         +--rw sonet-sdh
+         +--rw addressing
+         |  +--rw ipv4
+         |  |  +--rw vrrp
+         |  +--rw ipv6
+         |     +--rw vrrp
+         +--rw tunnels
+          </artwork>
+        </figure>
+      </section>
+
+      <section title="Logical routing instances" anchor="routers">
+        <t>
+          Logical routers represent the capability on some devices to partition
+          resources into independent logical routers.  In physical devices, some
+          hardware features are shared across partitions, but routing protocol
+          instances, routing tables, and configuration are managed separately.
+          In virtual routers or VNFs, this may correspond to establishing
+          multiple logical instances using a single software installation. The
+          model supports configuration of multiple routing instances on a single
+          device by creating a list of logical routers, each with their own
+          configuration and operational state related to routing and switching
+          protocols, as shown below:
+        </t>
+        <figure>
+          <artwork>
+   +--rw device
+      +--rw logical-routers
+         +--rw logical-router* [router-id]
+            +--rw router-id            uint8
+            +--rw router-name?         string
+            +--rw layer-2-protocols
+            |     ...
+            +--rw layer-3-protocols
+                  ...
+          </artwork>
+        </figure>
+      </section>
+
+      <section title="VRFs and global routing configuration" anchor="vrf">
+        <t>
+          Virtual routing and forwarding instances (VRFs) are commonly
+          used to isolate routing domains, for example to create
+          virtual private networks, each with their own active
+          protocols and routing policies.  Devices also have a global
+          instance of each routing protocol that may also exchange
+          routes with VRFs through routing policies.  The model
+          describes protocols and policies for both VRF routing
+          instances and the global instance.  The routing policy
+          framework is expected to follow <xref target="RTG-POLICY"></xref>,
+          which enables import / export policies to be expressed with
+          respect to a VRF, or the global routing instance.
+        </t>
+        <figure>
+          <artwork>
++--rw device
+      +--rw logical-routers
+         +--rw logical-router* [router-id]
+            +--rw router-id
+            +--rw router-name?
+            +--rw layer-3-protocols
+               +--rw global
+               |     ...
+               +--rw vrf* [vrf-name]
+               |     ...
+               +--rw routing-policy
+                     ...
+          </artwork>
+        </figure>
+      </section>
+    </section>
+
+    <section title="Populating the structural model" anchor="populating">
+      <t>
+        The structural model in this document describes how individual YANG
+        models may be used together to represent the configuration and
+        operational state for all parts of a physical or virtual device. It does
+        not, however, document the actual model in its entirety.  In this
+        section, we outline an option for creating the full model and also
+        describe how it may be used.
+      </t>
+
+      <section title="Constructing the device model" anchor="constructing">
+        <t>
+          One of the challenges in assembling existing YANG models is
+          that they are generally written with the assumption that
+          each model is at the root of the configuration or state
+          tree.  Combining models then results in a multi-rooted tree
+          that does not follow any logical construction and makes it
+          difficult to work with operationally.  In some cases, models
+          explicitly reference other models (e.g., via augmentation)
+          to define a relationship, but this is the case for only a
+          few existing models.
+        </t>
+        <t>
+          Some examples include the <xref
+          target="RFC7223">interfaces</xref> and <xref
+          target="RFC7277">IP management</xref> models, and proposed <xref
+          target="RTG-ISIS">IS-IS</xref>, <xref target="RTG-OSPF">OSPF</xref>
+          and <xref target="RTG-CFG">routing configuration</xref> models.
+        </t>
+      </section>
+
+      <section title="Pull approach for model composition" anchor="pull">
+        <t>
+         To enable model composition, one possible approach is to avoid using
+         root-level containers in individual component models.
+         Instead, the top level container (and all other data
+         definitions) can be enclosed in a YANG ‘grouping’ statement
+         so that when the model is imported by another model, its
+         location in the configuration tree can be controlled by the
+         importing YANG module with the ‘uses’ statement.  One
+         advantage of this approach is that the importing module has
+         the flexibility to readily use the data definitions where the
+         author deems appropriate.
+        </t>
+        <t>
+         One obvious drawback is that individual models no longer
+         contain any of their own data definitions and must be used by
+         a higher-level model for their data nodes to become active.
+         Some judgment as to which models are more suited for
+         inclusion in higher level models is also necessary to decide
+         when the corresponding YANG module should contain only
+         groupings.  Another potential drawback is that this approach
+         does not define a common structure for models to fit
+         together, limiting interoperability due to implementations
+         using different structures.  To address this, a top-level
+         standard model structure could be defined and updated to
+         import new models into the hierarchy as they are defined.
+        </t>
+      </section>
+
+      <section title="“Push” approach for model composition" anchor="push">
+        <t>
+          An alternative approach is to develop a top level model which defines
+          the overall structure of the models, similar to the structure
+          described in <xref target="overview"></xref>.  Individual models may
+          augment the top level model with their data nodes in the appropriate
+          locations.  The drawback is the need for a pre-defined top level
+          model structure.  On the other hand, when this top level model is
+          standardized, it can become the basis for a vendor-neutral way to
+          manage devices, assuming that the component models are supported by a
+          given implementation.
+        </t>
+        <t>
+          One question in both approaches is what the root of the top-
+          level model should be.  In this document we selected to base
+          the mode at a device because this layer should be common
+          across many use cases and implementations.  Starting at a
+          higher layer (e.g., services) makes defining and agreeing on
+          a common organization more challenging as discussed in
+          <xref target="goals"></xref>.
+        </t>
+        <t>
+         Ideally, one could consider a hybrid construction mechanism
+        that supports both styles of model composition.  For
+        example, a YANG compiler directive could be used to indicate
+        whether an individual model should assume it is at the root,
+        or whether it is meant for inclusion in other higher-level
+        models.
+      </t>
+      </section>
+    </section>
+
+    <section title="Additional use cases" anchor="use-cases">
+      <t>
+        The goal of this document is to motivate the need for an
+        overall structure for YANG data models that allows all of the
+        data to be accessed in a common, logical way.   With such a
+        structure defined itself as a simple YANG model, it is
+        possible to consider additional use cases.
+      </t>
+
+      <section title="Model catalog" anchor="catalog">
+        <t>
+          YANG data models are being developed in a number of
+          organizations, including standards bodies such as IETF, ONF,
+          and IEEE, as well as open source projects and ad-hoc working
+          groups.  In addition to understanding how these models can
+          work together, another challenge for users is the complexity
+          of tracking which organization created a given model, and
+          the capabilities and coverage each model provides.  This
+          becomes even more difficult when multiple overlapping
+          models are available for a particular component.
+        </t>
+        <t>
+          Such a catalog could also be locally defined by an operator to
+          describe the models needed to instantiate and manage different
+          services.
+        </t>
+        <t>
+          The idea of a model catalog is similar to service catalogs
+          in traditional IT environments.  Service catalogs serve as a
+          software-based registries of available services with
+          information needed to discover and invoke available
+          services.
+        </t>
+        <t>
+          The current model structure described in <xref target="overview"></xref>
+          focuses on describing relationships between the models, however
+          there are several examples of additional metadata that could
+          be captured for each component model in the overall
+          structural model:
+        </t>
+        <t>
+          <list style="symbols">
+            <t>
+              origin and responsible party for maintenance of the model with
+              contact information.  In IETF standard models, the YANG
+              'organization' and 'contact' statement contents are a good
+              example, but this is not necessarily the case for models from
+              other sources.
+            </t>
+            <t>
+              license under which the model is distributed, e.g., open
+              source or as part of a commercial license
+            </t>
+            <t>
+              classification of the model, including its category /
+              subcategory, whether the model is intended to be used
+              standalone, etc.
+            </t>
+            <t>
+              model dependencies, e.g., a list of other modules that
+              are required
+            </t>
+            <t>
+              namespace information, including base namespace,
+              prefixes, etc. to enable importing the model
+            </t>
+            <t>
+              pointer to the YANG code, if it is freely downloadable
+            </t>
+            <t>
+              implementation information, for example, a list of
+              available implementations that support the model from vendors,
+              open source projects, etc.
+            </t>
+            <t>
+              authentication information to allow users to verify that
+              the model they download does in fact originate from the
+              stated organization
+            </t>
+          </list>
+        </t>
+        <t>
+          For such an approach to be useful, we also require a
+          registration system where model developers can register
+          information about their models, and update it as needed.
+          The  <xref target="RFC3688">IANA XML Registry"</xref> provides a basic registry for YANG
+          models, but the information is somewhat limited and is
+          currently targeted at IETF-standardized models only.
+          Further details on the proposal for such a registry may be
+          forthcoming in further revisions to this document.
+        </t>
+      </section>
+
+      <section title="Service-layer composition" anchor="services">
+        <t>
+          The proposed structural model covers a wide variety of
+          components and protocols, and clearly not all of them are
+          needed for all services.  Another envisioned use case for
+          the structural model is the ability to reference the set of
+          models that are needed for specific use cases or services.
+          The intent is that the set would be based on best
+          operational practices as defined by users or operators who
+          run such services.
+        </t>
+        <t>
+          One approach for this would be to define a ‘service overlay’
+          model, for example for Layer 3 VPN services, that defines
+          the set of required configuration and state models, such as
+          VRFs, interfaces, BGP, policy, ACLs, and QoS.  Similar
+          overlay models can be defined for other services or use
+          cases, for example, basic Internet operations such as adding
+          new peers or customers, or setting up Layer 2 VPNs.  Note
+          these overlay models may be complementary to actual
+          configuration models for such services, which may focus on
+          providing an abstracted set of configuration or operational
+          state variables, which would then be mapped onto device level
+          variables.  We leave discussion of such mapping mechanisms
+          to future revisions.
+        </t>
+      </section>
+    </section>
+
+    <section title="Security Considerations">
+
+      <t>
+        The model structure described in this document does not define actual
+        configuration and state data, hence it is not directly responsible for
+        security risks.
+      </t>
+      <t>
+        However, each of the component models that provide the
+        corresponding configuration and state data should be
+        considered sensitive from a security standpoint since they
+        generally manipulate aspects of network configurations.  Each
+        component model should be carefully evaluated to determine its
+        security risks, along with mitigations to reduce such risks.
+      </t>
+
+    </section>
+
+    <section title="IANA Considerations">
+
+      <t>This YANG model currently uses
+      a temporary ad-hoc namespace.  If it is placed or redirected for
+      the standards track, an appropriate namespace URI will be
+      registered in the <xref target="RFC3688">IETF XML Registry"</xref>.
+      The YANG structure modules will be registered in the
+      "YANG Module Names" registry [RFC6020].
+      </t>
+    </section>
+
+    <section title="YANG module" anchor="model">
+
+      <t>The model structure is described by the YANG module below.
+      </t>
+
+      <section title="Model structure">
+	     <figure>
+	       <artwork><![CDATA[
+<CODE BEGINS> file model-structure.yang
+<?yfile include="model-structure.yang"?>
+<CODE ENDS>
+ ]]>
+        </artwork>
+        </figure>
+      </section>
+
+    </section>
+
+  </middle>
+
+  <back>
+    <references title="Normative references">
+      <reference anchor="RFC6020">
+        <front>
+          <title>YANG - A Data Modeling Language for
+            the Network Configuration Protocol (NETCONF)</title>
+          <author initials="M." surname="Bjorklund" fullname="Martin
+            Bjorklund">
+            <organization>Tail-f Systems</organization>
+          </author>
+          <date month="October" year="2014" />
+        </front>
+        <seriesInfo name="RFC" value="6020" />
+      </reference>
+
+      <reference anchor="RFC7223">
+        <front>
+          <title>A YANG Data Model for Interface Management</title>
+          <author initials="M." surname="Bjorklund" fullname="Martin
+            Bjorklund">
+            <organization>Tail-f Systems</organization>
+          </author>
+          <date month="May" year="2014" />
+        </front>
+        <seriesInfo name="RFC" value="7223" />
+      </reference>
+
+      <reference anchor="RFC7277">
+        <front>
+          <title>A YANG Data Model for IP Management</title>
+          <author initials="M." surname="Bjorklund" fullname="Martin
+            Bjorklund">
+            <organization>Tail-f Systems</organization>
+          </author>
+          <date month="June" year="2014" />
+        </front>
+        <seriesInfo name="RFC" value="7277" />
+      </reference>
+
+      <reference anchor="RFC7317">
+        <front>
+          <title>A YANG Data Model for System Management</title>
+          <author initials="A." surname="Bierman" fullname="Andy Bierman">
+            <organization>YumaWorks</organization>
+          </author>
+          <author initials="M." surname="Bjorklund" fullname="Martin
+            Bjorklund">
+            <organization>Tail-f Systems</organization>
+          </author>
+          <date month="August" year="2014" />
+        </front>
+        <seriesInfo name="RFC" value="7317" />
+      </reference>
+
+      <reference anchor="RFC3688">
+        <front>
+          <title>The IETF XML Registry</title>
+          <author initials="M." surname="Mealling" fullname="Michael
+	    Mealling">
+            <organization>Verisign, Inc.</organization>
+          </author>
+          <date month="January" year="2004" />
+        </front>
+        <seriesInfo name="RFC" value="3688" />
+      </reference>
+    </references>
+
+    <references title="Informative references">
+      <reference anchor="RTG-CFG">
+        <front>
+          <title>A YANG Data Model for Routing Management</title>
+          <author initials="L." surname="Lhotka" fullname="Ladislav Lhotka">
+            <organization>CZ.NIC</organization>
+          </author>
+          <date month="October" year="2014" />
+        </front>
+        <seriesInfo name="Internet-Draft" value="draft-ietf-netmod-routing-cfg-16" />
+      </reference>
+
+      <reference anchor="RTG-POLICY">
+        <front>
+          <title>Routing Policy Configuration Model for Service Provider Networks</title>
+          <author initials="A." surname="Shaikh" fullname="Anees Shaikh">
+            <organization>Google</organization>
+          </author>
+          <author initials = 'R.' surname='Shakir' fullname='Rob Shakir'>
+            <organization abbrev='BT'>BT</organization>
+          </author>
+          <author initials="K." surname="D'Souza" fullname="Kevin D'Souza">
+            <organization>AT&amp;T</organization>
+          </author>
+          <author initials="C." surname="Chase" fullname="Chris Chase">
+            <organization>AT&amp;T</organization>
+          </author>
+          <date month="January" year="2015" />
+        </front>
+        <seriesInfo name="Internet-Draft" value="draft-shaikh-rtgwg-policy-model-00" />
+      </reference>
+
+      <reference anchor="RTG-OSPF">
+        <front>
+          <title>Yang Data Model for OSPF Protocol</title>
+          <author initials="D." surname="Yeung" fullname="Derek Yeung">
+            <organization>Cisco Systems</organization>
+          </author>
+          <author initials="Y." surname="Qu" fullname="Yingzhen Qu">
+            <organization>Cisco Systems</organization>
+          </author>
+          <author initials="J." surname="Zhang" fullname="Jeffrey Zhang">
+            <organization>Juniper Networks</organization>
+          </author>
+          <author initials="D." surname="Bogdanovic" fullname="Dean Bogdanovic">
+            <organization>Juniper Networks</organization>
+          </author>
+          <date month="October" year="2014" />
+        </front>
+        <seriesInfo name="Internet-Draft" value="draft-yeung-netmod-ospf-02" />
+      </reference>
+
+      <reference anchor="RTG-ISIS">
+        <front>
+          <title>YANG Data Model for ISIS protocol</title>
+          <author fullname="Stephane Litkowski" initials="S" surname="Litkowski">
+            <organization>Orange</organization>
+          </author>
+          <author fullname="Derek Yeung" initials="D" surname="Yeung">
+            <organization>Cisco Systems</organization>
+          </author>
+          <author fullname="Acee Lindem" initials="A" surname="Lindem">
+            <organization>Cisco Systems</organization>
+          </author>
+          <author fullname="Jeffrey Zhang" initials="J" surname="Zhang">
+            <organization>Juniper Networks</organization>
+          </author>
+          <author fullname="Ladislav Lhotka" initials="L" surname="Lhotka">
+            <organization/>
+          </author>
+          <date month="October" year="2014" />
+        </front>
+        <seriesInfo name="Internet-Draft" value="draft-ietf-isis-yang-isis-cfg-01" />
+      </reference>
+
+    </references>
+
+    <section title="Acknowledgements">
+      <t>
+        The authors are grateful for valuable contributions to this document and
+        the associated models from: Deepak Bansal, Paul Borman, Chris Chase,
+        Josh George, Marcus Hines, and Jim Uttaro.
+      </t>
+    </section>
+  </back>
+</rfc>

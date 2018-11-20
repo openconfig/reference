@@ -1,0 +1,364 @@
+<?xml version="1.0"?>
+<!DOCTYPE rfc SYSTEM "rfc2629.dtd">
+<rfc docName="draft-openconfig-rtgwg-local-routing-00" ipr="trust200902" category="info">
+  <front>
+    <title abbrev="Local Routing Model">A Data Model for Locally Generated Routes in Service Provider Networks</title>
+    <author initials="A." surname="Shaikh" fullname="Anees Shaikh">
+      <organization>Google</organization>
+      <address>
+        <postal>
+          <street>1600 Amphitheatre Pkwy</street>
+          <city>Mountain View</city>
+          <region>CA</region>
+          <code>94043</code>
+          <country>US</country>
+        </postal>
+        <email>aashaikh@google.com</email>
+      </address>
+    </author>
+    <author initials="J." surname="George" fullname="Joshua George">
+      <organization>Google</organization>
+      <address>
+        <postal>
+          <street>1600 Amphitheatre Pkwy</street>
+          <city>Mountain View</city>
+          <region>CA</region>
+          <code>94043</code>
+          <country>US</country>
+        </postal>
+        <email>jgeorge@google.com</email>
+      </address>
+    </author>
+    <!-- Include Rob Shakir as author -->
+    <?rfc include="http://rob.sh/files/ietf-author.xml"?>
+    <author initials="F." surname="Chen" fullname="Feihong Chen">
+      <organization>Verizon Communications</organization>
+      <address>
+        <postal>
+          <street>40 Sylvan Rd.</street>
+          <city>Waltham</city>
+          <region>MA</region>
+          <country>US</country>
+        </postal>
+        <email>feihong.x.chen@verizon.com</email>
+      </address>
+    </author>
+
+    <date month="July" year="2015" />
+
+    <area>Routing</area>
+
+    <abstract>
+      <t>This document defines a YANG data model for configuring and
+        managing locally generated routes in a vendor-neutral way and
+        based on operational best practice.  Locally generated routes
+        are those created by configuration, rather than by dynamic
+        routing protocols.  Such routes include static routes, locally
+        created aggregate routes for reducing the number of constituent
+        routes that must be advertised, summary routes for IGPs, etc.
+      </t>
+    </abstract>
+  </front>
+
+  <middle>
+    <section title="Introduction" anchor="intro">
+      <t>
+      This document describes a simple <xref target="RFC6020">YANG</xref>
+      data model for locally generated routes, i.e., those not created by
+      dynamic routing protocols.  These include static routes, locally
+      created aggregate routes, summary routes for IGPs, etc.
+      </t>
+        <section title = "Goals and approach" anchor="goals">
+        <t>
+        This model expresses locally generated routes as generically as
+        possible, avoiding configuration of protocol-specific attributes
+        at the time of route creation.  This is primarily to avoid
+        assumptions about how underlying router implementations handle
+        route attributes in various routing table data structures they
+        maintain.  Hence, the definition of locally generated routes
+        essentially creates 'bare' routes that do not have any protocol-
+        specific attributes.
+        </t>
+        <t>
+        When protocol-specific attributes must be attached to a route
+        (e.g., communities on a locally defined route meant to be
+        advertised via BGP), the attributes should be attached via a
+        protocol-specific policy after importing the route into the
+        protocol for distribution (again via routing policy).  This
+        model is intended to be used with the generic routing policy
+        framework defined in <xref target="I-D.shaikh-rtgwg-policy-model"
+        />.
+        </t>
+        <t>
+        This model does not aim to be feature complete -- it is a
+        subset of the configuration parameters available in a variety
+        of vendor implementations, but supports widely
+        used constructs for managing local routes.  Model development
+        has been primarily driven by examination of actual configurations
+        across operator networks.
+        </t>
+        <t>
+        While this document provides an overview of the model, the
+        most current and authoritative version is available in the
+        public <xref target="YANG-REPO">YANG model repository</xref>.
+        </t>
+      </section>
+    </section>
+
+    <section title="Model overview" anchor="overview">
+      <t>
+      In this initial version of the local routing model, two primary
+      types of locally generated routes are supported, static routes
+      and local aggregates. Static routes are manually configured routes
+      with a defined prefix and next-hop.  The model support next-hops
+      specified as an IP address, interface, or a special defined value,
+      e.g., DISCARD to prevent forwarding for the specified prefix.
+      Aggregate routes are used to summarize constituent routes and
+      avoid having to advertise each constituent individually, and hence
+      increase routing table size.  Aggregate routes are not used for
+      forwarding, rather they are "activated" when a constituent route
+      with a valid next hop is present in the IP routing table.
+      </t>
+      <t>
+      The model structure is shown below:
+      </t>
+      <figure>
+        <artwork>
+    +--rw local-routes
+      +--rw config
+      +--ro state
+      +--rw static-routes
+      |  +--rw static* [prefix]
+      |        ...
+      +--rw local-aggregates
+         +--rw aggregate* [prefix]
+               ...
+        </artwork>
+      </figure>
+      <t>
+      Note that the model follows the convention of representing
+      configuration and operational state at the leaves of the
+      tree, based on recommendations in <xref target="I-D.openconfig-netmod-opstate" />.
+      In this case, the operational state consists primarily of the applied
+      configuration.
+      </t>
+    </section>
+
+    <section title="Interaction with routing policy" anchor="policy">
+      <t>
+      In many vendor implementations, local routes may be annotated with
+      various route attributes or policies.  For example, when creating
+      a locally generated aggregate route, it is often possible to specify
+      <xref target="RFC4271">BGP</xref> communities which can then be
+      used when filtering the routes
+      sent to particular neighbors or peer groups.  IGP implementations
+      such as IS-IS and OSPF have similar capability to create "summary"
+      routes that serve a similar purpose to BGP aggregates.
+      </t>
+      <t>
+      Since these and other local routes are conceptually similar from
+      an operator standpoint, there is a desire to create a single
+      model that may be used generically to address a number of use cases.
+      The approach taken in this model is to define locally generated
+      routes as "bare" routes, i.e., without any protocol-specific attributes
+      such as BGP communities, IGP tags, etc.  Instead, these attributes are
+      expected to be added via policy when locally generated routes are
+      injected into a particular protocol for subsequent advertisement.
+      </t>
+      <t>
+      Another important motivation for not including protocol-specific
+      attributes when configuring local routes is that it assumes
+      implementations can support the association of a variety of attributes
+      with a route.  While this may be true in some implementations, others
+      may segregate routing tables for different protocols into different
+      data structures such that it would not be possible to attach attributes
+      from, say BGP, onto an OSPF route.  For this reason, we constrain
+      attributes on locally generated routes to be attached via policy as
+      they are imported into different protocols.
+      </t>
+      <t>
+      For example, consider the case of configuring a new prefix to be
+      advertised to neighbors via BGP.  Using the local routing model
+      and the routing policy model in <xref target="I-D.shaikh-rtgwg-policy-model"
+      />, one way to do this is enumerated below:
+      </t>
+      <t>
+        <list style="numbers">
+          <t>
+            Declare a static route for the advertised prefix using
+            the local routing model (e.g., with a next hop set to DISCARD).
+            This route is placed in the IP routing table.
+          </t>
+          <t>
+            Define a policy to add BGP attributes to the route -- the
+            policy would match on the prefix and the origin of the route
+            (i.e., STATIC) and its action could be to add a BGP
+            community.
+          </t>
+          <t>
+            Apply the BGP policy as an import policy within BGP, e.g.,
+            using the apply-policy statement in the policy model, to
+            import the route into BGP.
+          </t>
+          <t>
+            Export the route to neighbors using an export policy as
+            usual, filtering on the added community attribute if appropriate.
+          </t>
+        </list>
+      </t>
+      <t>
+        The step of creating a policy to add BGP (or other
+        protocol-specific) attributes to the route is optional
+        if an operator simply wishes to export the route to neighbors,
+        as opposed to also filtering on attributes that are assumed to
+        be present on the locally generated route.
+      </t>
+      <t>
+        This version of the model does support the capability to specify
+        a generic route tag that can be associated with locally generated
+        routes (i.e., both statics and aggregates).  The tag can be used
+        to filter routes that are imported into different routing protocols,
+        for example, or to control which routes are exported to a neighbor.
+        The route tagging capability may be refined further as more
+        implementor feedback is incorporated into the model.
+      </t>
+      </section>
+
+    <section title="Security Considerations">
+
+      <t>Routing configuration has a significant impact on network operations,
+      and as such any related model carries potential security risks.
+      </t>
+
+      <t>YANG data models are generally designed to be used with the
+      NETCONF protocol over an SSH transport.  This provides an
+      authenticated and secure channel over which to transfer
+      configuration and operational data.  Note that use of
+      alternate transport or data encoding (e.g., JSON over HTTPS)
+      would require similar mechanisms for authenticating and
+      securing access to configuration data.
+      </t>
+
+      <t>Most of the data elements in the local routing model could be
+      considered sensitive from a security standpoint.  Unauthorized
+      access or invalid data could cause major disruption.
+      </t>
+
+    </section>
+
+    <section title="IANA Considerations">
+
+      <t>This YANG data model and the component modules currently use
+      a temporary ad-hoc namespace.  If and when it is placed on redirected for
+      the standards track, an appropriate namespace URI will be
+      registered in the <xref target="RFC3688">IETF XML Registry"</xref>.
+      The routing policy YANG modules will be registered in the
+      "YANG Module Names" registry [RFC6020].
+      </t>
+    </section>
+
+    <section title="YANG module" anchor="models">
+
+      <t>The local routing model is described by the YANG module below.
+      </t>
+
+	<figure>
+	<artwork><![CDATA[
+<CODE BEGINS> file local-routing.yang
+<?yfile include="https://raw.githubusercontent.com/YangModels/yang/master/experimental/openconfig/local-routing/local-routing.yang"?>
+<CODE ENDS>
+ ]]>
+        </artwork>
+        </figure>
+    </section>
+
+    <section title="Examples" anchor="examples">
+
+      <t>
+      Below we show an example of XML-encoded configuration data using
+      the local routing model, in conjunction with the policy <xref
+      target="I-D.shaikh-rtgwg-policy-model" /> and BGP <xref
+      target="I-D.shaikh-idr-bgp-model" /> models to illustrate how local
+      aggregate routes are defined and distributed into protocols.  Although
+      the example focuses on BGP, the aggregate routes may be used with other
+      routing protocols (e.g., IGPs) as mentioned in Section
+      <xref target="policy" />.  Note that
+      the XML has been modified to improve readability.
+      </t>
+
+      <figure>
+        <artwork><![CDATA[
+<?yfile include="file:///tmp/local-routing-example.xml"?>
+ ]]>
+        </artwork>
+      </figure>
+
+    </section>
+
+  </middle>
+
+  <back>
+    <references title="Normative references">
+      <reference anchor="RFC6020">
+        <front>
+          <title>YANG - A Data Modeling Language for
+            the Network Configuration Protocol (NETCONF)</title>
+          <author initials="M." surname="Bjorklund" fullname="Martin
+            Bjorklund">
+            <organization>Tail-f Systems</organization>
+          </author>
+          <date month="October" year="2014" />
+        </front>
+        <seriesInfo name="RFC" value="6020" />
+      </reference>
+      <reference anchor="RFC4271">
+      	<front>
+      	  <title>A Border Gateway Protocol 4 (BGP-4)</title>
+      	  <author initials="Y." surname="Rekhter" fullname="Yakov Rekhter">
+      	    <organization/>
+      	  </author>
+      	  <author initials="T." surname="Li" fullname="Tony Li">
+      	    <organization/>
+      	  </author>
+      	  <author initials="S." surname="Hares" fullname="Susan Hares">
+      	    <organization/>
+      	  </author>
+      	  <date year="2006" month="January"/>
+      	</front>
+      	<seriesInfo name="RFC" value="4271"/>
+      </reference>
+
+      <reference anchor="RFC3688">
+        <front>
+          <title>The IETF XML Registry</title>
+          <author initials="M." surname="Mealling" fullname="Michael
+	    Mealling">
+            <organization>Verisign, Inc.</organization>
+          </author>
+          <date month="January" year="2004" />
+        </front>
+        <seriesInfo name="RFC" value="3688" />
+      </reference>
+    </references>
+
+    <references title="Informative references">
+      <reference anchor="YANG-REPO" target="https://github.com/YangModels/yang/tree/master/experimental/openconfig/local-routing">
+        <front>
+          <title>A Data Model for Locally Generated Routes in Service Provider Networks</title>
+          <author></author>
+          <date month="July" year="2015" />
+        </front>
+      </reference>
+      <?rfc include="http://xml2rfc.ietf.org/public/rfc/bibxml3/reference.I-D.shaikh-rtgwg-policy-model.xml"?>
+      <?rfc include="http://xml2rfc.ietf.org/public/rfc/bibxml3/reference.I-D.openconfig-netmod-opstate.xml"?>
+      <?rfc include="http://xml2rfc.ietf.org/public/rfc/bibxml3/reference.I-D.shaikh-idr-bgp-model.xml"?>
+    </references>
+
+    <section title="Acknowledgements">
+      <t>The authors are grateful for valuable contributions to this
+      document and the associated models from: Phil Bedard, Kevin Brintnall,
+      Matt John, Marcus Hines, and Eric Osborne.
+      </t>
+    </section>
+  </back>
+</rfc>

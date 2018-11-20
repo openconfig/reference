@@ -1,0 +1,784 @@
+
+
+
+
+Network Working Group                                          J. George
+Internet-Draft                                                    Google
+Intended status: Informational                                   L. Fang
+Expires: September 10, 2015                                    Microsoft
+                                                              E. Osborne
+                                                                 Level 3
+                                                               R. Shakir
+                                                                      BT
+                                                           March 9, 2015
+
+
+             MPLS / TE Model for Service Provider Networks
+              draft-openconfig-mpls-consolidated-model-00
+
+Abstract
+
+   This document defines a framework for a YANG data model for
+   configuring and managing label switched paths, including the
+   signaling protocols, traffic engineering, and operational aspects
+   based on carrier and content provider operational requirements.
+
+Status of This Memo
+
+   This Internet-Draft is submitted in full conformance with the
+   provisions of BCP 78 and BCP 79.
+
+   Internet-Drafts are working documents of the Internet Engineering
+   Task Force (IETF).  Note that other groups may also distribute
+   working documents as Internet-Drafts.  The list of current Internet-
+   Drafts is at http://datatracker.ietf.org/drafts/current/.
+
+   Internet-Drafts are draft documents valid for a maximum of six months
+   and may be updated, replaced, or obsoleted by other documents at any
+   time.  It is inappropriate to use Internet-Drafts as reference
+   material or to cite them other than as "work in progress."
+
+   This Internet-Draft will expire on September 10, 2015.
+
+Copyright Notice
+
+   Copyright (c) 2015 IETF Trust and the persons identified as the
+   document authors.  All rights reserved.
+
+   This document is subject to BCP 78 and the IETF Trust's Legal
+   Provisions Relating to IETF Documents
+   (http://trustee.ietf.org/license-info) in effect on the date of
+   publication of this document.  Please review these documents
+   carefully, as they describe your rights and restrictions with respect
+
+
+
+George, et al.         Expires September 10, 2015               [Page 1]
+
+Internet-Draft               MPLS / TE Model                  March 2015
+
+
+   to this document.  Code Components extracted from this document must
+   include Simplified BSD License text as described in Section 4.e of
+   the Trust Legal Provisions and are provided without warranty as
+   described in the Simplified BSD License.
+
+1.  Introduction
+
+   This document describes a YANG [RFC6020] data model for MPLS and
+   traffic engineering, covering label switched path (LSP)
+   configuration, as well as signaling protocol configuration.  The
+   model is intended to be vendor-neutral, in order to allow operators
+   to manage MPLS in heterogeneous environments with routers supplied by
+   multiple vendors.  The model is also intended to be readily mapped to
+   existing implementations, however, to facilitate support from as
+   large a set of routing hardware and software vendors as possible.
+
+1.1.  Goals and approach
+
+   The focus area of the first version of the model is to set forth a
+   framework for MPLS, with hooks into which information specific to
+   various signaling-protocols can be added.  The framework is built
+   around functionality from a network operator perspective rather than
+   a signaling protocol-centric approach.  For example, a traffic-
+   engineered LSP will have configuration relating to its path
+   computation method, regardless of whether it is signaled with RSVP-TE
+   or with segment routing.  Thus, rather than creating separate per-
+   signaling protocol models and trying to stitch them under a common
+   umbrella, this framework focuses on functionality, and adds
+   siginaling protocol-specific information under it where applicable.
+
+   This model does not (in the current iteration) aim to be feature
+   complete (i.e., cover all possible aspects or features of MPLS).
+   Rather its development is driven by examination of actual production
+   configurations in use across a number of operator network
+   deployments.
+
+   Configuration items that are deemed to be widely available in
+   existing major implementations are included in the model.  Those
+   configuration items that are only available from a single
+   implementation are omitted from the model with the expectation they
+   will be available in companion modules that augment the current
+   model.  This allows clarity in identifying data that is part of the
+   vendor-neutral model.
+
+   Where possible, naming in the model follows conventions used in
+   available standards documents, and otherwise tries to be self-
+   explanatory with sufficient descriptions of the intended behavior.
+   Similarly, configuration data value constraints and default values,
+
+
+
+George, et al.         Expires September 10, 2015               [Page 2]
+
+Internet-Draft               MPLS / TE Model                  March 2015
+
+
+   where used, are based on recommendations in current standards
+   documentation.  Since implementations vary widely in this respect,
+   this version of the model specifies only a limited set of defaults
+   and ranges with the expectation of being more prescriptive in future
+   versions based on actual operator use.
+
+   Note that this version of the model is a work-in-progress in several
+   respects.  Although we present a complete framework for MPLS and
+   traffic engineering from an operational perspective, some signaling
+   protocol configuration will be completed in future revisions.  In
+   addition, operational state data for MPLS LSPs is not included in
+   this version, but will be added in the next revision.
+
+2.  Model overview
+
+   The overall MPLS model is defined across several YANG modules and
+   submodules but at a high level is organized into 3 main sections:
+
+   o  global -- configuration affecting MPLS behavior which exists
+      independently of the underlying signaling protocol or label
+      switched path configuration.
+
+   o  signaling protocols -- configuration specific to signaling
+      protocols used to setup and manage label switched paths.
+
+   o  label switched paths -- configuration specific to instantiating
+      and managing individual label switched paths.
+
+   The top level of the model is shown in the tree view below:
+
+   +--rw mpls!
+         +--rw global
+         |     ...
+         +--rw signaling-protocols
+         |     ...
+         +--rw lsps
+               ...
+
+2.1.  MPLS global overview
+
+   The global section of the framework provides configuration control
+   for MPLS items which exist independently of an individual label
+   switched path or signaling protocol.  These standalone items are
+   applicable to the entire logical routing device, and establish
+   fundamental configuration such as specific device interfaces where
+   MPLS forwarding will be permitted.  Timers are also specified which
+   determine the length of time an LSP must be present before considered
+   viable for forwarding use (mpls-lsp-install-delay), and the length of
+
+
+
+George, et al.         Expires September 10, 2015               [Page 3]
+
+Internet-Draft               MPLS / TE Model                  March 2015
+
+
+   time between LSP teardown and removal of the LSP from the network
+   element's forwarding information base (mpls-lsp-cleanup- delay).
+   Also specified are the name to value mappings of MPLS administrative
+   groups (mpls-admin-groups).
+
+        +--rw mpls!
+           +--rw global
+              +--rw mpls-interfaces* [interface-name]
+              |  +--rw interface-name            string
+              |  +--rw interface-admin-groups*  -> /mpls/global/...
+              +--rw mpls-lsp-install-delay?   uint16
+              +--rw mpls-lsp-cleanup-delay?   uint16
+              +--rw mpls-admin-groups* [admin-group-name]
+                 +--rw admin-group-name     string
+                 +--rw admin-group-value?   uint32
+
+2.2.  Signaling protocol overview
+
+   The signaling protocol section of the framework provides
+   configuration elements for configuring three major methods of
+   signaling label switched paths: RSVP, segment routing, and label
+   distribution protocol (LDP).  Configuration of RSVP is centered
+   around interfaces on the device which participate in the protocol.  A
+   key focus is to expose common RSVP configuration parameters which are
+   used to enhance scale and reliability (refresh-reduction, refresh-
+   reduction-reliable).  From the same principles, configuration is
+   available to configure the sensitivity of IGP flooding events upon
+   bandwidth change on an RSVP interface (ted-update-threshold).  Also
+   specified are options to configure RSVP soft-preemption (soft-
+   preemption), and for MPLS protection (link-protection).
+
+   Containers for specifying signaling via segment routing and LDP are
+   also present.  Specific subelements will be added for those
+   protocols, as well as for BGP labeled unicast, in the next revision.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+George, et al.         Expires September 10, 2015               [Page 4]
+
+Internet-Draft               MPLS / TE Model                  March 2015
+
+
+     +--rw mpls!
+     +--rw signaling-protocols
+        +--rw rsvp
+        |  +--rw interfaces* [interface-name]
+        |  |  +--rw interface-name                string
+        |  |  +--rw hello-interval?               uint16
+        |  |  +--rw refresh-reduction?            boolean
+        |  |  +--rw refresh-reduction-reliable?   boolean
+        |  |  +--rw subscription?                 mplst:percentage
+        |  |  +--rw ted-update-threshold?         mplst:percentage
+        |  |  +--rw link-protection!
+        |  |     +--rw link-protection-only?       boolean
+        |  |     +--rw bypass-optimize-interval?   uint16
+        |  +--rw soft-preemption!
+        |     +--rw soft-preemption-timeout?   uint16
+        +--rw segment-routing
+        +--rw ldp
+           +--rw timers
+
+2.3.  LSP overview
+
+   This part of the framework contains LSP information.  At the high
+   level, LSPs are split into three categories: traffic-engineering-
+   capable (constrained-path), non-traffic-engineered determined by the
+   IGP (unconstrained-path), and hop-by-hop configured (static).
+
+   +--rw mpls!
+         +--rw lsps
+            +--rw constrained-path
+            |     ...
+            +--rw unconstrained-igp
+            |     ...
+            +--rw static-lsps
+                  ...
+
+   The first two categories, constrained-path and unconstrained-path are
+   the ones for which multiple signaling protocols exist, and are
+   organized in protocol-specific and protocol-independent sections.
+   For example, traffic-engineered, constrained path, LSPs may be set up
+   using RSVP-TE or segment routing, and unconstrained LSPs that follow
+   the IGP path may be signaled with LDP or with segment routing.  IGP-
+   determined LSPs may also be signaled by RSVP but this usage is not
+   considered in the current version of the model.
+
+   A portion of the data model for constrained path traffic-engineered
+   LSPs is shown below:
+
+
+
+
+
+George, et al.         Expires September 10, 2015               [Page 5]
+
+Internet-Draft               MPLS / TE Model                  March 2015
+
+
+   +--rw mpls!
+         +--rw lsps
+            +--rw constrained-path
+               +--rw path-information
+               |  +--rw path* [path-name]
+               |     +--rw path-name    string
+               |     +--rw hop* [address]
+               |           ...
+               +--rw label-switched-path* [signaled-name]
+                  +--rw signaled-name              string
+                  +--rw lsp-description?           string
+                  +--rw path-computation-method
+                  |  +--rw path-computation?   identityref
+                  |  +--rw explicit-path
+                  |  |     ...
+                  |  +--rw queried-path
+                  |  |     ...
+                  |  +--rw locally-computed
+                  |        ...
+                  +--rw path-attributes
+                  |  +--rw metric?                      te-metric-type
+                  |  +--rw bandwidth
+                  |  |     ...
+                  |  +--rw lsp-placement-constraints
+                  |  |     ...
+                  |  +--rw protection
+                  |        ...
+                  +--rw path-setup
+                     +--rw rsvp!
+                     |     ...
+                     +--rw segment-routing!
+                           ...
+
+
+   Similarly, the partial model for non-traffic-engineered, or IGP-
+   based, LSPs is shown below:
+
+   +--rw mpls!
+         +--rw lsps
+            +--rw unconstrained-igp
+               +--rw path-setup-protocol
+                  +--rw ldp!
+                  |     ...
+                  +--rw segment-routing!
+                        ...
+
+
+
+
+
+
+George, et al.         Expires September 10, 2015               [Page 6]
+
+Internet-Draft               MPLS / TE Model                  March 2015
+
+
+3.  Example use cases
+
+3.1.  Traffic engineered p2p LSP signaled with RSVP
+
+   A possible scenario may be the establishment of a mesh of traffic-
+   engineered LSPs where RSVP signaling is desired, and the LSPs use a
+   local constrained path calculation to determine their path.  These
+   LSPs would fall into the category of a constrained-path LSP.  The LSP
+   will specify the path setup method as RSVP inside the path-setup
+   container, indicating the LSP desires RSVP signaling.  The LSP would
+   be configured as locally-computed under the path-computation-method
+   container, specifying the use of cspf (use-cspf).  Additional
+   attributes such as bandwidth (explicit or auto), protection style,
+   and placement constraints are available in the path-attributes
+   container.
+
+   The structure to support these is shown in the constrained-path
+   portion of the data model below:
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+George, et al.         Expires September 10, 2015               [Page 7]
+
+Internet-Draft               MPLS / TE Model                  March 2015
+
+
+   +--rw mpls!
+         +--rw lsps
+            +--rw constrained-path
+               +--rw path-information
+               |  +--rw path* [path-name]
+               |     +--rw path-name    string
+               |     +--rw hop* [address]
+               |           ...
+               +--rw label-switched-path* [signaled-name]
+                  +--rw signaled-name              string
+                  +--rw lsp-description?           string
+                  +--rw path-computation-method
+                  |  +--rw path-computation?   identityref
+                  |  +--rw explicit-path
+                  |  |     ...
+                  |  +--rw queried-path
+                  |  |     ...
+                  |  +--rw locally-computed
+                  |        ...
+                  +--rw path-attributes
+                  |  +--rw metric?                      te-metric-type
+                  |  +--rw bandwidth
+                  |  |     ...
+                  |  +--rw lsp-placement-constraints
+                  |  |     ...
+                  |  +--rw protection
+                  |        ...
+                  +--rw path-setup
+                     +--rw rsvp!
+                     |     ...
+                     +--rw segment-routing!
+                           ...
+
+3.2.  Traffic engineered LSP signaled with SR
+
+   A possible scenario may be the establishment of disjoint paths in a
+   network where there is no requirement for per-LSP state to be held on
+   midpoint nodes within the network, or RSVP-TE is unsuitable (as
+   described in [I-D.ietf-spring-segment-routing-mpls] and
+   [I-D.shakir-rtgwg-sr-performance-engineered-lsps]).  Such LSPs fall
+   in the constrained-path category.  Similar to any other traffic
+   engineered LSPs, the path computation method must be specified.  Path
+   attributes, such as the as lsp- placement-constraints (expressed as
+   administrative groups) or metric must be defined.  Finally, the path
+   must be specified in a signaling- protocol specific manner
+   appropriate for SR.  The same configuration elements from the tree
+   above apply in this case, except that path setup is done by the head-
+   end by building a label stack, rather than signaled.
+
+
+
+George, et al.         Expires September 10, 2015               [Page 8]
+
+Internet-Draft               MPLS / TE Model                  March 2015
+
+
+3.3.  IGP-congruent LDP-signaled LSP
+
+   A possible scenario may be the establishment of a full mesh of LSPs.
+   When traffic engineering is not an objective, no constraints are
+   placed on the end-to-end path, and the best- effort path can be setup
+   using LDP signaling simply for label distribution.  The LSPs follow
+   IGP-computed paths, and fall in the unconstrained-path category in
+   the model.  Protocol-specific configuration pertaining to the
+   signaling protocol used, such as the FEC definition and metrics
+   assigned are in the path- setup-protocol portion of the model.
+
+   The relevant part of the model for this case is shown below:
+
+     +--rw mpls!
+           +--rw lsps
+              +--rw unconstrained-igp
+                 +--rw path-setup-protocol
+                    +--rw ldp!
+                       +--rw tunnel
+                          +--rw tunnel-type?   mplst:tunnel-type
+                          +--rw p2p-lsp
+                          |  +--rw fec-address*   inet:ip-prefix
+                          +--rw p2mp-lsp
+                          +--rw mp2mp-lsp
+
+   A common operational issue encountered when using LDP is traffic
+   blackholing under the following scenario: when an IGP failure occurs,
+   LDP is not aware of it as these are two protocols running
+   independently, resulting in traffic blackholing at the IGP failure
+   point even though LDP is up and running.  "LDP-IGP synchronization"
+   [RFC5443] can be used to cost out the IGP failing point/segment to
+   avoid the blackholing issue.  The LDP-IGP synchronization function
+   will be incorporated in a future version of this document.
+
+   Note that targeted LDP sessions are not discussed in this use case,
+   and will be incorporated as a separate use case in a future version
+   of this document.
+
+4.  Security Considerations
+
+   MPLS configuration has a significant impact on network operations,
+   and as such any related protocol or model carries potential security
+   risks.
+
+   YANG data models are generally designed to be used with the NETCONF
+   protocol over an SSH transport.  This provides an authenticated and
+   secure channel over which to transfer BGP configuration and
+   operational data.  Note that use of alternate transport or data
+
+
+
+George, et al.         Expires September 10, 2015               [Page 9]
+
+Internet-Draft               MPLS / TE Model                  March 2015
+
+
+   encoding (e.g., JSON over HTTPS) would require similar mechanisms for
+   authenticating and securing access to configuration data.
+
+   Most of the data elements in the configuration model could be
+   considered sensitive from a security standpoint.  Unauthorized access
+   or invalid data could cause major disruption.
+
+5.  IANA Considerations
+
+   This YANG data model and the component modules currently use a
+   temporary ad-hoc namespace.  If and when it is placed on redirected
+   for the standards track, an appropriate namespace URI will be
+   registered in the IETF XML Registry" [RFC3688].  The MPLS YANG
+   modules will be registered in the "YANG Module Names" registry
+   [RFC6020].
+
+6.  YANG modules
+
+   The modules and submodules comprising the MPLS configuration and
+   operational model are currently organized as depcited below.
+
+                                 +-------+
+               +---------------->| MPLS  |<--------------+
+               |                 +-------+               |
+               |                     ^                   |
+               |                     |                   |
+          +----+-----+      +--------+-------+     +-----+-----+
+          | TE LSPs  |      | IGP-based LSPs |     |static LSPs|
+          |          |      |                |     |           |
+          +----------+      +----------------+     +-----------+
+              ^  ^                    ^  ^
+              |  +----------------+   |  +--------+
+              |                   |   |           |
+              |   +------+      +-+---+-+      +--+--+
+              +---+ RSVP |      |SEGMENT|      | LDP |
+                  +------+      |ROUTING|      +-----+
+                                +-------+
+
+   The base MPLS module includes submodules describing the three
+   different types of support LSPs, i.e., traffic-engineered
+   (constrained-path), IGP congruent (unconstrained-path), and static.
+   The signaling protocol specific parts of the model are described in
+   separate modules for RSVP, segment routing, and LDP.  As mentioned
+   earlier, support for BGP labeled unicast is also planned in a future
+   revision.
+
+
+
+
+
+
+George, et al.         Expires September 10, 2015              [Page 10]
+
+Internet-Draft               MPLS / TE Model                  March 2015
+
+
+   A module defining various reusable MPLS types is included, and these
+   modules also make use of the standard Internet types, such as IP
+   addresses, as defined in RFC 6991 [RFC6991].
+
+6.1.  MPLS base modules
+
+   <CODE BEGINS> file mpls.yang
+   <?rfc include="mpls.yang"?>
+   <CODE ENDS>
+
+
+   <CODE BEGINS> file mpls-types.yang
+   <?rfc include="mpls-types.yang"?>
+   <CODE ENDS>
+
+
+6.2.  MPLS LSP submodules
+
+   <CODE BEGINS> file mpls-te.yang
+   <?rfc include="mpls-te.yang"?>
+   <CODE ENDS>
+
+
+   <CODE BEGINS> file mpls-igp.yang
+   <?rfc include="mpls-igp.yang"?>
+   <CODE ENDS>
+
+
+   <CODE BEGINS> file mpls-static.yang
+   <?rfc include="mpls-static.yang"?>
+   <CODE ENDS>
+
+
+6.3.  MPLS signaling protocol modules
+
+   <CODE BEGINS> file mpls-rsvp.yang
+   <?rfc include="mpls-rsvp.yang"?>
+   <CODE ENDS>
+
+
+   <CODE BEGINS> file mpls-sr.yang
+   <?rfc include="mpls-sr.yang"?>
+   <CODE ENDS>
+
+
+
+
+
+
+
+
+George, et al.         Expires September 10, 2015              [Page 11]
+
+Internet-Draft               MPLS / TE Model                  March 2015
+
+
+   <CODE BEGINS> file mpls-ldp.yang
+   <?rfc include="mpls-ldp.yang"?>
+   <CODE ENDS>
+
+
+7.  Contributing Authors
+
+   The following people contributed significantly to this document and
+   are listed below:
+
+   Ina Minei
+   Google
+   1600 Amphitheatre Parkway
+   Mountain View, CA 94043
+   US
+   Email: inaminei@google.com
+
+   Anees Shaikh
+   Google
+   1600 Amphitheatre Parkway
+   Mountain View, CA 94043
+   US
+   Email: aashaikh@google.com
+
+   Phil Bedard
+   Cox Communications
+   Atlanta, GA 30319
+   US
+   Email: phil.bedard@cox.com
+
+8.  Acknowledgements
+
+   The authors are grateful for valuable contributions to this document
+   and the associated models from: Ebben Aires, Deepak Bansal, Nabil
+   Bitar, Feihong Chen, Mazen Khaddam.
+
+9.  References
+
+   [RFC6020]  Bjorklund, M., "YANG - A Data Modeling Language for the
+              Network Configuration Protocol (NETCONF)", RFC 6020,
+              October 2010.
+
+   [RFC6991]  Schoenwaelder, J., "Common YANG Data Types", RFC 6991,
+              July 2013.
+
+   [RFC3688]  Mealling, M., "The IETF XML Registry", BCP 81, RFC 3688,
+              January 2004.
+
+
+
+
+George, et al.         Expires September 10, 2015              [Page 12]
+
+Internet-Draft               MPLS / TE Model                  March 2015
+
+
+   [I-D.ietf-spring-segment-routing-mpls]
+              Filsfils, C., Previdi, S., Bashandy, A., Decraene, B.,
+              Litkowski, S., Horneffer, M., Shakir, R., Tantsura, J.,
+              and E. Crabbe, "Segment Routing with MPLS data plane",
+              draft-ietf-spring-segment-routing-mpls-00 (work in
+              progress), December 2014.
+
+   [I-D.shakir-rtgwg-sr-performance-engineered-lsps]
+              Shakir, R., Vernals, D., and A. Capello, "Performance
+              Engineered LSPs using the Segment Routing Data-Plane",
+              draft-shakir-rtgwg-sr-performance-engineered-lsps-00 (work
+              in progress), July 2013.
+
+   [RFC5443]  Jork, M., Atlas, A., and L. Fang, "LDP IGP
+              Synchronization", RFC 5443, March 2009.
+
+Authors' Addresses
+
+   Joshua George
+   Google
+   1600 Amphitheatre Pkwy
+   Mountain View, CA  94043
+   US
+
+   Email: jgeorge@google.com
+
+
+   Luyuan Fang
+   Microsoft
+   205 108th Ave. NE, Suite 400
+   Bellevue, WA
+   US
+
+   Email: lufang@microsoft.com
+
+
+   Eric Osborne
+   Level 3
+
+   Email: eric.osborne@level3.com
+
+
+
+
+
+
+
+
+
+
+
+George, et al.         Expires September 10, 2015              [Page 13]
+
+Internet-Draft               MPLS / TE Model                  March 2015
+
+
+   Rob Shakir
+   BT
+   pp. C3L, BT Centre
+   81, Newgate Street
+   London  EC1A 7AJ
+   UK
+
+   Email: rob.shakir@bt.com
+   URI:   http://www.bt.com/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+George, et al.         Expires September 10, 2015              [Page 14]

@@ -1,0 +1,54 @@
+
+<config xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+      <routing-policy xmlns="http://openconfig.net/yang/routing-policy">
+
+        <defined-sets>
+          <prefix-sets>
+            <prefix-set>
+              <prefix-set-name>prefix-set-A</prefix-set-name>
+              <prefix>
+                <ip-prefix>192.0.2.0/24</ip-prefix>
+                <masklength-range>24..32</masklength-range>
+              </prefix>
+              <prefix>
+                <ip-prefix>10.0.0.0/16</ip-prefix>
+                <masklength-range>16..32</masklength-range>
+              </prefix>
+              <prefix>
+                <ip-prefix>192.168.0.0/19</ip-prefix>
+                <masklength-range>19..24</masklength-range>
+              </prefix>
+            </prefix-set>
+           </prefix-sets>
+           <tag-sets>
+            <tag-set>
+             <tag-set-name>cust-tag1</tag-set-name>
+             <tag>
+              <value>10</value>
+            </tag>
+           </tag-set>
+         </tag-sets>
+       </defined-sets>
+
+       <policy-definitions>
+        <policy-definition>
+          <name>export-tagged-BGP</name>
+          <statements>
+            <statement>
+              <name>term-0</name>
+              <conditions>
+                <install-protocol-eq xmlns:ns="http://openconfig.net/yang/policy-types">ns:OSPF3</install-protocol-eq>
+                <match-tag-set>
+                  <tag-set>cust-tag1</tag-set>
+                </match-tag-set>
+              </conditions>
+              <actions>
+                <accept-route />
+              </actions>
+            </statement>
+          </statements>
+        </policy-definition>
+      </policy-definitions>
+
+      </routing-policy>
+</config>

@@ -1,0 +1,306 @@
+<?xml version="1.0"?>
+<!DOCTYPE rfc SYSTEM "rfc2629.dtd">
+<rfc docName="draft-openconfig-rtgwg-gnmi-spec-01" ipr="trust200902" category="info">
+<?rfc toc="yes"?>
+  <front>
+    <title abbrev="gNMI specification">gRPC Network Management Interface (gNMI)</title>
+    <!-- Include Rob Shakir as author -->
+    <?rfc include="http://rob.sh/files/ietf-author.xml"?>
+    <!-- Include Anees Shaikh as author -->
+    <?rfc include="http://ashaikh.com/ashaikh_com/bib/aas-ietf-author.xml"?>
+    <author initials="P." surname="Borman" fullname="Paul Borman">
+      <organization>Google</organization>
+      <address>
+        <postal>
+          <street>1600 Amphitheatre Pkwy</street>
+          <city>Mountain View</city>
+          <region>CA</region>
+          <code>94043</code>
+          <country>US</country>
+        </postal>
+        <email>borman@google.com</email>
+      </address>
+    </author>
+    <author initials="M." surname="Hines" fullname="Marcus Hines">
+      <organization>Google</organization>
+      <address>
+        <postal>
+          <street>1600 Amphitheatre Pkwy</street>
+          <city>Mountain View</city>
+          <region>CA</region>
+          <code>94043</code>
+          <country>US</country>
+        </postal>
+        <email>hines@google.com</email>
+      </address>
+    </author>
+    <author initials="C." surname="Lebsack" fullname="Carl Lebsack">
+      <organization>Google</organization>
+      <address>
+        <postal>
+          <street>1600 Amphitheatre Pkwy</street>
+          <city>Mountain View</city>
+          <region>CA</region>
+          <code>94043</code>
+          <country>US</country>
+        </postal>
+        <email>csl@google.com</email>
+      </address>
+    </author>
+    <author initials="C." surname="Morrow" fullname="Chris Morrow">
+      <organization>Google</organization>
+      <address>
+        <email>christopher.morrow@gmail.com</email>
+      </address>
+    </author>
+    <date month="March" year="2018" />
+
+    <area>Routing</area>
+
+    <abstract>
+      <t>
+        This document describes the gRPC Network Management Interface (gNMI),
+        a network management protocol based on the gRPC framework.  gNMI
+        supports retrieval and manipulation of state from network elements
+        where the data is represented by a tree structure, and addressable by
+        paths.  The gNMI service defines operations for configuration
+        management, operational state retrieval, and bulk data collection via
+        streaming telemetry.  The authoritative gNMI specification is
+        maintained at <xref target="GNMI-SPEC" />.
+      </t>
+    </abstract>
+  </front>
+
+<middle>
+<section anchor="introduction" title="Introduction">
+<t>
+  This document provides an overview of gNMI, a gRPC-based protocol for state
+  management on network elements <xref target="GRPC" />.The gRPC Network
+  Management Interface (gNMI) supports modification and retrieval of
+  configuration, as well as control and transmission telemetry streams from a
+  network element to a data collection system.This allows a single
+  implementation on the network element, as well as a single NMS element to
+  interact with the device via telemetry and configuration RPCs.
+</t>
+<t>
+  All messages within the gRPC service definition are defined as protocol
+  buffers (specifically proto3) <xref target="PROTO" />.gRPC service
+  definitions are described using the relevant features of the protobuf
+  IDL.The authoritative protobuf definition is maintained in <xref target
+  ="GNMI-PROTO" />.The current, authoritative version of the gNMI
+  specification is available at <xref target="GNMI-SPEC" />.
+</t>
+<t>
+  gNMI offers an alternative to management protocols such as <xref
+  target="RFC6241">NETCONF</xref> and <xref target="RFC8040">RESTCONF</xref>
+  with implementations on devices from multiple vendors.gNMI derives a number
+  of benefits from being built on gRPC and HTTP/2, including modern security
+  mechanisms, bidirectional streaming, binary framing, and a wide variety of
+  language bindings to simplify integration with management applications.With
+  protobuf encoding, it also provides significant efficiency advantages over
+  XML serialization with a 3 to 10 times reduction in data volume (see the
+  "Developer Guide" in <xref target="PROTO" /> for examples).A number of open
+  source tools and reference implementations are available from the OpenConfig
+  working group <xref target="GNMI-TOOLS" />.
+</t>
+</section>
+
+<section anchor="terminology" title="Terminology">
+
+<t>Throughout this document the following terminology is used:
+</t>
+<t>
+<list style="symbols">
+<t>Telemetry - refers to streaming data relating to underlying characteristics of the device - either operational state or configuration.</t>
+<t>Configuration - elements within the data schema which are read/write and can be manipulated by the client.</t>
+<t>Target - the device within gNMI which acts as the owner of the data that is being manipulated or reported on. Typically this will be a network device.</t>
+<t>Client - the device or system using gNMI to query/modify data on the target, or act as a collector for telemetry data. Typically this will be a network management application.</t>
+</list>
+</t>
+</section>
+
+<section anchor="overview" title="Protocol overview">
+<t>The sections below provide an overview of the gNMI protocol operations, leaving a detailed discussion to the full specification in <xref target="GNMI-SPEC" />.
+</t>
+
+
+<section anchor="payloads-paths" title="Data payloads and paths">
+<t>gNMI is often used to carry payloads that contain data instances of YANG schemas (for example based on OpenConfig models <xref target="OPENCONFIG" />), but can be used for any data with the following characteristics:
+</t>
+<t>
+<list style="numbers">
+<t>structure that can be represented by a tree, where nodes can be uniquely identified by a path consisting of node names, or node names coupled with attributes;</t>
+<t>values can be serialised into a scalar object.</t>
+</list>
+</t>
+<t>Values may be serialised to native protobuf scalar types, structured data types (e.g. as JSON or protobuf object), or a schema language-specific type (e.g., YANG Decimal64).
+</t>
+<t>Data in gNMI is addressed by a path, which is represented as a structured list of elements, each with associated attributes if present.  For example, the human-readable path "/interfaces/interface[name=eth0]/config/description" is represented as a text-encoded protobuf as:
+</t>
+<figure><artwork>
+  path: &lt;
+  elem: &lt;
+    name: "interfaces"
+  &gt;
+  elem: &lt;
+    name: "interface"
+    key: &lt;
+      key: "name"
+      value: "eth0"
+    &gt;
+  &gt;
+  elem: &lt;
+    name: "config"
+  &gt;
+  elem: &lt;
+    name: "description"
+  &gt;
+&gt;
+</artwork></figure>
+<t>For more efficient handling of paths, gNMI supports a path prefix that is applied to every path in a message.  Paths in gNMI are always absolute, constructed by concatenating the prefix with the path.
+</t>
+</section>
+
+
+<section anchor="rpcs" title="gNMI RPCs">
+<t>gNMI is designed with a small number of base remote procedure calls (RPCs) to simplify client and target implementations.  This section provides a high-level overview of each RPC.  Full details are available in <xref target="GNMI-SPEC" />.
+</t>
+
+<section anchor="capabilities" title="Capabilities">
+<t>The Capabilities RPC allows a client to interrogate a gNMI target to learn about supported features.  The primary information returned by a target include the set of models it supports, the data encodings supported, and the version of the gNMI protocol it is using.  The model information is expected to be based on a published model catalog <xref target="I-D.openconfig-netmod-model-catalog" />.
+</t>
+</section>
+
+<section anchor="subscribe" title="Subscribe">
+<t>Subscribe is a bidirectional streaming RPC that allows clients and targets to send independent sequences of telemetry messages.  Clients may subscribe to notifications for telemetry data by specifying a path to the desired data and a mode (in addition to other parameters).  gNMI supports several modes, but the two common use cases are for periodically sampled data, such as counters, and event-driven data in which a notification is sent only when the corresponding data value changes.  In response to a subscription, the target sends a stream of telemetry notifications that contain a timestamp, path, and updated value.  Multiple updates may be included in a single RPC message.
+</t>
+<t>A streaming RPC for telemetry has the benefit of not requiring the target to collect, stage in memory, and serialize all of the requested data at once.  The target is able to send data as soon as it is available, and can manage its resources to avoid becoming overloaded when sending a large volume of data.
+</t>
+</section>
+
+<section anchor="set" title="Set">
+<t>Set is a unary RPC (i.e., single request and single response) that is sent by a client to update the state of the target.  Set includes several operation types whereby data may be updated, deleted, or replaced.  A Set RPC may include multiple operations -- the target is expected to treat each RPC as a transaction such that if all included operations cannot be completed successfully, the target's state is unchanged.  Clients using the gNMI Set RPC pre-stage a set of update operations into a single Set RPC call, which must be either completely applied, or rolled back - eliminating the complex, long-lived candidate changes used in other protocols.
+</t>
+</section>
+
+<section anchor="get" title="Get">
+<t>Get is also a unary RPC that allows clients to request an immediate snapshot of the current state from the target, specified by a path.  The target is expected to collect the data when the request is received, and serialize it for immediate transmission to the client. Where supported, gNMI allows the client to specify the type of data that should be returned (e.g., configuration state, operational state, etc.).
+</t>
+</section>
+</section>
+</section>
+
+<section anchor="additional" title="Additional operations">
+<t>The sections below describe additional features and operations in gNMI.
+</t>
+<section anchor="errors" title="Error handling">
+<t>Rather than defining application-level error messates, gNMI leverages native error handling mechanisms in gRPC in which canonical error codes and context information are part of the Status message in every RPC. The gNMI specification provides guidance on how gNMI error conditions should be mapped to canonical error codes.
+</t>
+</section>
+
+<section anchor="extensions" title="gNMI Extensions">
+<t>While the base gNMI protocol is deliberately limited to a set of simple operations, some use cases require additional parameters that may be only applicable in those scenarios.  gNMI extensions <xref target="GNMI-EXT" /> define a common way to add new payload to gNMI RPCs for these use cases without requiring changes in the core protocol specification.
+</t>
+</section>
+</section>
+
+<section title="Security Considerations">
+      <t>
+        gNMI allows access and manipulation of state on network devices, hence it requires careful consideration of security implications including authentication and authorization of RPCs.  The gNMI specification <xref target="GNMI-SPEC" /> and companion document <xref target="GNMI-SECURITY" /> discuss the considerations in more detail.
+      </t>
+
+</section>
+
+<section title="IANA Considerations">
+  <t>
+    No IANA considerations at this time.  In the future there may be a request for a protocol registry
+    entry and well-known port allocation.
+  </t>
+</section>
+
+</middle>
+
+<back>
+  <references title="Normative references">
+      <?rfc include="http://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.6241.xml"?>
+      <?rfc include="http://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.8040.xml"?>
+    </references>
+
+    <references title="Informative references">
+      <reference anchor="GRPC" target="https://grpc.io/">
+        <front>
+          <title>gRPC</title>
+          <author><organization>The gRPC authors</organization></author>
+          <date month="March" year="2018" />
+        </front>
+      </reference>
+      <reference anchor="PROTO" target="https://developers.google.com/protocol-buffers/">
+        <front>
+          <title>Protocol buffers</title>
+          <author><organization>Google</organization></author>
+          <date month="March" year="2018" />
+        </front>
+      </reference>
+      <reference anchor="GNMI-PROTO" target="https://github.com/openconfig/gnmi/tree/master/proto/gnmi">
+        <front>
+          <title>gnmi.proto</title>
+          <author><organization>OpenConfig operator working group</organization></author>
+          <date month="February" year="2018" />
+        </front>
+      </reference>
+      <reference anchor="GNMI-SPEC" target="https://github.com/openconfig/reference/blob/master/rpc/gnmi/gnmi-specification.md">
+        <front>
+          <title>gRPC Network Management Interface (gNMI) v0.6.0</title>
+          <author><organization>OpenConfig operator working group</organization></author>
+          <date month="January" year="2018" />
+        </front>
+      </reference>
+      <reference anchor="GNMI-TOOLS" target="https://github.com/openconfig/gnmi">
+        <front>
+          <title>gNMI Github repository</title>
+          <author><organization>OpenConfig operator working group</organization></author>
+          <date month="March" year="2018" />
+        </front>
+      </reference>
+      <reference anchor="GNMI-EXT" target="https://github.com/openconfig/reference/blob/master/rpc/gnmi/gnmi-extensions.md">
+        <front>
+          <title>Extensions to gNMI</title>
+          <author><organization>OpenConfig operator working group</organization></author>
+          <date month="January" year="2018" />
+        </front>
+      </reference>
+      <reference anchor="GNMI-SECURITY" target="https://github.com/openconfig/reference/blob/master/rpc/gnmi/gnmi-authentication.md">
+        <front>
+          <title>gNMI Authentication and Encryption</title>
+          <author><organization>OpenConfig operator working group</organization></author>
+          <date month="October" year="2016" />
+        </front>
+      </reference>
+      <reference anchor="OPENCONFIG" target="http://www.openconfig.net/">
+        <front>
+          <title>OpenConfig</title>
+          <author><organization>OpenConfig operator working group</organization></author>
+          <date month="March" year="2018" />
+        </front>
+      </reference>
+      <?rfc include="http://xml2rfc.ietf.org/public/rfc/bibxml3/reference.I-D.openconfig-netmod-model-catalog"?>
+    </references>
+
+<section title="Change summary">
+      <section title="Changes between revisions -00 and -01">
+        <t>
+          <list style="symbols">
+            <t>Replaced specification content with overview material and reference to normative reference to the gNMI specification document
+            </t>
+            <t>Updated to reflect changes in the gNMI specification and introduction of gNMI extensions.
+            </t>
+          </list>
+        </t>
+      </section>
+</section>
+
+
+</back>
+
+
+</rfc>
