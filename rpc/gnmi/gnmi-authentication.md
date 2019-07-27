@@ -1,8 +1,8 @@
 ## gNMI Authentication and Encryption
 
 
-**Updated**: October 5, 2016
-**Version:**: 0.1.0
+**Updated**: July 26, 2019
+**Version:**: 0.1.1
 
 #### Background
 
@@ -36,19 +36,26 @@ Network devices managed by the gRPC Network Management Interface ([gNMI](https:/
 
 
 
-*   Configuration operations carried over the encrypted connection will carry credentials (username/password) in the metadata of each gRPC message.
-*   The target will use these credentials to authorize the configuration operation using currently available AAA methods on the network element.
+*   Configuration operations carried over the encrypted connection will carry credentials (username/password) in the metadata 
+of each gRPC message.  Configuration changes require a user with Read-Write permission.
+*   The target will use these credentials to authorize the configuration operation using currently available AAA methods on 
+the network element.
 *   The network element uses the local AAA configuration to determine where and what type of AAA request to issue.
-    *   For example, on a network element configured to use TACACS for command authorization, a <code><em>Get(/interfaces)</em></code> request for user:password would trigger a TACACS command authorization request using the same username.
-*   Future versions of the authentication scheme may use a username/password credential carried inside a field of the X.509 certificate, rather than exclusive use of RPC metadata.
+    *   For example, on a network element configured to use TACACS for command authorization, a <code><em>Get(/interfaces)
+   </em></code> request for user:password would trigger a TACACS command authorization request using the same username.
+*   Future versions of the authentication scheme may use a username/password credential carried inside a field of the X.509 
+certificate, rather than exclusive use of RPC metadata.
 
 #### Telemetry Authentication
 
-*   Each telemetry message will not be authenticated with a username/password, as this is redundant and will not be a performant solution.
+*   Each telemetry message will not be authenticated with a username/password, as this is redundant and will not be a 
+performant solution.
 *   Each telemetry message will only be carried over the encrypted gRPC streaming channel which was previously authenticated.
-*   Telemetry <code><em>Subscribe()</em></code> RPCs will be treated as a configuration RPC, which require a username/password credential inside the metadata.
+*   Telemetry <code><em>Subscribe()</em></code> RPCs require a username/password credential inside the metadata.  The 
+Subscribe and Get RPCs do not make configuration changes to a device and thus should be allowed for users with Read-Only or
+Read-Write permissions.
 
-**Contributors**: Alex Bogdanov, Josh George, Chris Morrow, Anees Shaikh, Rob Shakir
+**Contributors**: Alex Bogdanov, Josh George, Carl Lebsack, Chris Morrow, Anees Shaikh, Rob Shakir
 
 ## Appendix - gRPC Authentication Flow Diagram
 
