@@ -1119,6 +1119,29 @@ omits values that have been previously set, they MUST be treated as deleted from
 the data tree.  Otherwise, omitted data elements MUST be created with their
 default values on the target.
 
+For example, consider the following tree, where boolean `b` has a default value
+of True and boolean `c` has no default value. Both `b` and `c` have been
+previously set as False.
+```
+root +
+     |
+     + a --+
+     |     |
+     |     +-- b
+     |     |
+     |     +-- c
+     |
+     |
+     + d --+
+           +-- e
+           |
+           +-- f
+```
+A `replace` operation is issued where `e` and `f` are set, and all other
+elements are omitted. In this scenario, `b` MUST be reverted to it's default
+setting of True and the configuration of `c` MUST be deleted from the tree,
+and returned to it's original un-configured setting.
+
 For `update` operations, only the value of those data elements that are
 specified explicitly should be treated as changed.
 
