@@ -1119,12 +1119,12 @@ For replace operations:
  * If a particular path-value is NOT specified in the client-supplied data and
  the path does not have a specified default value in the corresponding schema,
  it is treated as deleted.
- * If a path-val is NOT specified in the client-supplied data and the path does
- have a default value, it takes on this value.
+ * If a path-value is NOT specified in the client-supplied data and the path does
+ have a default value, it takes on the schema-specified default value.
 
-For example, consider the following tree, where boolean `b` has a default value
-of True and boolean `c` has no default value. Both `b` and `c` have been
-previously set as False.
+For example, consider the following tree, where a schema defines the boolean `b`
+as having a default value of True and boolean `c` as having no default value.
+Both `b` and `c` have been previously set as False.
 ```
 root +
      |
