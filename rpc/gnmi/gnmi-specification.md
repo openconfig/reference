@@ -1141,9 +1141,9 @@ root +
            +-- f
 ```
 A `replace` operation is issued where `e` and `f` are set, and all other
-elements are omitted. In this scenario, `b` MUST be reverted to it's default
+elements are omitted. In this scenario, `b` MUST be reverted to its default
 setting of True and the configuration of `c` MUST be deleted from the tree,
-and returned to it's original un-configured setting.
+and returned to its original un-configured setting.
 
 For `update` operations, only the value of those data elements that are
 specified explicitly should be treated as changed.
