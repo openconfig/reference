@@ -1112,12 +1112,38 @@ updates within the `SetRequest` method, return the data tree to the state prior
 to any changes, and return a `SetResponse` status indicating the error
 encountered.
 
-For `replace` operations, the behavior regarding omitted data elements in the
-`Update` depends on whether they refer to non-default values (i.e., set by a
-previous `SetRequest`), or unmodified defaults.  When the `replace` operation
-omits values that have been previously set, they MUST be treated as deleted from
-the data tree.  Otherwise, omitted data elements MUST be created with their
-default values on the target.
+For replace operations:
+
+ * If a particular path-value is specified in the client-supplied data, it is
+ replaced with the client-specified value.
+ * If a particular path-value is NOT specified in the client-supplied data and
+ the path does not have a specified default value in the corresponding schema,
+ it should be deleted.
+ * If a path-value is NOT specified in the client-supplied data and the path does
+ have a default value, it takes on the schema-specified default value.
+
+For example, consider the following tree, where a schema defines the boolean `b`
+as having a default value of True and boolean `c` as having no default value.
+Both `b` and `c` have been previously set as False.
+```
+root +
+     |
+     + a --+
+     |     |
+     |     +-- b
+     |     |
+     |     +-- c
+     |
+     |
+     + d --+
+           +-- e
+           |
+           +-- f
+```
+A `replace` operation is issued where `e` and `f` are set, and all other
+elements are omitted. In this scenario, `b` MUST be reverted to its default
+setting of True and the configuration of `c` MUST be deleted from the tree,
+and returned to its original un-configured setting.
 
 For `update` operations, only the value of those data elements that are
 specified explicitly should be treated as changed.
