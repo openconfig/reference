@@ -1118,7 +1118,7 @@ For replace operations:
  replaced with the client-specified value.
  * If a particular path-value is NOT specified in the client-supplied data and
  the path does not have a specified default value in the corresponding schema,
- it is treated as deleted.
+ it should be deleted.
  * If a path-value is NOT specified in the client-supplied data and the path does
  have a default value, it takes on the schema-specified default value.
 
