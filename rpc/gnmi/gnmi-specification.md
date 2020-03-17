@@ -1637,19 +1637,19 @@ using the `#shortPath` alias in the same manner as described in [Section
 
 #### 3.5.2.1 Bundling of Telemetry Updates
 
-Since multiple `Notification` messages can be included in the `update` field of
-a `SubscribeResponse` message, it is possible for a target to bundle messages
-such that fewer messages are sent to the client. The advantage of such bundling
-is clearly to reduce the number of bytes on the wire (caused by message
-overhead). Since `Notification` messages contain the timestamp at which an event
-occurred, or a sample was taken, such bundling does not affect the sample
-accuracy to the client. However, bundling does have a negative impact on the
-freshness of the data in the client - and on the client's ability to react to
-events on the target.
+Since multiple `Update` messages can be included in the `Notification` message
+of a `SubscribeResponse`, it is possible for a target to bundle messages such
+that fewer messages are sent to the client. The advantage of such bundling is
+clearly to reduce the number of bytes on the wire (caused by message overhead);
+however, since only `Notification` messages contain the timestamp at which an
+event occurred, or a sample was taken, such bundling assigns a single timestamp
+for all bundled `Update` values. As such, it has the downside of negatively
+affecting the sample accuracy and freshness to the client, and as a result, on
+the client's ability to react to events on the target.
 
 Since it is not possible for the target to infer whether its clients are
 sensitive to the latency introduced by bundling, if a target implements
-optimizations such that multiple `Notification` messages are bundled together,
+optimizations such that multiple `Update` messages are bundled together,
 it MUST provide an ability to disable this functionality within the
 configuration of the gNMI service. Additionally, a target SHOULD provide means
 by which the operator can control the maximum number of updates that are to be
