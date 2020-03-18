@@ -320,64 +320,13 @@ type. It should be noted that the target never utilises the `Encoding`
 enumeration to declare to the client the type of encoding utilised, hence the
 client must infer the encoding from the populated `TypedValue` field.
 
-<!-- TODO(robjs): Convert to a MarkDown table -->
-<table>
-  <tr>
-   <td><strong>Name</strong>
-   </td>
-   <td><strong>Description</strong>
-   </td>
-   <td><strong><code>TypedValue</code> field</strong>
-   </td>
-   <td><strong><code>Encoding</code> Value</strong>
-   </td>
-  </tr>
-  <tr>
-   <td>JSON
-   </td>
-   <td>A JSON encoded string as per <a href="#231-json-and-json_ietf">2.3.1</a>.
-   </td>
-   <td><code>json_val</code></td>
-   <td>0
-   </td>
-  </tr>
-  <tr>
-   <td>Bytes
-   </td>
-   <td>An arbitrary sequence of bytes as per <a href="#232-bytes">2.3.2</a>.
-   </td>
-   <td><code>bytes_val</code></td>
-   <td>1
-   </td>
-  </tr>
-  <tr>
-   <td>Proto
-   </td>
-   <td>A <a href="https://developers.google.com/protocol-buffers/">Protobuf</a> encoded message using <a href="https://developers.google.com/protocol-buffers/docs/proto3#any"><code>protobuf.any</code></a>, as per <a href="#233-protobuf">2.3.3</a>
-   </td>
-   <td><code>any_val</code></td>
-   <td>2
-   </td>
-  </tr>
-  <tr>
-   <td>ASCII
-   </td>
-   <td>An ASCII encoded string representing text formatted according to a target-defined convention (described in <a href="#234-ascii">Section 2.3.4</a>).
-   </td>
-   <td><code>ascii_val</code></td>
-   <td>3
-   </td>
-  </tr>
-  <tr>
-   <td>JSON_IETF
-   </td>
-   <td>A JSON encoded string as per <a href="#231-json-and-json_ietf">2.3.1</a> using JSON encoding compatible with [RFC 7951](https://tools.ietf.org/html/rfc7951)
-   </td>
-   <td><code>json_ietf_val</code></td>
-   <td>4
-   </td>
-  </tr>
-</table>
+|Name     |Description                                                                                                                                                                                         |`TypedValue` field|`Encoding` Value|
+|---------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------|----------------|
+|JSON     |A JSON encoded string as per [2.3.1](#231-json-and-json_ietf).                                                                                                                                      |`json_val`        |0               |
+|Bytes    |An arbitrary sequence of bytes as per [2.3.2](#232-bytes).                                                                                                                                          |`bytes_val`       |1               |
+|Proto    |A [Protobuf](https://developers.google.com/protocol-buffers/) encoded message using [`protobuf.any`](https://developers.google.com/protocol-buffers/docs/proto3#any), as per [2.3.3](#233-protobuf).|`any_val`         |2               |
+|ASCII    |An ASCII encoded string representing text formatted according to a target-defined convention (described in [Section 2.3.4](#234-ascii)).                                                            |`ascii_val`       |3               |
+|JSON_IETF|A JSON encoded string as per [2.3.1](#231-json-and-json_ietf) using JSON encoding compatible with [RFC 7951](https://tools.ietf.org/html/rfc7951).                                                  |`json_ietf_val`   |4               |
 
 ### 2.3.1 JSON and JSON_IETF
 
