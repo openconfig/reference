@@ -1709,7 +1709,7 @@ field set to `true` MUST be generated.
 In the case where the `updates_only` field in the `SubscribeRequest` message has
 been set, a `sync_response` is sent as the first message on the stream, followed
 by any updates representing subsequent changes to current state. For a `POLL` or
-`ONCE` mode, this means that only a `sync_resonse` will be sent. The
+`ONCE` mode, this means that only a `sync_response` will be sent. The
 `updates_only` field allows a client to only watch for changes, e.g. an update
 to configuration.
 
