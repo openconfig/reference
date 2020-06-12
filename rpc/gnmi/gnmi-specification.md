@@ -11,63 +11,64 @@ January 30, 2018
 
 # Table of Contents
 
-   * [1 Introduction](#1-introduction)
-   * [2 Common Message Types and Encodings](#2-common-message-types-and-encodings)
+* [1 Introduction](#1-introduction)
+* [2 Common Message Types and Encodings](#2-common-message-types-and-encodings)
   * [2.1 Reusable Notification Message Format](#21-reusable-notification-message-format)
   * [2.2 Common Data Types](#22-common-data-types)
-     * [2.2.1 Timestamps](#221-timestamps)
-     * [2.2.2 Paths](#222-paths)
-     * [2.2.3 Node Values](#223-node-values)
+    * [2.2.1 Timestamps](#221-timestamps)
+    * [2.2.2 Paths](#222-paths)
+      * [2.2.2.1 Path Target](#2221-path-target)
+    * [2.2.3 Node Values](#223-node-values)
   * [2.3 Structured data types](#23-structured-data-types)
-     * [2.3.1 JSON and JSON_IETF](#231-json-and-json_ietf)
-     * [2.3.2 Bytes](#232-bytes)
-     * [2.3.3 Protobuf](#233-protobuf)
-     * [2.3.4 Text](#234-text)
+    * [2.3.1 JSON and JSON_IETF](#231-json-and-json_ietf)
+    * [2.3.2 Bytes](#232-bytes)
+    * [2.3.3 Protobuf](#233-protobuf)
+    * [2.3.4 ASCII](#234-ascii)
   * [2.4 Use of Data Schema Paths](#24-use-of-data-schema-paths)
-     * [2.4.1 Path Prefixes](#241-path-prefixes)
-     * [2.4.2 Path Aliases](#242-path-aliases)
-     * [2.4.3 Interpretation of Paths Used in RPCs](#243-interpretation-of-paths-used-in-rpcs)
+    * [2.4.1 Path Prefixes](#241-path-prefixes)
+    * [2.4.2 Path Aliases](#242-path-aliases)
+    * [2.4.3 Interpretation of Paths Used in RPCs](#243-interpretation-of-paths-used-in-rpcs)
   * [2.5 Error handling](#25-error-handling)
   * [2.6 Schema Definition Models](#26-schema-definition-models)
-     * [2.6.1 The ModelData message](#261-the-modeldata-message)
-  * [2.7 Extensions to gNMI](#27-gnmi-extensions)
-  * [3 Service Definition](#3-service-definition)
+    * [2.6.1 The ModelData message](#261-the-modeldata-message)
+  * [2.7 Extensions to gNMI](#27-extensions-to-gnmi)
+* [3 Service Definition](#3-service-definition)
   * [3.1 Session Security, Authentication and RPC Authorization](#31-session-security-authentication-and-rpc-authorization)
   * [3.2 Capability Discovery](#32-capability-discovery)
-     * [3.2.1 The CapabilityRequest message](#321-the-capabilityrequest-message)
-     * [3.2.2 The CapabilityResponse message](#322-the-capabilityresponse-message)
+    * [3.2.1 The CapabilityRequest message](#321-the-capabilityrequest-message)
+    * [3.2.2 The CapabilityResponse message](#322-the-capabilityresponse-message)
   * [3.3 Retrieving Snapshots of State Information](#33-retrieving-snapshots-of-state-information)
-     * [3.3.1 The GetRequest Message](#331-the-getrequest-message)
-     * [3.3.2 The GetResponse message](#332-the-getresponse-message)
-     * [3.3.3 Considerations for using Get](#333-considerations-for-using-get)
+    * [3.3.1 The GetRequest Message](#331-the-getrequest-message)
+    * [3.3.2 The GetResponse message](#332-the-getresponse-message)
+    * [3.3.3 Considerations for using Get](#333-considerations-for-using-get)
   * [3.4 Modifying State](#34-modifying-state)
-     * [3.4.1 The SetRequest Message](#341-the-setrequest-message)
-     * [3.4.2 The SetResponse Message](#342-the-setresponse-message)
-     * [3.4.3 Transactions](#343-transactions)
-     * [3.4.4 Modes of Update: Replace versus Update](#344-modes-of-update-replace-versus-update)
-     * [3.4.5 Modifying Paths Identified by Attributes](#345-modifying-paths-identified-by-attributes)
-     * [3.4.6 Deleting Configuration](#346-deleting-configuration)
-     * [3.4.7 Error Handling](#347-error-handling)
+    * [3.4.1 The SetRequest Message](#341-the-setrequest-message)
+    * [3.4.2 The SetResponse Message](#342-the-setresponse-message)
+    * [3.4.3 Transactions](#343-transactions)
+    * [3.4.4 Modes of Update: Replace versus Update](#344-modes-of-update-replace-versus-update)
+    * [3.4.5 Modifying Paths Identified by Attributes](#345-modifying-paths-identified-by-attributes)
+    * [3.4.6 Deleting Configuration](#346-deleting-configuration)
+    * [3.4.7 Error Handling](#347-error-handling)
   * [3.5 Subscribing to Telemetry Updates](#35-subscribing-to-telemetry-updates)
-     * [3.5.1 Managing Subscriptions](#351-managing-subscriptions)
-        * [3.5.1.1 The SubscribeRequest Message](#3511-the-subscriberequest-message)
-        * [3.5.1.2 The SubscriptionList Message](#3512-the-subscriptionlist-message)
-        * [3.5.1.3 The Subscription Message](#3513-the-subscription-message)
-        * [3.5.1.4 The SubscribeResponse Message](#3514-the-subscriberesponse-message)
-        * [3.5.1.5 Creating Subscriptions](#3515-creating-subscriptions)
-           * [3.5.1.5.1 ONCE Subscriptions](#35151-once-subscriptions)
-           * [3.5.1.5.2 STREAM Subscriptions](#35152-stream-subscriptions)
-           * [3.5.1.5.3 POLL Subscriptions](#35153-poll-subscriptions)
-        * [3.5.1.6 Client-defined Aliases within a Subscription](#3516-client-defined-aliases-within-a-subscription)
-     * [3.5.2 Sending Telemetry Updates](#352-sending-telemetry-updates)
-        * [3.5.2.1 Bundling of Telemetry Updates](#3521-bundling-of-telemetry-updates)
-        * [3.5.2.2 Target-defined Aliases within a Subscription](#3522-target-defined-aliases-within-a-subscription)
-        * [3.5.2.3 Sending Telemetry Updates](#3523-sending-telemetry-updates)
-   * [4 Appendix: Current Protobuf Message and Service Specification](#4-appendix-current-protobuf-message-and-service-specification)
-   * [5 Appendix: Current Outstanding Issues/Future Features](#5-appendix-current-outstanding-issuesfuture-features)
-   * [6 Copyright](#6-copyright)
-   * [7 Revision History](#7-revision-history)
-      * [Notes](#notes)
+    * [3.5.1 Managing Subscriptions](#351-managing-subscriptions)
+      * [3.5.1.1 The SubscribeRequest Message](#3511-the-subscriberequest-message)
+      * [3.5.1.2 The SubscriptionList Message](#3512-the-subscriptionlist-message)
+      * [3.5.1.3 The Subscription Message](#3513-the-subscription-message)
+      * [3.5.1.4 The SubscribeResponse Message](#3514-the-subscriberesponse-message)
+      * [3.5.1.5 Creating Subscriptions](#3515-creating-subscriptions)
+        * [3.5.1.5.1 ONCE Subscriptions](#35151-once-subscriptions)
+        * [3.5.1.5.2 STREAM Subscriptions](#35152-stream-subscriptions)
+        * [3.5.1.5.3 POLL Subscriptions](#35153-poll-subscriptions)
+      * [3.5.1.6 Client-defined Aliases within a Subscription](#3516-client-defined-aliases-within-a-subscription)
+    * [3.5.2 Sending Telemetry Updates](#352-sending-telemetry-updates)
+      * [3.5.2.1 Bundling of Telemetry Updates](#3521-bundling-of-telemetry-updates)
+      * [3.5.2.2 Target-defined Aliases within a Subscription](#3522-target-defined-aliases-within-a-subscription)
+      * [3.5.2.3 Sending Telemetry Updates](#3523-sending-telemetry-updates)
+* [4 Appendix: Current Protobuf Message and Service Specification](#4-appendix-current-protobuf-message-and-service-specification)
+* [5 Appendix: Current Outstanding Issues/Future Features](#5-appendix-current-outstanding-issuesfuture-features)
+* [6 Copyright](#6-copyright)
+* [7 Revision History](#7-revision-history)
+  * [Notes](#notes)
 
 # 1 Introduction
 
@@ -320,13 +321,13 @@ type. It should be noted that the target never utilises the `Encoding`
 enumeration to declare to the client the type of encoding utilised, hence the
 client must infer the encoding from the populated `TypedValue` field.
 
-|Name     |Description                                                                                                                                                                                         |`TypedValue` field|`Encoding` Value|
-|---------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------|----------------|
-|JSON     |A JSON encoded string as per [2.3.1](#231-json-and-json_ietf).                                                                                                                                      |`json_val`        |0               |
-|Bytes    |An arbitrary sequence of bytes as per [2.3.2](#232-bytes).                                                                                                                                          |`bytes_val`       |1               |
-|Proto    |A [Protobuf](https://developers.google.com/protocol-buffers/) encoded message using [`protobuf.any`](https://developers.google.com/protocol-buffers/docs/proto3#any), as per [2.3.3](#233-protobuf).|`any_val`         |2               |
-|ASCII    |An ASCII encoded string representing text formatted according to a target-defined convention (described in [Section 2.3.4](#234-ascii)).                                                            |`ascii_val`       |3               |
-|JSON_IETF|A JSON encoded string as per [2.3.1](#231-json-and-json_ietf) using JSON encoding compatible with [RFC 7951](https://tools.ietf.org/html/rfc7951).                                                  |`json_ietf_val`   |4               |
+| Name      | Description                                                                                                                                                                                          | `TypedValue` field | `Encoding` Value |
+| --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ | ---------------- |
+| JSON      | A JSON encoded string as per [2.3.1](#231-json-and-json_ietf).                                                                                                                                       | `json_val`         | 0                |
+| Bytes     | An arbitrary sequence of bytes as per [2.3.2](#232-bytes).                                                                                                                                           | `bytes_val`        | 1                |
+| Proto     | A [Protobuf](https://developers.google.com/protocol-buffers/) encoded message using [`protobuf.any`](https://developers.google.com/protocol-buffers/docs/proto3#any), as per [2.3.3](#233-protobuf). | `any_val`          | 2                |
+| ASCII     | An ASCII encoded string representing text formatted according to a target-defined convention (described in [Section 2.3.4](#234-ascii)).                                                             | `ascii_val`        | 3                |
+| JSON_IETF | A JSON encoded string as per [2.3.1](#231-json-and-json_ietf) using JSON encoding compatible with [RFC 7951](https://tools.ietf.org/html/rfc7951).                                                   | `json_ietf_val`    | 4                |
 
 ### 2.3.1 JSON and JSON_IETF
 
