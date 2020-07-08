@@ -11,63 +11,64 @@ January 30, 2018
 
 # Table of Contents
 
-   * [1 Introduction](#1-introduction)
-   * [2 Common Message Types and Encodings](#2-common-message-types-and-encodings)
+* [1 Introduction](#1-introduction)
+* [2 Common Message Types and Encodings](#2-common-message-types-and-encodings)
   * [2.1 Reusable Notification Message Format](#21-reusable-notification-message-format)
   * [2.2 Common Data Types](#22-common-data-types)
-     * [2.2.1 Timestamps](#221-timestamps)
-     * [2.2.2 Paths](#222-paths)
-     * [2.2.3 Node Values](#223-node-values)
+    * [2.2.1 Timestamps](#221-timestamps)
+    * [2.2.2 Paths](#222-paths)
+      * [2.2.2.1 Path Target](#2221-path-target)
+    * [2.2.3 Node Values](#223-node-values)
   * [2.3 Structured data types](#23-structured-data-types)
-     * [2.3.1 JSON and JSON_IETF](#231-json-and-json_ietf)
-     * [2.3.2 Bytes](#232-bytes)
-     * [2.3.3 Protobuf](#233-protobuf)
-     * [2.3.4 Text](#234-text)
+    * [2.3.1 JSON and JSON_IETF](#231-json-and-json_ietf)
+    * [2.3.2 Bytes](#232-bytes)
+    * [2.3.3 Protobuf](#233-protobuf)
+    * [2.3.4 ASCII](#234-ascii)
   * [2.4 Use of Data Schema Paths](#24-use-of-data-schema-paths)
-     * [2.4.1 Path Prefixes](#241-path-prefixes)
-     * [2.4.2 Path Aliases](#242-path-aliases)
-     * [2.4.3 Interpretation of Paths Used in RPCs](#243-interpretation-of-paths-used-in-rpcs)
+    * [2.4.1 Path Prefixes](#241-path-prefixes)
+    * [2.4.2 Path Aliases](#242-path-aliases)
+    * [2.4.3 Interpretation of Paths Used in RPCs](#243-interpretation-of-paths-used-in-rpcs)
   * [2.5 Error handling](#25-error-handling)
   * [2.6 Schema Definition Models](#26-schema-definition-models)
-     * [2.6.1 The ModelData message](#261-the-modeldata-message)
-  * [2.7 Extensions to gNMI](#27-gnmi-extensions)
-  * [3 Service Definition](#3-service-definition)
+    * [2.6.1 The ModelData message](#261-the-modeldata-message)
+  * [2.7 Extensions to gNMI](#27-extensions-to-gnmi)
+* [3 Service Definition](#3-service-definition)
   * [3.1 Session Security, Authentication and RPC Authorization](#31-session-security-authentication-and-rpc-authorization)
   * [3.2 Capability Discovery](#32-capability-discovery)
-     * [3.2.1 The CapabilityRequest message](#321-the-capabilityrequest-message)
-     * [3.2.2 The CapabilityResponse message](#322-the-capabilityresponse-message)
+    * [3.2.1 The CapabilityRequest message](#321-the-capabilityrequest-message)
+    * [3.2.2 The CapabilityResponse message](#322-the-capabilityresponse-message)
   * [3.3 Retrieving Snapshots of State Information](#33-retrieving-snapshots-of-state-information)
-     * [3.3.1 The GetRequest Message](#331-the-getrequest-message)
-     * [3.3.2 The GetResponse message](#332-the-getresponse-message)
-     * [3.3.3 Considerations for using Get](#333-considerations-for-using-get)
+    * [3.3.1 The GetRequest Message](#331-the-getrequest-message)
+    * [3.3.2 The GetResponse message](#332-the-getresponse-message)
+    * [3.3.3 Considerations for using Get](#333-considerations-for-using-get)
   * [3.4 Modifying State](#34-modifying-state)
-     * [3.4.1 The SetRequest Message](#341-the-setrequest-message)
-     * [3.4.2 The SetResponse Message](#342-the-setresponse-message)
-     * [3.4.3 Transactions](#343-transactions)
-     * [3.4.4 Modes of Update: Replace versus Update](#344-modes-of-update-replace-versus-update)
-     * [3.4.5 Modifying Paths Identified by Attributes](#345-modifying-paths-identified-by-attributes)
-     * [3.4.6 Deleting Configuration](#346-deleting-configuration)
-     * [3.4.7 Error Handling](#347-error-handling)
+    * [3.4.1 The SetRequest Message](#341-the-setrequest-message)
+    * [3.4.2 The SetResponse Message](#342-the-setresponse-message)
+    * [3.4.3 Transactions](#343-transactions)
+    * [3.4.4 Modes of Update: Replace versus Update](#344-modes-of-update-replace-versus-update)
+    * [3.4.5 Modifying Paths Identified by Attributes](#345-modifying-paths-identified-by-attributes)
+    * [3.4.6 Deleting Configuration](#346-deleting-configuration)
+    * [3.4.7 Error Handling](#347-error-handling)
   * [3.5 Subscribing to Telemetry Updates](#35-subscribing-to-telemetry-updates)
-     * [3.5.1 Managing Subscriptions](#351-managing-subscriptions)
-        * [3.5.1.1 The SubscribeRequest Message](#3511-the-subscriberequest-message)
-        * [3.5.1.2 The SubscriptionList Message](#3512-the-subscriptionlist-message)
-        * [3.5.1.3 The Subscription Message](#3513-the-subscription-message)
-        * [3.5.1.4 The SubscribeResponse Message](#3514-the-subscriberesponse-message)
-        * [3.5.1.5 Creating Subscriptions](#3515-creating-subscriptions)
-           * [3.5.1.5.1 ONCE Subscriptions](#35151-once-subscriptions)
-           * [3.5.1.5.2 STREAM Subscriptions](#35152-stream-subscriptions)
-           * [3.5.1.5.3 POLL Subscriptions](#35153-poll-subscriptions)
-        * [3.5.1.6 Client-defined Aliases within a Subscription](#3516-client-defined-aliases-within-a-subscription)
-     * [3.5.2 Sending Telemetry Updates](#352-sending-telemetry-updates)
-        * [3.5.2.1 Bundling of Telemetry Updates](#3521-bundling-of-telemetry-updates)
-        * [3.5.2.2 Target-defined Aliases within a Subscription](#3522-target-defined-aliases-within-a-subscription)
-        * [3.5.2.3 Sending Telemetry Updates](#3523-sending-telemetry-updates)
-   * [4 Appendix: Current Protobuf Message and Service Specification](#4-appendix-current-protobuf-message-and-service-specification)
-   * [5 Appendix: Current Outstanding Issues/Future Features](#5-appendix-current-outstanding-issuesfuture-features)
-   * [6 Copyright](#6-copyright)
-   * [7 Revision History](#7-revision-history)
-      * [Notes](#notes)
+    * [3.5.1 Managing Subscriptions](#351-managing-subscriptions)
+      * [3.5.1.1 The SubscribeRequest Message](#3511-the-subscriberequest-message)
+      * [3.5.1.2 The SubscriptionList Message](#3512-the-subscriptionlist-message)
+      * [3.5.1.3 The Subscription Message](#3513-the-subscription-message)
+      * [3.5.1.4 The SubscribeResponse Message](#3514-the-subscriberesponse-message)
+      * [3.5.1.5 Creating Subscriptions](#3515-creating-subscriptions)
+        * [3.5.1.5.1 ONCE Subscriptions](#35151-once-subscriptions)
+        * [3.5.1.5.2 STREAM Subscriptions](#35152-stream-subscriptions)
+        * [3.5.1.5.3 POLL Subscriptions](#35153-poll-subscriptions)
+      * [3.5.1.6 Client-defined Aliases within a Subscription](#3516-client-defined-aliases-within-a-subscription)
+    * [3.5.2 Sending Telemetry Updates](#352-sending-telemetry-updates)
+      * [3.5.2.1 Bundling of Telemetry Updates](#3521-bundling-of-telemetry-updates)
+      * [3.5.2.2 Target-defined Aliases within a Subscription](#3522-target-defined-aliases-within-a-subscription)
+      * [3.5.2.3 Sending Telemetry Updates](#3523-sending-telemetry-updates)
+* [4 Appendix: Current Protobuf Message and Service Specification](#4-appendix-current-protobuf-message-and-service-specification)
+* [5 Appendix: Current Outstanding Issues/Future Features](#5-appendix-current-outstanding-issuesfuture-features)
+* [6 Copyright](#6-copyright)
+* [7 Revision History](#7-revision-history)
+  * [Notes](#notes)
 
 # 1 Introduction
 
@@ -134,7 +135,7 @@ The fields of the Notification message are as follows:
     [2.2.2](#222-paths)) included in the `Notification` message. The paths
     expressed within the message are formed by the concatenation of `prefix +
     path`. The `prefix` always precedes the `path` elements. Further semantics
-    of prefixes are described in [2.4.1](#24-1-path-prefixes).
+    of prefixes are described in [2.4.1](#241-path-prefixes).
 *   `alias` - a string providing an alias for the prefix specified within the
     notification message. The encoding of an alias, and the procedure for their
     creation  is described in [2.4.2](#242-path-aliases).
@@ -288,7 +289,7 @@ Several native scalar protobuf types are included in the `TypedValue` message:
 *   `uint64` in the `uint_val` field (used to store all unsigned integer types -
     i.e., `uint8`, `uint16`, `uint32`, `uint64`).
 *   `bool` in the `bool_val` field, used to store boolean values.
-*   `bytes` (see <a href="#232-bytes">2.3.2</a>)
+*   `bytes` (see [2.3.2](#232-bytes))
 *   `float` in the `float_val` field, used to store floating-point values (i.e.,
     `float32`, `float64`).
 
@@ -308,7 +309,7 @@ Additional defined data types include:
       `Decimal64`).
 
 The remaining fields in the `TypedValue` message define structured data types.
-Section <a href="#23-structured-data-types">2.3</a> describes these further.
+Section [2.3](#23-structured-data-types) describes these further.
 
 ## 2.3 Structured data types
 
@@ -320,13 +321,13 @@ type. It should be noted that the target never utilises the `Encoding`
 enumeration to declare to the client the type of encoding utilised, hence the
 client must infer the encoding from the populated `TypedValue` field.
 
-|Name     |Description                                                                                                                                                                                         |`TypedValue` field|`Encoding` Value|
-|---------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------|----------------|
-|JSON     |A JSON encoded string as per [2.3.1](#231-json-and-json_ietf).                                                                                                                                      |`json_val`        |0               |
-|Bytes    |An arbitrary sequence of bytes as per [2.3.2](#232-bytes).                                                                                                                                          |`bytes_val`       |1               |
-|Proto    |A [Protobuf](https://developers.google.com/protocol-buffers/) encoded message using [`protobuf.any`](https://developers.google.com/protocol-buffers/docs/proto3#any), as per [2.3.3](#233-protobuf).|`any_val`         |2               |
-|ASCII    |An ASCII encoded string representing text formatted according to a target-defined convention (described in [Section 2.3.4](#234-ascii)).                                                            |`ascii_val`       |3               |
-|JSON_IETF|A JSON encoded string as per [2.3.1](#231-json-and-json_ietf) using JSON encoding compatible with [RFC 7951](https://tools.ietf.org/html/rfc7951).                                                  |`json_ietf_val`   |4               |
+| Name      | Description                                                                                                                                                                                          | `TypedValue` field | `Encoding` Value |
+| --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ | ---------------- |
+| JSON      | A JSON encoded string as per [2.3.1](#231-json-and-json_ietf).                                                                                                                                       | `json_val`         | 0                |
+| Bytes     | An arbitrary sequence of bytes as per [2.3.2](#232-bytes).                                                                                                                                           | `bytes_val`        | 1                |
+| Proto     | A [Protobuf](https://developers.google.com/protocol-buffers/) encoded message using [`protobuf.any`](https://developers.google.com/protocol-buffers/docs/proto3#any), as per [2.3.3](#233-protobuf). | `any_val`          | 2                |
+| ASCII     | An ASCII encoded string representing text formatted according to a target-defined convention (described in [Section 2.3.4](#234-ascii)).                                                             | `ascii_val`        | 3                |
+| JSON_IETF | A JSON encoded string as per [2.3.1](#231-json-and-json_ietf) using JSON encoding compatible with [RFC 7951](https://tools.ietf.org/html/rfc7951).                                                   | `json_ietf_val`    | 4                |
 
 ### 2.3.1 JSON and JSON_IETF
 
@@ -696,7 +697,7 @@ In order to allow the client to restrict the set of data models to be used when
 interacting with the target, the client MAY discover the set of models that are
 supported by the target using the `Capabilities` RPC described in [Section
 3.2](#32-capability-discovery). For subsequent `Get` and `Subscribe` RPCs, the
-client MAY specify the models to be used by the target.   The set of models to
+client MAY specify the models to be used by the target.  The set of models to
 use is expressed as a `ModelData` message, as specified in [Section
 2.6.1](#261-the-modeldata-message).
 
@@ -729,7 +730,7 @@ Each `ModelData` message contains the following fields:
 *   `version` - the supported (or requested) version of the model, expressed as
     a string which represents the semantic version of the catalog entry.
 
-The combination of `name`,  `organization`, and `version` uniquely identifies an entry in the model catalog.
+The combination of `name`, `organization`, and `version` uniquely identifies an entry in the model catalog.
 
 ## 2.7 Extensions to gNMI
 
@@ -813,7 +814,7 @@ MUST send JSON encoded values (the default encoding).
 The `CapabilityRequest` message is sent by the client to request capability
 information from the target.  The `CapabilityRequest` message carries a single
 repeated `extension` field, which is used as per the definition in [Section
-2.7](#27-gnmi-extensions).
+2.7](#27-extensions-to-gnmi).
 
 ### 3.2.2 The CapabilityResponse message
 
@@ -824,12 +825,12 @@ The `CapabilityResponse` message has the following fields:
     by the target
 *   `supported_encodings` - an enumeration field describing the data encodings
     supported by the target, as described in [Section
-    2.3](#23-encoding-data-in-an-update-message).
+    2.3](#23-structured-data-types).
 *   `gNMI_version` - the semantic version of the gNMI service supported by the
     target, specified as a string. The version should be interpreted as per
     [[OPENCONFIG-SEMVER](http://www.openconfig.net/documentation/semantic-versioning/)].
 *   `extension` - a repeated field to carry gNMI extensions, which is used as
-    per the definition in [Section 2.7](#27-gnmi-extensions).
+    per the definition in [Section 2.7](#27-extensions-to-gnmi).
 
 ## 3.3 Retrieving Snapshots of State Information
 
@@ -858,7 +859,7 @@ message.
 The `GetRequest` message contains the following fields:
 
 *   `prefix` - a path (specified as per [Section 2.2.2](#222-paths)), and used
-    as described in [Section 2.4.1](#24-1-path-prefixes). The prefix is applied
+    as described in [Section 2.4.1](#241-path-prefixes). The prefix is applied
     to all paths within the `GetRequest` message.
 *   `path` - a set of paths (expressed as per [Section 2.2.2](#222-paths)) for
     which the client is requesting a data snapshot from the target. The path
@@ -870,7 +871,7 @@ The `GetRequest` message contains the following fields:
     values for type are described below.
 *   `encoding` - the encoding that the target should utilise to serialise the
     subtree of the data tree requested. The type MUST be one of the encodings
-    specified in [Section 2.3](#23-encoding-data-in-an-update-message). If the
+    specified in [Section 2.3](#23-structured-data-types). If the
     `Capabilities` RPC has been utilised, the client SHOULD use an encoding
     advertised as supported by the target. If the encoding is not specified,
     JSON MUST be used. If the target does not support the specified encoding,
@@ -882,7 +883,7 @@ The `GetRequest` message contains the following fields:
     RPC call. The semantics of the `use_models` field are defined in [Section
     2.6](#26-schema-definition-models).
 *   `extension` - a repeated field to carry gNMI extensions, used as per the
-    definition in [Section 2.7](#27-gnmi-extensions).
+    definition in [Section 2.7](#27-extensions-to-gnmi).
 
 Since the data tree stored by the target may consist of different types of data
 (e.g., values that are operational in nature, such as protocol statistics) - the
@@ -918,7 +919,7 @@ The `GetResponse` message consists of:
     `Notification` message MUST be set to the time at which the target's
     snapshot of the relevant path was taken.
 *   `extension` - a repeated field used to carry gNMI extensions, as per the
-    description in [Section 2.7](#27-gnmi-extensions).
+    description in [Section 2.7](#27-extensions-to-gnmi).
 
 ### 3.3.3 Considerations for using Get
 
@@ -968,7 +969,7 @@ specification in [Section 3.4.7](#347-error-handling). In addition, the status
 of the `SetResponse` message MUST be populated with an error message indicating
 the success or failure of the set of operations within the `SetRequest` message
 (again using the error handling behavior defined in [Section
-3.4.7](#34-7-error-handling)).
+3.4.7](#347-error-handling)).
 
 ### 3.4.1 The SetRequest Message
 
@@ -985,7 +986,7 @@ A `SetRequest` message consists of the following fields:
 *   `update` - A set of `Update` messages indicating elements of the data tree
     whose content is to be updated.
 *   `extension` - a repeated field used to carry gNMI extensions, as per the
-    description in [Section 2.7](#27-gnmi-extensions).
+    description in [Section 2.7](#27-extensions-to-gnmi).
 
 The semantics of "updating" versus "replacing" content are defined in [Section
 3.4.4.](#344-modes-of-update-replace-versus-update)
@@ -998,7 +999,7 @@ new value is required. The `Update` message contains two fields:
 *   `value` - a value encoded as per [Section 2.2.3](#223-node-values)
     indicating the value applied to the specified node. The semantics of how the
     node is updated is dependent upon the context of the update message, as
-    specified in [Section 3.4.4](#34-4-modes-of-update-replace-versus-update).
+    specified in [Section 3.4.4](#344-modes-of-update-replace-versus-update).
 
 ### 3.4.2 The SetResponse Message
 
@@ -1027,7 +1028,7 @@ A `SetResponse` consists of the following fields:
         2.5](#25-error-handling)). This field follows the same rules as the
         status field returned with the `SetResponse` message specified above.
 *   `extension` - a repeated field used to carry gNMI extensions, as per the
-    description in [Section 2.7](#27-gnmi-extensions).
+    description in [Section 2.7](#27-extensions-to-gnmi).
 
 ### 3.4.3 Transactions
 
@@ -1303,13 +1304,13 @@ The fields of the `SubscribeRequest` are as follows:
     *   `poll `- a `Poll` message used to specify (on an existing RPC) that the
         client wishes to receive a polled update for the paths specified within
         the subscription.  The semantics of the `Poll` message are described in
-        [Section 3.5.1.5.3](#3515-3-poll-subscriptions).
+        [Section 3.5.1.5.3](#35153-poll-subscriptions).
     *   `aliases` - used by a client to define (on an existing RPC) a new path
         alias (as described in [Section 2.4.2](#242-path-aliases)). The use of
         the aliases message is described in [Section
-        3.5.1.6](#35-1-6-client-defined-aliases-within-a-subscription).
+        3.5.1.6](#3516-client-defined-aliases-within-a-subscription).
 *   `extension` - a repeated field used to carry gNMI extensions, as per the
-    description in [Section 2.7](#27-gnmi-extensions).
+    description in [Section 2.7](#27-extensions-to-gnmi).
 
 In order to create a new subscription a client MUST initiate a `Subscribe` RPC
 with a `SubscribeRequest` message specifying the `subscribe` field. The
@@ -1345,9 +1346,9 @@ subscription behavior are required. The fields of the message are:
 *   `subscription` - a set of `Subscription` messages that indicate the set of
     paths associated with the subscription list.
 *   `mode` -  the type of subscription that is being created. This may be `ONCE`
-    (described in [3.5.1.5.1](#3515-1-once-subscriptions)); `STREAM` (described
-    in [3.5.1.5.2](#3-5-1-5-2-stream-subscriptions)); or `POLL` (described in
-    [3.5.1.5.3](#3-5-1-5-3-poll-subscriptions)). The default value for the mode
+    (described in [3.5.1.5.1](#35151-once-subscriptions)); `STREAM` (described
+    in [3.5.1.5.2](#35152-stream-subscriptions)); or `POLL` (described in
+    [3.5.1.5.3](#35153-poll-subscriptions)). The default value for the mode
     field is `STREAM`.
 *   `prefix`-  a common prefix that is applied to all paths specified within the
     message as per the definition in [Section 2.4.1](#241-path-prefixes). The
@@ -1382,7 +1383,7 @@ subscription behavior are required. The fields of the message are:
     before proceeding to process poll requests (in the case of `POLL`) or
     closing the RPC (in the case of `ONCE`)."
 *   `extension` - a repeated field used to carry gNMI extensions, as per the
-    description in [Section 2.7](#27-gnmi-extensions).
+    description in [Section 2.7](#27-extensions-to-gnmi).
 
 A client generating a `SubscriptionList` message MUST include the `subscription`
 field - which MUST be a non-empty set of `Subscription` messages, all other
@@ -1425,13 +1426,13 @@ established `Subscribe` RPC. The message contains the following fields:
         3.5.2.3](#3523-sending-telemetry-updates). The `update` field is also
         utilised when a target wishes to create an alias within a subscription,
         as described in [Section
-        3.5.2.2](#3-5-2-2-target-defined-aliases-within-a-subscription).
+        3.5.2.2](#3522-target-defined-aliases-within-a-subscription).
     *   `sync_response`  - a boolean field indicating that all data values
         corresponding to the path(s) specified in the `SubscriptionList` has
         been transmitted at least once, used for `POLL` and `STREAM`
         subscriptions.
 *   `extension` - a repeated field used to carry gNMI extensions, as per the
-    description in [Section 2.7](#27-gnmi-extensions).
+    description in [Section 2.7](#27-extensions-to-gnmi).
 
 #### 3.5.1.5 Creating Subscriptions
 
@@ -1708,7 +1709,7 @@ field set to `true` MUST be generated.
 In the case where the `updates_only` field in the `SubscribeRequest` message has
 been set, a `sync_response` is sent as the first message on the stream, followed
 by any updates representing subsequent changes to current state. For a `POLL` or
-`ONCE` mode, this means that only a `sync_resonse` will be sent. The
+`ONCE` mode, this means that only a `sync_response` will be sent. The
 `updates_only` field allows a client to only watch for changes, e.g. an update
 to configuration.
 
