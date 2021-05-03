@@ -69,7 +69,7 @@ gNMI paths are encoded as an ordered list (slice, array, etc.) of `gnmi.PathElem
   	  elem: <
   		  name: "interfaces"
   	  >
-  	    elem: <
+  	  elem: <
   		  name: "interface"
   		  key: <
   			  key: "name"
