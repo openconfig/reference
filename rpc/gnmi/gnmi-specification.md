@@ -453,6 +453,35 @@ update: <
 >
 ```
 
+For `/a/b[name=b1]`:
+
+```
+update: <
+  path: <
+    elem: <
+      name: "a"
+    >
+    elem: <
+      name: "b"
+      key: <
+        key: "name"
+        value: "b1"
+      >
+    >
+  >
+  val: <
+    json_ietf_val: `{ "b": {
+                        "name": "b1",
+                        "c": {
+                          "d": "AStringValue",
+                          "e": 10042
+                        }
+                   }
+            }`
+  >
+>
+```
+
 For `/a` :
 
 ```
@@ -467,10 +496,10 @@ update: <
                       {
                         "name": "b1",
                         "c": {
-                        "d": "AStringValue",
+                          "d": "AStringValue",
                           "e": 10042
                         }
-                       }
+                      }
                    ]
             }`
   >
@@ -1109,11 +1138,11 @@ array), the following considerations apply:
 
 *   In the case that multiple attribute values are required to uniquely address
     an element - e.g., `/a/f[k1=10][k2=20] `- and a replace or update
-    operation's path specifies  a subset of the attributes (e.g., `/a/f[k1=10]`)
-    then this MUST be considered an error by the target system - and an status
-    code of` InvalidArgument (3)` specified.
+    operation's path specifies a strict subset of the attributes (e.g.,
+    `/a/f[k1=10]`, `/a/f`), then this MUST be considered an error by the target
+    system - and an status code of` InvalidArgument (3)` specified.
 *   Where the path specified refers to a node which itself represents the
-    collection of objects (list, map, or array) a replace operation MUST remove
+    collection of objects (list, map, or array), a replace operation MUST remove
     all collection entries that are not supplied in the value provided in the
     `SetRequest`. An update operation MUST be considered to add new entries to
     the collection if they do not exist.
@@ -1121,6 +1150,11 @@ array), the following considerations apply:
     as their own elements within the data tree, update or replace operations
     that modify instances of the key in conflicting ways MUST be considered an
     error. The target MUST return a status code of `InvalidArgument (3)`.
+*   In OpenConfig, a path which refers to a keyed YANG list node for
+    modification (as opposed to an element of the list node) MUST terminate at
+    the [enclosing
+    container](https://github.com/openconfig/public/blob/master/doc/openconfig_style_guide.md#list)
+    element.
 
 For example, consider a tree corresponding to the examples above, as illustrated
 below.
