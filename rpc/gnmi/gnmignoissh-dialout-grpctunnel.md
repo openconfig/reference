@@ -34,6 +34,8 @@ This is the process by which a tunnel client dials a tunnel server and invokes a
 
 The tunnel server must be network reachable by the tunnel client, and both the tunnel client and tunnel server must be configured with mutually compatible authentication mechanisms.  This document does not aim to enumerate all mechanisms but for illustration, a given implementation should support both insecure TLS with no certificate verification and mTLS with bidirectional certificate verification.  The encryption and verification of the tunnel is completely independent of any encryption, authentication and authorization that happens over a session within the tunnel.
 
+In practice, it is support that a target could support both both dial-in and dial-out by setting up (or connecting to) a tunnel client and a tunnel server at the same time. 
+
 The requirement for encrypted transport (TLS or mTLS) implies that if a tunnel session carries a gNMI RPC or ssh there will be double encryption, once at the tunnel layer and a second at the gNMI API layer.  While it may be tempting to run the tunnel without encryption, doing so would eliminate the ability to perform authentication at the tunnel level, which is not recommended. Removing encryption at the API layer, such as gNMI or SSH, when carried over an encrypted tunnel is also not suggested as this breaks end-to-end authentication of the API client which is also not recommended. Without delving into a host of security concerns, we recommend that strong authentication and encryption be used both at the tunnel level and any API carried over the tunnel.
 
 ## Target registration
@@ -68,7 +70,7 @@ This final case is a special case of the tunnel client to tunnel server session 
 ![](img/tunnelclienttotunnelclient.png)
 
 ## Target subscription
-A tunnel client has the option of getting a subscription of all targets registered with the tunnel.  After the Tunnel is established, a tunnel client sends a Subscribe message (optionally specifying a target type) and receives a stream of Target messages from the tunnel server for all currently registered targets followed by a Subscribe accept.  Future target additions that match the subscription type will be forwarded to the tunnel client as Target messages at the time they are added.
+A tunnel client has the option of getting a subscription of all targets registered with the tunnel.  After the Tunnel is established, a tunnel client sends a Subscribe message (optionally specifying a target type) and receives a stream of Target messages from the tunnel server for all currently registered targets followed by a Subscribe accept.  Future target additions that match the subscription type will be forwarded to the tunnel client as Target messages at the time they are added. This can be useful when the tunnel client is acting as a gNMI target in the Tunnel client to tunnel client session establishment case, so it can discovery available relays.
 
 # Select deployment use cases
 ## Dial-out gNMI collector
@@ -83,7 +85,7 @@ This option is available to a target implementer that wants to leverage the tunn
 
 ![](img/grpctunnelclient_standalone.png)
 
-The grpctunnel repository has an [example tunnel client application](http://github.com/openconfig/grpctunnel/tree/master/cmd) that can be configured to perform this task by connecting to a remote tunnel server and redirecting incoming sessions over a TCP connection dialed from the tunnel client to the local gNMI server.
+The grpctunnel repository has an [example tunnel client application](https://github.com/openconfig/gnmi/tree/master/cmd/gnmi_collector) that can be configured to perform this task by connecting to a remote tunnel server and redirecting incoming sessions over a TCP connection dialed from the tunnel client to the local gNMI server.
 
 ### Target-side gNMI tunnel client embedded within a gNMI server
 This option provides a means to deploy the tunnel client as a library within an application that hosts a gNMI server. In this example, a single binary acts as both the gNMI server and the tunnel client.  A tunnel listener is installed in parallel to the TCP listener in the gRPC service for gNMI.
