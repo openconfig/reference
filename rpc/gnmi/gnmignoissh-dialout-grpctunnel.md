@@ -53,6 +53,7 @@ The diagram below shows the call flow of the tunnel establishment. It uses a
 standalone tunenl server for the purpose illustration. Alternative deployment will be discussed in more details in [Select deployment use cases](#select-deployment-use-cases). Here each network device (gNMI server or target device) will establish a gRPC tunnel with the tunnel server by finishing the registration step. After that, the network devices will communicate as if they were directly connected.
 
 ![](img/grpctunnel-client-to-server-detail.png)
+
 ## Tunnel session establishment
 Once a tunnel is established between a tunnel client and tunnel server, the persistent bidirectional Registration RPC can be used to request a new gRPC session be established between the tunnel client and tunnel server to carry an arbitrary TCP session. There are three different ways a session can be established which are enumerated below.  In all cases, the session is established only to targets previously registered on the tunnel server, either by the tunnel server itself, or by one of its tunnel clients.
 
