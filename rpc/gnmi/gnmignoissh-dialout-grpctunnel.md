@@ -34,7 +34,7 @@ This is the process by which a tunnel client dials a tunnel server and invokes a
 
 The tunnel server must be network reachable by the tunnel client, and both the tunnel client and tunnel server must be configured with mutually compatible authentication mechanisms.  This document does not aim to enumerate all mechanisms but for illustration, a given implementation should support both insecure TLS with no certificate verification and mTLS with bidirectional certificate verification.  The encryption and verification of the tunnel is completely independent of any encryption, authentication and authorization that happens over a session within the tunnel.
 
-In practice, it is support that a target could support both both dial-in and dial-out by setting up (or connecting to) a tunnel client and a tunnel server at the same time. 
+In practice, it is support that a gNMI could support both both dial-in and dial-out at the same time. It can accept connection via TCP over the tunnel, or dial the target via TCP over the local interface.
 
 The requirement for encrypted transport (TLS or mTLS) implies that if a tunnel session carries a gNMI RPC or ssh there will be double encryption, once at the tunnel layer and a second at the gNMI API layer.  While it may be tempting to run the tunnel without encryption, doing so would eliminate the ability to perform authentication at the tunnel level, which is not recommended. Removing encryption at the API layer, such as gNMI or SSH, when carried over an encrypted tunnel is also not suggested as this breaks end-to-end authentication of the API client which is also not recommended. Without delving into a host of security concerns, we recommend that strong authentication and encryption be used both at the tunnel level and any API carried over the tunnel.
 
@@ -49,6 +49,10 @@ Specifically, the target_id is not prescribed, but should be unique in a given d
 
 The target_type field, although flexible, is used in conjunction with target_id to differentiate among multiple protocols supported for the same target.  It is a string to allow for arbitrary TCP protocols to be supported over the tunnel.  However, standard protocols are explicitly included in the tunnel Protocol enum, (e.g. GNMI_GNOI, SSH), and the string value for that enumeration can be reliably used on both tunnel clients and tunnel servers.
 
+The diagram below shows the call flow of the tunnel establishment. It uses a 
+standalone tunenl server for the purpose illustration. Alternative deployment will be discussed in more details in [Select deployment use cases](#select-deployment-use-cases). Here each network device (gNMI server or target device) will establish a gRPC tunnel with the tunnel server by finishing the registration step. After that, the network devices will communicate as if they were directly connected.
+
+![](img/grpctunnel-client-to-server-detail.png)
 ## Tunnel session establishment
 Once a tunnel is established between a tunnel client and tunnel server, the persistent bidirectional Registration RPC can be used to request a new gRPC session be established between the tunnel client and tunnel server to carry an arbitrary TCP session. There are three different ways a session can be established which are enumerated below.  In all cases, the session is established only to targets previously registered on the tunnel server, either by the tunnel server itself, or by one of its tunnel clients.
 
