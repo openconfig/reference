@@ -1434,6 +1434,11 @@ established `Subscribe` RPC. The message contains the following fields:
 *   `extension` - a repeated field used to carry gNMI extensions, as per the
     description in [Section 2.7](#27-extensions-to-gnmi).
 
+`SubscribeResponse` messages with the `update` field set to a `Notification`
+message are not guaranteed to be sent in timestamp order. This allows congestion
+management schemes to provide the most recent data while avoiding starving any
+particular path.
+
 #### 3.5.1.5 Creating Subscriptions
 
 ##### 3.5.1.5.1 ONCE Subscriptions
