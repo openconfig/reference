@@ -1402,10 +1402,10 @@ the current data tree on the server. While the path within the subscription
 SHOULD be a valid path within the set of schema modules that the target
 supports, subscribing to any syntactically valid path within such modules MUST
 be allowed. In the case that a particular path does not (yet) exist, the target
-would send just a `sync_response` for `ONCE` and `POLL` subscriptions, but MUST
-NOT close the RPC for `STREAM` subscriptions, and instead should continue to
-monitor for the existence of the path, and transmit telemetry updates should it
-exist in the future.
+would send a `sync_response` as the very first message to indicate this, and in
+the case of `STREAM` subscriptions, MUST NOT close the RPC, and instead should
+continue to monitor for the existence of the path, and transmit telemetry
+updates should it exist in the future.
 
 <!-- TODO(robjs): Need a way to be able to send this information. Previously
 said:
