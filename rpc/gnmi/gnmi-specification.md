@@ -26,7 +26,6 @@ January 30, 2018
     * [2.3.4 ASCII](#234-ascii)
   * [2.4 Use of Data Schema Paths](#24-use-of-data-schema-paths)
     * [2.4.1 Path Prefixes](#241-path-prefixes)
-    * [2.4.2 Path Aliases](#242-path-aliases)
     * [2.4.3 Interpretation of Paths Used in RPCs](#243-interpretation-of-paths-used-in-rpcs)
   * [2.5 Error handling](#25-error-handling)
   * [2.6 Schema Definition Models](#26-schema-definition-models)
@@ -59,10 +58,8 @@ January 30, 2018
         * [3.5.1.5.1 ONCE Subscriptions](#35151-once-subscriptions)
         * [3.5.1.5.2 STREAM Subscriptions](#35152-stream-subscriptions)
         * [3.5.1.5.3 POLL Subscriptions](#35153-poll-subscriptions)
-      * [3.5.1.6 Client-defined Aliases within a Subscription](#3516-client-defined-aliases-within-a-subscription)
     * [3.5.2 Sending Telemetry Updates](#352-sending-telemetry-updates)
       * [3.5.2.1 Bundling of Telemetry Updates](#3521-bundling-of-telemetry-updates)
-      * [3.5.2.2 Target-defined Aliases within a Subscription](#3522-target-defined-aliases-within-a-subscription)
       * [3.5.2.3 Sending Telemetry Updates](#3523-sending-telemetry-updates)
 * [4 Appendix: Current Protobuf Message and Service Specification](#4-appendix-current-protobuf-message-and-service-specification)
 * [5 Appendix: Current Outstanding Issues/Future Features](#5-appendix-current-outstanding-issuesfuture-features)
@@ -136,9 +133,6 @@ The fields of the Notification message are as follows:
     expressed within the message are formed by the concatenation of `prefix +
     path`. The `prefix` always precedes the `path` elements. Further semantics
     of prefixes are described in [2.4.1](#241-path-prefixes).
-*   `alias` - a string providing an alias for the prefix specified within the
-    notification message. The encoding of an alias, and the procedure for their
-    creation  is described in [2.4.2](#242-path-aliases).
 *   `update` - a list of update messages that indicate changes in the underlying
     data of the target. Both modification and creation of data is expressed
     through the update message.
@@ -574,30 +568,6 @@ notification: <
   >
 >
 ```
-
-### 2.4.2 Path Aliases
-
-In some cases, a client or target MAY desire to utilise aliases for a particular
-path - such that subsequent messages can be compressed by utilising the alias,
-rather than using a complete representation of the path. Doing so reduces total
-message length, by ensuring that redundant information can be removed.
-
-Support for path aliases MAY be provided by a target. In a case where a target
-does not support aliases, the maximum message length SHOULD be considered,
-especially in terms of bandwidth utilisation, and the efficiency of message
-generation.
-
-A path alias is encoded as a string. In order to avoid valid data paths clashing
-with aliases (e.g., `a` in the above example), an alias name MUST be prefixed
-with a `#` character.
-
-The means by which an alias is created is defined on a per-RPC basis. In order
-to delete an alias, the alias name is sent with the path corresponding to the
-alias empty.
-
-Aliases MUST be specified as a fully expanded path, and hence MUST NOT reference
-other aliases within their definition, such that a single alias lookup is
-sufficient to resolve the absolute path.
 
 ### 2.4.3 Interpretation of Paths Used in RPCs
 
@@ -1305,10 +1275,6 @@ The fields of the `SubscribeRequest` are as follows:
         client wishes to receive a polled update for the paths specified within
         the subscription.  The semantics of the `Poll` message are described in
         [Section 3.5.1.5.3](#35153-poll-subscriptions).
-    *   `aliases` - used by a client to define (on an existing RPC) a new path
-        alias (as described in [Section 2.4.2](#242-path-aliases)). The use of
-        the aliases message is described in [Section
-        3.5.1.6](#3516-client-defined-aliases-within-a-subscription).
 *   `extension` - a repeated field used to carry gNMI extensions, as per the
     description in [Section 2.7](#27-extensions-to-gnmi).
 
@@ -1353,10 +1319,6 @@ subscription behavior are required. The fields of the message are:
 *   `prefix`-  a common prefix that is applied to all paths specified within the
     message as per the definition in [Section 2.4.1](#241-path-prefixes). The
     default prefix is null.
-*   `use_aliases`- a boolean flag indicating whether the client accepts target
-    aliases via the subscription RPC. In the case that such aliases are
-    accepted, the logic described in [Section 2.4.2](#242-path-aliases) is
-    utilised.  By default, path aliases created by the target are not supported.
 *   `qos` - a field describing the packet marking that is to be utilised for the
     responses to the subscription that is being created. This field has a single
     sub-value, `marking`, which indicates the DSCP value as a 32-bit unsigned
@@ -1423,10 +1385,7 @@ established `Subscribe` RPC. The message contains the following fields:
     be specified per `SubscribeResponse` message:
     *   `update` - a `Notification` message providing an update value for a
         subscribed data entity as described in [Section
-        3.5.2.3](#3523-sending-telemetry-updates). The `update` field is also
-        utilised when a target wishes to create an alias within a subscription,
-        as described in [Section
-        3.5.2.2](#3522-target-defined-aliases-within-a-subscription).
+        3.5.2.3](#3523-sending-telemetry-updates). 
     *   `sync_response`  - a boolean field indicating that all data values
         corresponding to the path(s) specified in the `SubscriptionList` has
         been transmitted at least once, used for `POLL` and `STREAM`
@@ -1526,68 +1485,6 @@ message. On reception of such a message, the target MUST generate updates for
 all the corresponding paths within the `SubscriptionList`. Updates MUST be
 generated according to [Section 3.5.2.3](#3523-sending-telemetry-updates).
 
-#### 3.5.1.6 Client-defined Aliases within a Subscription
-
-When a client wishes to create an alias that a target should use for a path, the
-client should send a `SubscribeRequest` message specifying the `aliases` field.
-The `aliases` field consists of an `AliasList` message. An `AliasList` specifies
-a list of aliases, each of which consists of:
-
-*   `path` - the target path for the alias - encoded as per [Section
-    2.2.2](#222-paths).
-*   `alias` - the (client-defined) alias for the path, encoded as per [Section
-    2.4.2](#242-path-aliases).
-
-Where a target is unable to support a client-defined alias it SHOULD respond
-with a `SubscribeResponse` message with the status code indicating an error of
-the following types:
-
-*   `InvalidArgument (3)` where the specified alias is not acceptable to the
-    target.
-*   `AlreadyExists (6)` where the alias defined is a duplicate of an existing
-    alias for the client.
-*   `ResourceExhausted (8)` where the target has insufficient memory or
-    processing resources to support the alias.
-*   `Unknown (2)` in all other cases.
-
-Thus, for a client to create an alias corresponding to the path`
-/a/b/c/d[id=10]/e` with the name `shortPath`, it sends a `SubscribeRequest`
-message with the following fields specified:
-
-```
-subscriberequest: <
-  aliases: <
-    alias: <
-      path: <
-        elem: <
-          name: "a"
-        >
-        elem: <
-          name: "b"
-        >
-        elem: <
-          name: "c"
-        >
-        elem: <
-          name: "d"
-          key: <
-            name: "id"
-            value: "10"
-          >
-        elem: <
-          name: "e"
-        >
-      >
-      alias: "#shortPath"
-    >
-  >
->
-```
-
-If the alias is acceptable to the target, subsequent updates are transmitted
-using the `#shortPath` alias in the same manner as described in [Section
-3.5.2.2](#3522-target-defined-aliases-within-a-subscription).
-
 ### 3.5.2 Sending Telemetry Updates
 
 #### 3.5.2.1 Bundling of Telemetry Updates
@@ -1610,75 +1507,6 @@ configuration of the gNMI service. Additionally, a target SHOULD provide means
 by which the operator can control the maximum number of updates that are to be
 bundled into a single message,  This configuration is expected to be implemented
 out-of-band to the gNMI protocol itself.
-
-#### 3.5.2.2 Target-defined Aliases within a Subscription
-
-Where the `use_aliases` field of a `SubscriptionList` message has been set to
-`true`, a target MAY create aliases for paths within a subscription. A
-target-defined alias MUST be created separately from an update to the
-corresponding data item(s).
-
-To create a target-defined alias, a `SubscribeResponse` message is generated
-with the `update` field set to a `Notification` message. The `Notification`
-message specifies the aliased path within the `prefix` field, and a non-null
-`alias` field, specified according to [Section 2.4.2](#242-path-aliases).
-
-Thus, a target wishing to create an alias relating to the path `/a/b/c[id=10]`
-and subsequently update children of the `c[id=10] `entity must:
-
-*  Generate a `SubscribeResponse` message and transmit it over the RPC to the
-   client:
-
-```
-subscriberesponse: <
-  update: <
-    timestamp: (timestamp)
-    prefix: <
-      elem: <
-        name: "a"
-      >
-      elem: <
-        name: "b"
-      >
-      elem: <
-        name: "c"
-        key: <
-          name: "id"
-          value: "10"
-        >
-      >
-    >
-    alias: "#42"
-  >
->
-```
-
-* Subsequently, this alias can be used to provide updates for the `child1` leaf
-  corresponding to `/a/b/c[id=10]/child1`:
-
-```
-subscriberesponse: <
-  update: <
-    timestamp: (timestamp)
-    prefix: <
-      element: "#42"
-    >
-    update: <
-      path: <
-        elem: <
-          name: "child1"
-        >
-      >
-      value: <
-        val: <
-          int_val: 32
-        >
-      >
-    >
-  >
->
-```
-
 
 #### 3.5.2.3 Sending Telemetry Updates
 
