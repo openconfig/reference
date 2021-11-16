@@ -1475,10 +1475,6 @@ with one of the following `modes`:
       for all paths that match the subscription path(s), and transmit them.
       Following this initial set of updates, updated values SHOULD only be
       transmitted when their value changes.
-    * A heartbeat interval MAY be specified along with an "on change"
-      subscription - in this case, the value of the data item(s) MUST be re-sent
-      once per heartbeat interval regardless of whether the value has changed or
-      not.
 *   **Sampled (`SAMPLE`)** - a subscription that is defined to be sampled MUST
     be specified along with a `sample_interval` encoded as an unsigned 64-bit
     integer representing nanoseconds between samples.  The value of the data
@@ -1498,11 +1494,6 @@ with one of the following `modes`:
         `d` branching from the `b` node - if the value of `c` has changed, but
         `d` remains unchanged, an update for `d` MUST NOT be generated, whereas
         an update for `c` MUST be generated.
-    *   A `heartbeat_interval` MAY be specified to modify the behavior of
-        `suppress_redundant` in a sampled subscription.  In this case, the
-        target MUST generate one telemetry update  per heartbeat interval,
-        regardless of whether the `suppress_redundant` flag is set to `true`.
-        This value is specified as an unsigned 64-bit integer in nanoseconds.
 *   **Target Defined `(TARGET_DEFINED)`** - when a client creates a subscription
     specifying the target defined mode, the target MUST determine the best type
     of subscription to be created on a per-leaf basis. That is to say, if the
