@@ -1,7 +1,7 @@
 # gNMI/gNOI/ssh dial-out via grpctunnel
 
 **Contributors**:
-Carl Lebsack
+Carl Lebsack, Johnson Xu
 
 - [gNMI/gNOI/ssh dial-out via grpctunnel](#gnmignoissh-dial-out-via-grpctunnel)
 - [Introduction](#introduction)
