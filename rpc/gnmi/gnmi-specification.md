@@ -346,7 +346,8 @@ For any JSON encoding:
     required, and a bare JSON value is included).
 *   Where the data item referred to has child nodes, the `val` field contains a
     serialised JSON entity (object or array) corresponding to the referenced
-    item.
+    item.  The serialization MUST follow the methods and fields in the 
+    Subscribe RPC in [Section 3.5.1](#351-managing-subscriptions).
 
 Using the following example data tree:
 
@@ -1603,10 +1604,10 @@ affecting the sample accuracy and freshness to the client, and as a result, on
 the client's ability to react to events on the target.
 
 Since it is not possible for the target to infer whether its clients are
-sensitive to the latency introduced by bundling, if a target implements
-optimizations such that multiple `Update` messages are bundled together,
-it MUST provide an ability to disable this functionality within the
-configuration of the gNMI service. Additionally, a target SHOULD provide means
+sensitive to the latency introduced by bundling, the target MUST follow the
+`SubscriptionList` fields in [Section 3.5.1.2](#3512-the-subscriptionlist-message)
+that indicate if `allow_aggregation` is permitted. 
+Additionally, a target SHOULD provide means
 by which the operator can control the maximum number of updates that are to be
 bundled into a single message,  This configuration is expected to be implemented
 out-of-band to the gNMI protocol itself.
