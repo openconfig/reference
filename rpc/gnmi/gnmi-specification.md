@@ -1429,7 +1429,7 @@ established `Subscribe` RPC. The message contains the following fields:
         3.5.2.2](#3522-target-defined-aliases-within-a-subscription).
     *   `sync_response`  - a boolean field indicating that all data values
         corresponding to the path(s) specified in the `SubscriptionList` has
-        been transmitted at least once, used for `POLL` and `STREAM`
+        been transmitted at least once, used for `ONCE`, `POLL` and `STREAM`
         subscriptions.
 *   `extension` - a repeated field used to carry gNMI extensions, as per the
     description in [Section 2.7](#27-extensions-to-gnmi).
