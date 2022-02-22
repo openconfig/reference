@@ -4,10 +4,10 @@
 Paul Borman, Marcus Hines, Carl Lebsack, Chris Morrow, Anees Shaikh, Rob Shakir
 
 **Date:**
-January 30, 2018
+February 22, 2022
 
 **Version:**
-0.6.0
+0.8.0
 
 # Table of Contents
 
@@ -963,13 +963,9 @@ message. For each operation specified in the `SetRequest` message, an
 `UpdateResult` message MUST be included in the response field of the
 `SetResponse`. The order in which the operations are applied MUST be maintained
 such that `UpdateResult` messages can be correlated to the `SetRequest`
-operations. In the case of a failure of an operation, the status of the
-`UpdateResult` message MUST be populated with error information as per the
-specification in [Section 3.4.7](#347-error-handling). In addition, the status
-of the `SetResponse` message MUST be populated with an error message indicating
-the success or failure of the set of operations within the `SetRequest` message
-(again using the error handling behavior defined in [Section
-3.4.7](#347-error-handling)).
+operations. In the case of any update failing to be applied, the error
+handling behaviours described in [Section 3.4.7](#347-error-handling) must be
+followed.
 
 ### 3.4.1 The SetRequest Message
 
@@ -1162,28 +1158,16 @@ exist, these deletes MUST be silently accepted.
 
 ### 3.4.7 Error Handling
 
-When a client issues a `SetRequest`, and the target is unable to apply the
-specified changes, an error status MUST be reported to the client. The error is
-specified in multiple places:
+When a client issues a `SetRequest`, the status returned by the target as a part
+of the RPC response (see
+[the gRPC error handing guide](https://www.grpc.io/docs/guides/error/)) is used
+to indicate the success or failure of the `Set` transaction to the device.
 
-*   The status returned with the `SetResponse` message indicates the completion
-    status of the entire transaction.
-*   With a `UpdateResult` message, where the message field indicates the
-    completion status of the individual operation.
-
-The RPC status supplied with the `SetResponse` message MUST reflect the overall
-result of the transaction.
-
-In the case that any operation within the `SetRequest` message fails, then (as
-per [Section 3.4.3](#343-transactions)), the target MUST NOT apply any of the
-specified changes, and MUST consider the transaction as failed. The target
-SHOULD set the status code of the `SetResponse` message to `Aborted (10)`, along
-with an appropriate error message, and MUST set the `message` field of the
-`UpdateResult` corresponding to the failed operation to an `Error` message
-indicating failure.  In the case that the processed operation is not the only
-operation within the `SetRequest` the target MUST set the `message` field of the
-`UpdateResult` messages for all other operations, setting the code field to
-`Aborted (10)`.
+The RPC status response returned is indicative of the success or failure of
+the entire `SetRequest` such that if the `OK` status code is returned all
+operations within the request MUST have succeded. If the target returns a
+non-`OK` response, it indicates that the entire `Set` operation has failed, and
+MUST NOT apply any of the specified changes.
 
 For the operation that the target is unable to process, the code indicated in
 the status message returned within the RPC response MUST be set to a specific
@@ -1207,9 +1191,9 @@ canonical gRPC error codes:
     invalid value within the `Update` message specified - `InvalidArgument (3)`.
     This error SHOULD be used in cases where the payload specifies scalar values
     that do not correspond to the correct schema type.
-* When the client specifies a payload utilising an encoding that is not
-  supported by the target (e.g., JSON) - `Unimplemented (12)` SHOULD be used to
-  indicate that the encoding is not supported.
+*   When the client specifies a payload utilising an encoding that is not
+    supported by the target (e.g., JSON) - `Unimplemented (12)` SHOULD be used to
+    indicate that the encoding is not supported.
 
 ## 3.5 Subscribing to Telemetry Updates
 
