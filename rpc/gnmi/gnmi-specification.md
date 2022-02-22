@@ -1010,9 +1010,6 @@ A `SetResponse` consists of the following fields:
 *   `response`  - containing a list of responses, one per operation specified
     within the `SetRequest` message. Each response consists of an `UpdateResult`
     message with the following fields:
-    *   `timestamp` - a timestamp (encoded as per [Section
-        2.2.1](#221-timestamps)) at which the set request message was accepted
-        by the system.
     *   `path` - the path (encoded as per [Section 2.2.2](#222-paths)) specified
         within the `SetRequest`. In the case that a common prefix was not used
         within the `SetRequest`, the target MAY specify a `prefix` to reduce
@@ -1023,6 +1020,8 @@ A `SetResponse` consists of the following fields:
     *   `message` - a status message (as specified in [Section
         2.5](#25-error-handling)). This field follows the same rules as the
         status field returned with the `SetResponse` message specified above.
+*   `timestamp` - the time at which the `Set` operation was applied to the
+    target's data tree expressed in nanoseconds since the Unix epoch.
 *   `extension` - a repeated field used to carry gNMI extensions, as per the
     description in [Section 2.7](#27-extensions-to-gnmi).
 
@@ -1675,7 +1674,9 @@ associated with the subscription. The `update` field of the message contains a
 that is being updated was collected from the underlying data source, or the
 event being reported on (in the case of `ON_CHANGE` occurred).
 
-Where a leaf node's value has changed, or a new node has been created, an `Update` message specifying the path and value for the updated data item MUST be appended to the `update` field of the message.
+Where a leaf node's value has changed, or a new node has been created, an
+`Update` message specifying the path and value for the updated data item MUST be
+appended to the `update` field of the message.
 
 Where a node within the subscribed paths has been removed, the `delete` field of
 the `Notification` message MUST have the path of the node that has been removed
@@ -1716,7 +1717,7 @@ The latest Protobuf IDL gNMI specification is found in GitHub at
 # 6 Copyright
 
 ```
-Copyright 2016 Google Inc.
+Copyright 2016 The OpenConfig Contributors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -1732,6 +1733,11 @@ limitations under the License
 ```
 
 # 7 Revision History
+
+* v0.8.0: February 22, 2022
+  * Remove references to the `error` fields within the `SetResponse` and
+    `UpdateResult`. gNMI uses the standard gRPC error mode.
+  * Add clarification of the `timestamp` field in the `SetResponse`.
 
 * v0.6.0: January 25, 2018
   * Add `extension` fields to the top-level RPCs of the gNMI service.
