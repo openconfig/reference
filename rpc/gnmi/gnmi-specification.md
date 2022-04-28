@@ -289,10 +289,10 @@ Several native scalar protobuf types are included in the `TypedValue` message:
     i.e., `uint8`, `uint16`, `uint32`, `uint64`).
 *   `bool` in the `bool_val` field, used to store boolean values.
 *   `bytes` (see [2.3.2](#232-bytes))
-*   `float` in the `float_val` field, used to store floating-point values (i.e.,
+*   `float` in the `double_val` field, used to store floating-point values (i.e.,
     `float32`, `float64`).
   * Note: All values referenced as Decimal64 in any models should also be
-    encoded as float_val when PROTO encoding is requested. Direct support of
+    encoded as double_val when PROTO encoding is requested. Direct support of
     [Decimal64 has been deprecated](http://github.com/openconfig/reference/master/rpc/decimal64-deprecation.md).
 
 Additional defined data types include:
@@ -1737,6 +1737,11 @@ limitations under the License
 ```
 
 # 7 Revision History
+
+* v0.7.0: April 28, 2022
+  * Add 'double_val' in TypedValue message to replace both 'float_val' and
+    decimal64_val.
+  * Clarify format of responses when PROTO encoding is selected.
 
 * v0.6.0: January 25, 2018
   * Add `extension` fields to the top-level RPCs of the gNMI service.
