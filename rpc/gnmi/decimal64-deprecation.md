@@ -1,13 +1,13 @@
 ## Proposal to deprecate Decimal64 in gNMI
 
-**Updated**: November 2, 2021
+**Updated**: April 28, 2022
 **Author**: Carl Lebsack
 
 ### Proposal
 
 Deprecate and schedule removal of the Decimal64 message from gNMI and stipulate
 all Decimal64 values in the OpenConfig models be delivered as
-gNMI.TypedValue.float_val.
+gNMI.TypedValue.double_val.
 
 ### Why is Decimal64 present today?
 
@@ -104,10 +104,10 @@ native float type is used directly.
 
 On an Intel Xeon W-2135 @ 3.7GHz
 
-|                      | Float       | Decimal64   |
-| BenchmarkEncode+Rand | 486.3 ns/op | 759.4 ns/op |
-| BenchmarkRand        | 14.55 ns/op | 12.03 ns/op |
-| BenchmarkEncode only | 471.8 ns/op | 747.4 ns/op |
+|                      | Double      | Decimal64   |
+| BenchmarkEncode+Rand | 432.8 ns/op | 615.5 ns/op |
+| BenchmarkRand        | 13.2 ns/op  | 12.6  ns/op |
+| BenchmarkEncode only | 419.6 ns/op | 602.9 ns/op |
 
 ```go
 package decimal64
@@ -121,10 +121,10 @@ import (
 	pb "github.com/openconfig/gnmi/proto/gnmi/gnmi_go_proto"
 )
 
-func BenchmarkFloatVal(b *testing.B) {
+func BenchmarkDoubleVal(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		f := rand.Float32()
-		t := &pb.TypedValue{Value: &pb.TypedValue_FloatVal{FloatVal: f}}
+		f := rand.Float64()
+		t := &pb.TypedValue{Value: &pb.TypedValue_DoubleVal{DoubleVal: f}}
 		_, err := proto.Marshal(t)
 		if err != nil {
 			b.Fatalf("marshal error: %v", err)
@@ -132,9 +132,9 @@ func BenchmarkFloatVal(b *testing.B) {
 	}
 }
 
-func BenchmarkRandFloat32(b *testing.B) {
+func BenchmarkRandFloat64(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		rand.Float32()
+		rand.Float64()
 	}
 }
 
@@ -161,8 +161,8 @@ func BenchmarkRandInt63(b *testing.B) {
 Another significant inefficiency of the use of Decimal64 is one of inter-
 organizational human communication. The gNMI specification and Protocol Buffer
 definition include two ways of rendering fractional values, Decimal64 and
-float_val.  Because of this, we have some vendors using one or the other or both
+double_val.  Because of this, we have some vendors using one or the other or both
 methods for various paths.  Downstream clients need to handle both cases and
 convert Decimal64 to float where it appears.  There is often the question of,
 “What matches the official OpenConfig schema”.  The goal of this proposal is to
-codify that answer as float_val for gNMI.
+codify that answer as double_val for gNMI.
