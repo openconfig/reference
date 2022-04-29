@@ -50,7 +50,7 @@ decimal encoding is used for financial transactions because binary fractions
 have no precise representations of many decimal values, e.g. 0.1, and therefore
 can introduce error in computations where precise decimal rounding is required.
 
-Because the source of modeled data originates from ADC hardware, which
+Where the source of modeled data originates from ADC hardware, which
 themselves are subject to error and noise in their least significant bits, there
 is no need for precise rounding even in binary, let alone decimal.
 Additionally, often ADC are chosen based on cost with only as many bits as
