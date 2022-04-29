@@ -33,7 +33,7 @@ fundamentally binary because they originate from
 (ADC) whereby a continuous analog signal, such as the laser power in an optical
 transceiver, is discretized into a digital binary representation. This means
 that despite the fact that we may render the outputs in a decimal form when
-presenting a human readable output, the data itself is binary.
+presenting a human readable output, the data itself is binary. It would likely have been preferable to use a native floating point typedef (such as the `ieeefloat32` typedef that was defined within `openconfig-types`) as opposed to `decimal64`. The continued use of `decimal64` is primarily for backwards-compatibility reasons.
 
 Further, it is expected that a majority of clients using this data will
 ultimately be using binary floating point representation and Decimal64 is simply
