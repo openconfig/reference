@@ -5,7 +5,7 @@
 
 ### Decision
 
-Deprecate and schedule removal of the Decimal64 message from gNMI and stipulate
+This document details the proposal (and decision, once approved) to deprecate and schedule removal of the Decimal64 message from gNMI and stipulate
 all Decimal64 values in the OpenConfig models be delivered as
 gNMI.TypedValue.double_val.
 
