@@ -163,6 +163,6 @@ organizational human communication. The gNMI specification and Protocol Buffer
 definition include two ways of rendering fractional values, Decimal64 and
 double_val.  Because of this, we have some vendors using one or the other or both
 methods for various paths.  Downstream clients need to handle both cases and
-convert Decimal64 to float where it appears.  There is often the question of,
+convert Decimal64 to double where it appears.  There is often the question of,
 “What matches the official OpenConfig schema”.  The goal of this proposal is to
 codify that answer as double_val for gNMI.
