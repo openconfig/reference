@@ -4,10 +4,10 @@
 Paul Borman, Marcus Hines, Carl Lebsack, Chris Morrow, Anees Shaikh, Rob Shakir
 
 **Date:**
-January 30, 2018
+April 28, 2022
 
 **Version:**
-0.6.0
+0.8.0
 
 # Table of Contents
 
@@ -1738,10 +1738,13 @@ limitations under the License
 
 # 7 Revision History
 
-* v0.7.0: April 28, 2022
+* v0.8.0: April 28, 2022
   * Add 'double_val' in TypedValue message to replace both 'float_val' and
     decimal64_val.
   * Clarify format of responses when PROTO encoding is selected.
+
+* v0.7.0: May 22, 2018
+  * Add 'atomic' boolean option to Notification message.
 
 * v0.6.0: January 25, 2018
   * Add `extension` fields to the top-level RPCs of the gNMI service.
