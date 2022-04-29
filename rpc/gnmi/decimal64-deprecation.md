@@ -27,13 +27,13 @@ encoding of the Decimal64 type. Before enumerating some of the inefficiencies in
 practical use, we’ll start with a brief discussion of the ultimate source of the
 data being modeled and the inappropriateness of Decimal64 for encoding.
 
-All values within the OpenConfig models using the YANG Decimal64 type are
+All values within the OpenConfig models that currently use the YANG Decimal64 type are
 fundamentally binary because they originate from
 [Analog to Digital Converters](https://en.wikipedia.org/wiki/Analog-to-digital_converter)
 (ADC) whereby a continuous analog signal, such as the laser power in an optical
 transceiver, is discretized into a digital binary representation. This means
 that despite the fact that we may render the outputs in a decimal form when
-presenting a human readable output, the data itself is binary.
+presenting a human readable output, the data itself is binary. It would likely have been preferable to use a native floating point typedef (such as the `ieeefloat32` typedef that was defined within `openconfig-types`) as opposed to `decimal64`. The continued use of `decimal64` is primarily for backwards-compatibility reasons.
 
 Further, it is expected that a majority of clients using this data will
 ultimately be using binary floating point representation and Decimal64 is simply
@@ -50,7 +50,7 @@ decimal encoding is used for financial transactions because binary fractions
 have no precise representations of many decimal values, e.g. 0.1, and therefore
 can introduce error in computations where precise decimal rounding is required.
 
-Because the source of modeled data originates from ADC hardware, which
+Where the source of modeled data originates from ADC hardware, which
 themselves are subject to error and noise in their least significant bits, there
 is no need for precise rounding even in binary, let alone decimal.
 Additionally, often ADC are chosen based on cost with only as many bits as
