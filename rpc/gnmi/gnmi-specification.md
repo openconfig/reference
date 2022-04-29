@@ -4,10 +4,10 @@
 Paul Borman, Marcus Hines, Carl Lebsack, Chris Morrow, Anees Shaikh, Rob Shakir
 
 **Date:**
-January 30, 2018
+April 28, 2022
 
 **Version:**
-0.6.0
+0.8.0
 
 # Table of Contents
 
@@ -271,7 +271,6 @@ field to allow selection of the data type by setting exactly one of the member
 fields.  The possible data types include:
 
 * scalar types
-* additional types used in some schema languages
 * structured data types (e.g., to encode objects or subtrees)
 
 Several native scalar protobuf types are included in the `TypedValue` message:
@@ -284,23 +283,18 @@ Several native scalar protobuf types are included in the `TypedValue` message:
     i.e., `uint8`, `uint16`, `uint32`, `uint64`).
 *   `bool` in the `bool_val` field, used to store boolean values.
 *   `bytes` (see [2.3.2](#232-bytes))
-*   `float` in the `float_val` field, used to store floating-point values (i.e.,
+*   `float` in the `double_val` field, used to store floating-point values (i.e.,
     `float32`, `float64`).
+  * Note: All values defined using the YANG `decimal64` datatype should also be
+    encoded as `double_val` when PROTO encoding is requested. Direct support of
+    [Decimal64 has been deprecated](http://github.com/openconfig/reference/master/rpc/decimal64-deprecation.md).
 
 Additional defined data types include:
-
-* `Decimal64` in the `decimal_val` field -- a message encoding a fixed-precision
-  decimal number consisting of a total number of digits and a precision
-  indicating the number of digits following the decimal point.  It has two
-  subfields:
-  * `digits` - the set of digits
-  * `precision` - number of digits following the decimal point
 
 * `ScalarArray` in the `leaflist_val` field -- a message encoding a mixed-type
   scalar array; contains single repeated field:
   *   `element` -- a `TypedValue` element within the array.  The type of each
-      element MUST be a scalar type (i.e., one of the scalar types or
-      `Decimal64`).
+      element MUST be a scalar type (i.e., one of the scalar types).
 
 The remaining fields in the `TypedValue` message define structured data types.
 Section [2.3](#23-structured-data-types) describes these further.
@@ -319,7 +313,7 @@ client must infer the encoding from the populated `TypedValue` field.
 | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ | ---------------- |
 | JSON      | A JSON encoded string as per [2.3.1](#231-json-and-json_ietf).                                                                                                                                       | `json_val`         | 0                |
 | Bytes     | An arbitrary sequence of bytes as per [2.3.2](#232-bytes).                                                                                                                                           | `bytes_val`        | 1                |
-| Proto     | A [Protobuf](https://developers.google.com/protocol-buffers/) encoded message using [`protobuf.any`](https://developers.google.com/protocol-buffers/docs/proto3#any), as per [2.3.3](#233-protobuf). | `any_val`          | 2                |
+| Proto     | A [Protobuf](https://developers.google.com/protocol-buffers/) encoded message using scalar values as per [Section 2.3.3](#233-protobuf). | `string_val`, `int_val`, `uint_val`, `bool_val`, `bytes_val`, `float_val`, `leaflist_val`          | 2               |
 | ASCII     | An ASCII encoded string representing text formatted according to a target-defined convention (described in [Section 2.3.4](#234-ascii)).                                                             | `ascii_val`        | 3                |
 | JSON_IETF | A JSON encoded string as per [2.3.1](#231-json-and-json_ietf) using JSON encoding compatible with [RFC 7951](https://tools.ietf.org/html/rfc7951).                                                   | `json_ietf_val`    | 4                |
 
@@ -494,13 +488,8 @@ byte sequence whose semantics is opaque to the protocol.
 <!-- TODO(robjs): should we say that protobuf can be within `bytes_val` as well
 as `any_val`, or rather in the future do we add a `protomsg_val`/`agg_val`
 field?) -->
-Data encoded using the `PROTOBUF` type (i.e., within the `any_val` field)
-contains a serialised protobuf message using
-[protobuf.Any](https://developers.google.com/protocol-buffers/docs/proto3#any).
-Note that in the case that the sender utilises this type, the receiver must
-understand the schema (and hence the type of protobuf message that is
-serialised) in order to decode the value. Such agreement is not guaranteed by
-the protocol and hence must be established out-of-band.
+Data encoded using the `PROTOBUF` type should use the TypedValue message using
+primitive types as described in [Section 2.2.3](#223-node-values).
 
 ### 2.3.4 ASCII
 
@@ -1576,6 +1565,14 @@ limitations under the License
 ```
 
 # 7 Revision History
+
+* v0.8.0: April 28, 2022
+  * Add 'double_val' in TypedValue message to replace both 'float_val' and
+    decimal64_val.
+  * Clarify format of responses when PROTO encoding is selected.
+
+* v0.7.0: May 22, 2018
+  * Add 'atomic' boolean option to Notification message.
 
 * v0.6.0: January 25, 2018
   * Add `extension` fields to the top-level RPCs of the gNMI service.
