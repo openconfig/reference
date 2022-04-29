@@ -292,7 +292,7 @@ Several native scalar protobuf types are included in the `TypedValue` message:
 *   `float` in the `double_val` field, used to store floating-point values (i.e.,
     `float32`, `float64`).
   * Note: All values defined using the YANG `decimal64` datatype should also be
-    encoded as double_val when PROTO encoding is requested. Direct support of
+    encoded as `double_val` when PROTO encoding is requested. Direct support of
     [Decimal64 has been deprecated](http://github.com/openconfig/reference/master/rpc/decimal64-deprecation.md).
 
 Additional defined data types include:
