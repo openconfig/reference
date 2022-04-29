@@ -27,7 +27,7 @@ encoding of the Decimal64 type. Before enumerating some of the inefficiencies in
 practical use, we’ll start with a brief discussion of the ultimate source of the
 data being modeled and the inappropriateness of Decimal64 for encoding.
 
-All values within the OpenConfig models using the YANG Decimal64 type are
+All values within the OpenConfig models that currently use the YANG Decimal64 type are
 fundamentally binary because they originate from
 [Analog to Digital Converters](https://en.wikipedia.org/wiki/Analog-to-digital_converter)
 (ADC) whereby a continuous analog signal, such as the laser power in an optical
