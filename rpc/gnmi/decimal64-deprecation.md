@@ -1,4 +1,4 @@
-## Proposal to deprecate Decimal64 in gNMI
+## Deprecation of Decimal64 in gNMI
 
 **Updated**: April 28, 2022
 **Author**: Carl Lebsack
