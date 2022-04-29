@@ -43,7 +43,7 @@ floating point for real numbers.  All major programming languages have native
 support for binary floating point as do the vast majority of modern CPU hardware
 where gNMI servers or its clients would likely run.
 
-Decimal64, on the other hand, is “ intended for applications where it is
+Decimal64, on the other hand, is “intended for applications where it is
 necessary to emulate decimal rounding exactly, such as financial and tax computations.”
 ([Wikipedia](https://en.wikipedia.org/wiki/Decimal64_floating-point_format)) The
 decimal encoding is used for financial transactions because binary fractions
