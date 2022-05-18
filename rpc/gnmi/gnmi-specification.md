@@ -1486,7 +1486,7 @@ however, since only `Notification` messages contain the timestamp at which an
 event occurred, or a sample was taken, such bundling assigns a single timestamp
 for all bundled `Update` values. As such, bundling is primarily useful for
 datasets where a group of leaves are meaningfully conjoined, such as a group
-of leaves atomically applied as a configuration update via a Set call, system
+of leaves atomically applied as a configuration update via a `Set` call, system
 properties that are effectively static after boot and component inventory data
 including part, model and serial numbers.
 
