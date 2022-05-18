@@ -1492,7 +1492,7 @@ including part, model and serial numbers.
 
 For counter and event data where hardware provides precise timestamps, a
 gNMI implementation MUST NOT obscure access to these timestamps in an
-attempt to provide bundling. In cases where an OpenConfig leaf is derived
+attempt to provide bundling. In cases where a leaf's value is derived
 from two or more hardware values with distinct timestamps, an implementation
 SHOULD attempt to provide a consistent and meaningful timestamp that
 introduces minimal error.  This includes attempting to synchronize collection
@@ -1511,7 +1511,9 @@ associated with the subscription. The `update` field of the message contains a
 that is being updated was collected from the underlying data source, or the
 event being reported on (in the case of `ON_CHANGE` occurred).
 
-Where a leaf node's value has changed, or a new node has been created, an `Update` message specifying the path and value for the updated data item MUST be appended to the `update` field of the message.
+Where a leaf node's value has changed, or a new node has been created, an
+`Update` message specifying the path and value for the updated data item MUST be
+appended to the `update` field of the message.
 
 Where a node within the subscribed paths has been removed, the `delete` field of
 the `Notification` message MUST have the path of the node that has been removed
