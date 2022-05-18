@@ -1491,7 +1491,7 @@ properties that are effectively static after boot and component inventory data
 including part, model and serial numbers.
 
 For counter and event data where hardware provides precise timestamps, a
-gNMI implementation MUST not obscure access to these timestamps in an
+gNMI implementation MUST NOT obscure access to these timestamps in an
 attempt to provide bundling. In cases where an OpenConfig leaf is derived
 from two or more hardware values with distinct timestamps, an implementation
 SHOULD attempt to provide a consistent and meaningful timestamp that
