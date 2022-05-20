@@ -1495,7 +1495,7 @@ gNMI implementation MUST NOT obscure access to these timestamps in an
 attempt to provide bundling. In cases where a leaf's value is derived
 from two or more hardware values with distinct timestamps, an implementation
 SHOULD attempt to provide a consistent and meaningful timestamp that
-introduces minimal error.  This includes attempting to synchronize collection
+introduces minimal error.  This could include approaches such as attempting to synchronize collection
 of the values, retaining a consistent sample period and having a robust
 mechanism to ensure that sampling artifacts are not introduced (e.g. a constant
 rate byte flow over an interface appearing to have adjacent spikes and dips).
