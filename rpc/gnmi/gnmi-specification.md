@@ -26,7 +26,7 @@ April 28, 2022
     * [2.3.4 ASCII](#234-ascii)
   * [2.4 Use of Data Schema Paths](#24-use-of-data-schema-paths)
     * [2.4.1 Path Prefixes](#241-path-prefixes)
-    * [2.4.3 Interpretation of Paths Used in RPCs](#243-interpretation-of-paths-used-in-rpcs)
+    * [2.4.2 Interpretation of Paths Used in RPCs](#242-interpretation-of-paths-used-in-rpcs)
   * [2.5 Error handling](#25-error-handling)
   * [2.6 Schema Definition Models](#26-schema-definition-models)
     * [2.6.1 The ModelData message](#261-the-modeldata-message)
@@ -558,7 +558,7 @@ notification: <
 >
 ```
 
-### 2.4.3 Interpretation of Paths Used in RPCs
+### 2.4.2 Interpretation of Paths Used in RPCs
 
 When a client specifies a path within an RPC message which indicates a read, or
 retrieval of data, the path MUST be interpreted such that it refers to the node
