@@ -40,7 +40,7 @@ April 28, 2022
     * [3.3.1 The GetRequest Message](#331-the-getrequest-message)
     * [3.3.2 The GetResponse Message](#332-the-getresponse-message)
     * [3.3.3 Considerations for using Get](#333-considerations-for-using-get)
-    * [3.3.4 GetResponse Behaviour Table](#333-getresponse-behaviour-table)
+    * [3.3.4 GetResponse Behaviour Table](#334-getresponse-behaviour-table)
   * [3.4 Modifying State](#34-modifying-state)
     * [3.4.1 The SetRequest Message](#341-the-setrequest-message)
     * [3.4.2 The SetResponse Message](#342-the-setresponse-message)
@@ -62,7 +62,7 @@ April 28, 2022
     * [3.5.2 Sending Telemetry Updates](#352-sending-telemetry-updates)
       * [3.5.2.1 Bundling of Telemetry Updates](#3521-bundling-of-telemetry-updates)
       * [3.5.2.3 Sending Telemetry Updates](#3523-sending-telemetry-updates)
-      * [3.5.2.4 SubscribeResponse Behaviour Table](#3523-subscriberesponse-behaviour-table)
+      * [3.5.2.4 SubscribeResponse Behaviour Table](#3524-subscriberesponse-behaviour-table)
 * [4 Appendix: Current Protobuf Message and Service Specification](#4-appendix-current-protobuf-message-and-service-specification)
 * [5 Appendix: Current Outstanding Issues/Future Features](#5-appendix-current-outstanding-issuesfuture-features)
 * [6 Copyright](#6-copyright)
@@ -902,12 +902,12 @@ request a telemetry stream (see [Section
 
 ### 3.3.4 GetResponse Behaviour Table
 
-| GetRequest Scenario                                                                                                     | Target Behaviour |
-| ----------------------------------------------------------------------------------------------------------------------- | ---------------- |
-| Subscribed paths exist or a YANG default value is [in use](https://datatracker.ietf.org/doc/html/rfc7950#section-7.6.1) | Value is returned |
-| Subscribed paths are syntactically correct but one or more paths do not (yet) exist                                     | Return `NOT_FOUND` |
-| Subscribed paths are syntactically correct but one or more paths is not implemented by the server                       | Return `UNIMPLEMENTED` |
-| One or more subscribed paths is syntactically incorrect                                                                 | Return `INVALID_ARGUMENT` |
+| GetRequest Scenario                                                                                                      | Target Behaviour |
+| ------------------------------------------------------------------------------------------------------------------------ | ---------------- |
+| Subscribed paths exist or a YANG default value is [in use](https://datatracker.ietf.org/doc/html/rfc7950#section-7.6.1). | Value is returned |
+| Subscribed paths are syntactically correct but one or more paths do not (yet) exist.                                     | Return `NOT_FOUND` |
+| Subscribed paths are syntactically correct but one or more paths is not implemented by the server.                       | Return `UNIMPLEMENTED` |
+| One or more subscribed paths is syntactically incorrect.                                                                 | Return `INVALID_ARGUMENT` |
 
 ## 3.4 Modifying State
 
@@ -1548,12 +1548,12 @@ to configuration.
 
 #### 3.5.2.4 SubscribeResponse Behaviour Table
 
-| Subscription Scenario                                                                                                   | ONCE                                     | POLL                                     | STREAM |
-| ----------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- | ---------------------------------------- | ------ |
-| Subscribed paths exist or a YANG default value is [in use](https://datatracker.ietf.org/doc/html/rfc7950#section-7.6.1) | Value is returned                        | Value is returned                        | Value is returned |
-| Subscribed paths are syntactically correct but one or more paths do not (yet) exist                                     | No value returned for non-existent paths | No value returned for non-existent paths | nothing is sent for non-existent paths (yet), RPC is not closed |
-| Subscribed paths are syntactically correct but one or more paths is not implemented by the server                       | Return `UNIMPLEMENTED`                   | Return `UNIMPLEMENTED`                   | Return `UNIMPLEMENTED` |
-| One or more subscribed paths is syntactically incorrect                                                                 | Return `INVALID_ARGUMENT`                | Return `INVALID_ARGUMENT`                | Return `INVALID_ARGUMENT` |
+| Subscription Scenario                                                                                                    | ONCE                                     | POLL                                     | STREAM |
+| ------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------- | ---------------------------------------- | ------ |
+| Subscribed paths exist or a YANG default value is [in use](https://datatracker.ietf.org/doc/html/rfc7950#section-7.6.1). | Value is returned                        | Value is returned                        | Value is returned |
+| Subscribed paths are syntactically correct but one or more paths do not (yet) exist.                                     | No value returned for non-existent paths | No value returned for non-existent paths | nothing is sent for non-existent paths (yet), RPC is not closed |
+| Subscribed paths are syntactically correct but one or more paths is not implemented by the server.                       | Return `UNIMPLEMENTED`                   | Return `UNIMPLEMENTED`                   | Return `UNIMPLEMENTED` |
+| One or more subscribed paths is syntactically incorrect.                                                                 | Return `INVALID_ARGUMENT`                | Return `INVALID_ARGUMENT`                | Return `INVALID_ARGUMENT` |
 
 # 4 Appendix: Current Protobuf Message and Service Specification
 
