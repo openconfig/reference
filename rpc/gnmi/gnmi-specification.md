@@ -40,7 +40,7 @@ April 28, 2022
     * [3.3.1 The GetRequest Message](#331-the-getrequest-message)
     * [3.3.2 The GetResponse Message](#332-the-getresponse-message)
     * [3.3.3 Considerations for using Get](#333-considerations-for-using-get)
-    * [3.3.4 GetResponse Behaviour Table](#334-getresponse-behaviour-table)
+    * [3.3.4 GetResponse Behavior Table](#334-getresponse-behavior-table)
   * [3.4 Modifying State](#34-modifying-state)
     * [3.4.1 The SetRequest Message](#341-the-setrequest-message)
     * [3.4.2 The SetResponse Message](#342-the-setresponse-message)
@@ -62,7 +62,7 @@ April 28, 2022
     * [3.5.2 Sending Telemetry Updates](#352-sending-telemetry-updates)
       * [3.5.2.1 Bundling of Telemetry Updates](#3521-bundling-of-telemetry-updates)
       * [3.5.2.3 Sending Telemetry Updates](#3523-sending-telemetry-updates)
-      * [3.5.2.4 SubscribeResponse Behaviour Table](#3524-subscriberesponse-behaviour-table)
+      * [3.5.2.4 SubscribeResponse Behavior Table](#3524-subscriberesponse-behavior-table)
 * [4 Appendix: Current Protobuf Message and Service Specification](#4-appendix-current-protobuf-message-and-service-specification)
 * [5 Appendix: Current Outstanding Issues/Future Features](#5-appendix-current-outstanding-issuesfuture-features)
 * [6 Copyright](#6-copyright)
@@ -900,9 +900,9 @@ accuracy for individual data items, the `Subscribe` RPC is recommended to
 request a telemetry stream (see [Section
 3.5.2](#352-sending-telemetry-updates)).
 
-### 3.3.4 GetResponse Behaviour Table
+### 3.3.4 GetResponse Behavior Table
 
-| GetRequest Scenario                                                                                                      | Target Behaviour |
+| GetRequest Scenario                                                                                                      | Target Behavior |
 | ------------------------------------------------------------------------------------------------------------------------ | ---------------- |
 | Subscribed paths exist or a YANG default value is [in use](https://datatracker.ietf.org/doc/html/rfc7950#section-7.6.1). | Value is returned |
 | Subscribed paths are syntactically correct but one or more paths do not (yet) exist.                                     | Return `NOT_FOUND` |
@@ -1546,7 +1546,7 @@ by any updates representing subsequent changes to current state. For a `POLL` or
 `updates_only` field allows a client to only watch for changes, e.g. an update
 to configuration.
 
-#### 3.5.2.4 SubscribeResponse Behaviour Table
+#### 3.5.2.4 SubscribeResponse Behavior Table
 
 | Subscription Scenario                                                                                                    | ONCE                                     | POLL                                     | STREAM |
 | ------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------- | ---------------------------------------- | ------ |
