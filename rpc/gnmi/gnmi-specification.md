@@ -1518,6 +1518,11 @@ To replace the contents of an entire node within the tree, the target populates
 the `delete` field with the path of the node being removed, along with the new
 contents within the `update` field.
 
+To signal that a leaf that has transitioned to [using its default
+value](https://datatracker.ietf.org/doc/html/rfc7950#section-7.6.1), the target
+MUST send an `update` with the new value being set to the default value, and
+MUST NOT only send a `delete` for the path.
+
 When the target has transmitted the initial updates for all paths specified
 within the subscription, a `SubscribeResponse` message with the `sync_response`
 field set to `true` MUST be transmitted to the client to indicate that the
