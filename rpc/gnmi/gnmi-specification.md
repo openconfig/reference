@@ -904,7 +904,7 @@ request a telemetry stream (see [Section
 
 | GetRequest Scenario                                                                                                      | Target Behavior |
 | ------------------------------------------------------------------------------------------------------------------------ | ---------------- |
-| Subscribed paths exist or a YANG default value is [in use](https://datatracker.ietf.org/doc/html/rfc7950#section-7.6.1). | Value is returned |
+| Subscribed paths exist or a YANG default value is [in use](https://datatracker.ietf.org/doc/html/rfc7950#section-7.6.1). | Value(s) are returned |
 | Subscribed paths are syntactically correct but one or more paths do not (yet) exist.                                     | Return `NOT_FOUND` |
 | Subscribed paths are syntactically correct but one or more paths is not implemented by the server.                       | Return `UNIMPLEMENTED` |
 | One or more subscribed paths is syntactically incorrect.                                                                 | Return `INVALID_ARGUMENT` |
@@ -1548,12 +1548,12 @@ to configuration.
 
 #### 3.5.2.4 SubscribeResponse Behavior Table
 
-| Subscription Scenario                                                                                                    | ONCE                                     | POLL                                     | STREAM |
-| ------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------- | ---------------------------------------- | ------ |
-| Subscribed paths exist or a YANG default value is [in use](https://datatracker.ietf.org/doc/html/rfc7950#section-7.6.1). | Value is returned                        | Value is returned                        | Value is returned |
-| Subscribed paths are syntactically correct but one or more paths do not (yet) exist.                                     | No value returned for non-existent paths | No value returned for non-existent paths | nothing is sent for non-existent paths (yet), RPC is not closed |
-| Subscribed paths are syntactically correct but one or more paths is not implemented by the server.                       | Return `UNIMPLEMENTED`                   | Return `UNIMPLEMENTED`                   | Return `UNIMPLEMENTED` |
-| One or more subscribed paths is syntactically incorrect.                                                                 | Return `INVALID_ARGUMENT`                | Return `INVALID_ARGUMENT`                | Return `INVALID_ARGUMENT` |
+| Subscription Scenario                                                                                                    | ONCE/POLL                                | STREAM |
+| ------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------- | ------ |
+| Subscribed paths exist or a YANG default value is [in use](https://datatracker.ietf.org/doc/html/rfc7950#section-7.6.1). | Value(s) are returned                    | Value(s) are returned |
+| Subscribed paths are syntactically correct but one or more paths do not (yet) exist.                                     | No value returned for non-existent paths | nothing is sent for non-existent paths (yet), RPC is not closed |
+| Subscribed paths are syntactically correct but one or more paths is not implemented by the server.                       | Return `UNIMPLEMENTED`                   | Return `UNIMPLEMENTED` |
+| One or more subscribed paths is syntactically incorrect.                                                                 | Return `INVALID_ARGUMENT`                | Return `INVALID_ARGUMENT` |
 
 # 4 Appendix: Current Protobuf Message and Service Specification
 
