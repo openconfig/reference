@@ -1054,6 +1054,11 @@ elements are omitted. In this scenario, `b` MUST be reverted to its default
 setting of True and the configuration of `c` MUST be deleted from the tree,
 and returned to its original un-configured setting.
 
+`replace` MUST not be used as a way to delete configuration by being supplied
+with a value outside of its value range. For example, if the boolean `b` is
+provided a `nil` value instead of a boolean value, the target MUST reject this
+operation by returning `INVALID_ARGUMENT`.
+
 For `update` operations, only the value of those data elements that are
 specified explicitly should be treated as changed.
 
