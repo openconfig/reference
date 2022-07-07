@@ -1579,6 +1579,8 @@ limitations under the License
 * v0.8.1: July 7, 2022
   * Clarify that for `Subscribe`, a transition to a YANG default value for a
     leaf must use `update` rather than just a `delete`.
+  * Clarify that for `Set`, deleting configuration using `replace(nil)` is
+    prohibited.
 
 * v0.8.0: April 28, 2022
   * Add 'double_val' in TypedValue message to replace both 'float_val' and
