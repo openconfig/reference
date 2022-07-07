@@ -4,10 +4,10 @@
 Paul Borman, Marcus Hines, Carl Lebsack, Chris Morrow, Anees Shaikh, Rob Shakir
 
 **Date:**
-April 28, 2022
+July 7, 2022
 
 **Version:**
-0.8.0
+0.8.1
 
 # Table of Contents
 
@@ -1518,6 +1518,11 @@ To replace the contents of an entire node within the tree, the target populates
 the `delete` field with the path of the node being removed, along with the new
 contents within the `update` field.
 
+To signal that a leaf that has transitioned to [using its default
+value](https://datatracker.ietf.org/doc/html/rfc7950#section-7.6.1), the target
+MUST send an `update` with the new value being set to the default value, and
+MUST NOT only send a `delete` for the path or a parent path.
+
 When the target has transmitted the initial updates for all paths specified
 within the subscription, a `SubscribeResponse` message with the `sync_response`
 field set to `true` MUST be transmitted to the client to indicate that the
@@ -1565,6 +1570,10 @@ limitations under the License
 ```
 
 # 7 Revision History
+
+* v0.8.1: July 7, 2022
+  * Clarify that for `Subscribe`, a transition to a YANG default value for a
+    leaf must use `update` rather than just a `delete`.
 
 * v0.8.0: April 28, 2022
   * Add 'double_val' in TypedValue message to replace both 'float_val' and
