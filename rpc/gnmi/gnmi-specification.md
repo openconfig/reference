@@ -54,7 +54,7 @@ April 28, 2022
       * [3.5.1.1 The SubscribeRequest Message](#3511-the-subscriberequest-message)
       * [3.5.1.2 The SubscriptionList Message](#3512-the-subscriptionlist-message)
       * [3.5.1.3 The Subscription Message](#3513-the-subscription-message)
-  * [3.5.1.4 The SubscribeResponse Message](#3514-the-subscriberesponse-message)
+      * [3.5.1.4 The SubscribeResponse Message](#3514-the-subscriberesponse-message)
       * [3.5.1.5 Creating Subscriptions](#3515-creating-subscriptions)
         * [3.5.1.5.1 ONCE Subscriptions](#35151-once-subscriptions)
         * [3.5.1.5.2 STREAM Subscriptions](#35152-stream-subscriptions)
@@ -902,12 +902,14 @@ request a telemetry stream (see [Section
 
 ### 3.3.4 GetResponse Behavior Table
 
+The following table clarifies the target behaviors for `Get` for certain scenarios:
+
 | GetRequest Scenario                                                                                                      | Target Behavior |
 | ------------------------------------------------------------------------------------------------------------------------ | ---------------- |
-| Subscribed paths exist or a YANG default value is [in use](https://datatracker.ietf.org/doc/html/rfc7950#section-7.6.1). | Value(s) are returned |
-| Subscribed paths are syntactically correct but one or more paths do not (yet) exist.                                     | Return `NOT_FOUND` |
-| Subscribed paths are syntactically correct but one or more paths is not implemented by the server.                       | Return `UNIMPLEMENTED` |
-| One or more subscribed paths is syntactically incorrect.                                                                 | Return `INVALID_ARGUMENT` |
+| Requested paths exist or a YANG default value is [in use](https://datatracker.ietf.org/doc/html/rfc7950#section-7.6.1).  | Value(s) are returned |
+| Requested paths are syntactically correct but one or more paths neither exist (yet) nor has a YANG default value in use. | Return `NOT_FOUND` |
+| Requested paths are syntactically correct but one or more paths is not implemented by the server.                        | Return `UNIMPLEMENTED` |
+| One or more requested paths is syntactically incorrect.                                                                  | Return `INVALID_ARGUMENT` |
 
 ## 3.4 Modifying State
 
@@ -1548,12 +1550,14 @@ to configuration.
 
 #### 3.5.2.4 SubscribeResponse Behavior Table
 
-| Subscription Scenario                                                                                                    | ONCE/POLL                                | STREAM |
-| ------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------- | ------ |
-| Subscribed paths exist or a YANG default value is [in use](https://datatracker.ietf.org/doc/html/rfc7950#section-7.6.1). | Value(s) are returned                    | Value(s) are returned |
-| Subscribed paths are syntactically correct but one or more paths do not (yet) exist.                                     | No value returned for non-existent paths | nothing is sent for non-existent paths (yet), RPC is not closed |
-| Subscribed paths are syntactically correct but one or more paths is not implemented by the server.                       | Return `UNIMPLEMENTED`                   | Return `UNIMPLEMENTED` |
-| One or more subscribed paths is syntactically incorrect.                                                                 | Return `INVALID_ARGUMENT`                | Return `INVALID_ARGUMENT` |
+The following table clarifies the target behaviors for `Subscribe` for certain scenarios:
+
+| Subscription Scenario                                                                                                     | ONCE/POLL                                | STREAM |
+| ------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- | ------ |
+| Subscribed paths exist or a YANG default value is [in use](https://datatracker.ietf.org/doc/html/rfc7950#section-7.6.1).  | Value(s) are returned                    | Value(s) are returned |
+| Subscribed paths are syntactically correct but one or more paths neither exist (yet) nor has a YANG default value in use. | No value returned for non-existent paths | nothing is sent for non-existent paths (yet), RPC is not closed |
+| Subscribed paths are syntactically correct but one or more paths is not implemented by the server.                        | Return `UNIMPLEMENTED`                   | Return `UNIMPLEMENTED` |
+| One or more subscribed paths is syntactically incorrect.                                                                  | Return `INVALID_ARGUMENT`                | Return `INVALID_ARGUMENT` |
 
 # 4 Appendix: Current Protobuf Message and Service Specification
 
