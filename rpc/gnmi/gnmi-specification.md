@@ -4,10 +4,10 @@
 Paul Borman, Marcus Hines, Carl Lebsack, Chris Morrow, Anees Shaikh, Rob Shakir
 
 **Date:**
-April 28, 2022
+July 7, 2022
 
 **Version:**
-0.8.0
+0.8.1
 
 # Table of Contents
 
@@ -26,7 +26,7 @@ April 28, 2022
     * [2.3.4 ASCII](#234-ascii)
   * [2.4 Use of Data Schema Paths](#24-use-of-data-schema-paths)
     * [2.4.1 Path Prefixes](#241-path-prefixes)
-    * [2.4.3 Interpretation of Paths Used in RPCs](#243-interpretation-of-paths-used-in-rpcs)
+    * [2.4.2 Interpretation of Paths Used in RPCs](#242-interpretation-of-paths-used-in-rpcs)
   * [2.5 Error handling](#25-error-handling)
   * [2.6 Schema Definition Models](#26-schema-definition-models)
     * [2.6.1 The ModelData message](#261-the-modeldata-message)
@@ -560,7 +560,7 @@ notification: <
 >
 ```
 
-### 2.4.3 Interpretation of Paths Used in RPCs
+### 2.4.2 Interpretation of Paths Used in RPCs
 
 When a client specifies a path within an RPC message which indicates a read, or
 retrieval of data, the path MUST be interpreted such that it refers to the node
@@ -1531,6 +1531,11 @@ To replace the contents of an entire node within the tree, the target populates
 the `delete` field with the path of the node being removed, along with the new
 contents within the `update` field.
 
+To signal that a leaf that has transitioned to [using its default
+value](https://datatracker.ietf.org/doc/html/rfc7950#section-7.6.1), the target
+MUST send an `update` with the new value being set to the default value, and
+MUST NOT only send a `delete` for the path or a parent path.
+
 When the target has transmitted the initial updates for all paths specified
 within the subscription, a `SubscribeResponse` message with the `sync_response`
 field set to `true` MUST be transmitted to the client to indicate that the
@@ -1589,6 +1594,10 @@ limitations under the License
 ```
 
 # 7 Revision History
+
+* v0.8.1: July 7, 2022
+  * Clarify that for `Subscribe`, a transition to a YANG default value for a
+    leaf must use `update` rather than just a `delete`.
 
 * v0.8.0: April 28, 2022
   * Add 'double_val' in TypedValue message to replace both 'float_val' and
