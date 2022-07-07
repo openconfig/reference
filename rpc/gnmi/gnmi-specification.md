@@ -1054,6 +1054,11 @@ elements are omitted. In this scenario, `b` MUST be reverted to its default
 setting of True and the configuration of `c` MUST be deleted from the tree,
 and returned to its original un-configured setting.
 
+`replace` MUST not be used as a way to delete configuration at the path
+specified by being supplied with a null or invalid value. For example, if the
+boolean `b` is provided a `nil` value instead of a boolean value, the target
+MUST reject this operation by returning `INVALID_ARGUMENT`.
+
 For `update` operations, only the value of those data elements that are
 specified explicitly should be treated as changed.
 
@@ -1579,6 +1584,8 @@ limitations under the License
 * v0.8.1: July 7, 2022
   * Clarify that for `Subscribe`, a transition to a YANG default value for a
     leaf must use `update` rather than just a `delete`.
+  * Clarify that for `Set`, deleting configuration using `replace(nil)` is
+    prohibited.
 
 * v0.8.0: April 28, 2022
   * Add 'double_val' in TypedValue message to replace both 'float_val' and
