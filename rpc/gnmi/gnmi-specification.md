@@ -38,8 +38,9 @@ July 7, 2022
     * [3.2.2 The CapabilityResponse message](#322-the-capabilityresponse-message)
   * [3.3 Retrieving Snapshots of State Information](#33-retrieving-snapshots-of-state-information)
     * [3.3.1 The GetRequest Message](#331-the-getrequest-message)
-    * [3.3.2 The GetResponse message](#332-the-getresponse-message)
+    * [3.3.2 The GetResponse Message](#332-the-getresponse-message)
     * [3.3.3 Considerations for using Get](#333-considerations-for-using-get)
+    * [3.3.4 GetResponse Behavior Table](#334-getresponse-behavior-table)
   * [3.4 Modifying State](#34-modifying-state)
     * [3.4.1 The SetRequest Message](#341-the-setrequest-message)
     * [3.4.2 The SetResponse Message](#342-the-setresponse-message)
@@ -61,6 +62,7 @@ July 7, 2022
     * [3.5.2 Sending Telemetry Updates](#352-sending-telemetry-updates)
       * [3.5.2.1 Bundling of Telemetry Updates](#3521-bundling-of-telemetry-updates)
       * [3.5.2.3 Sending Telemetry Updates](#3523-sending-telemetry-updates)
+      * [3.5.2.4 SubscribeResponse Behavior Table](#3524-subscriberesponse-behavior-table)
 * [4 Appendix: Current Protobuf Message and Service Specification](#4-appendix-current-protobuf-message-and-service-specification)
 * [5 Appendix: Current Outstanding Issues/Future Features](#5-appendix-current-outstanding-issuesfuture-features)
 * [6 Copyright](#6-copyright)
@@ -866,7 +868,7 @@ The types of data currently defined are:
 If the `type` field is not specified, the target MUST return CONFIG, STATE  and
 OPERATIONAL data fields in the tree resulting from the client's query.
 
-### 3.3.2 The GetResponse message
+### 3.3.2 The GetResponse Message
 
 The `GetResponse` message consists of:
 
@@ -897,6 +899,17 @@ sampled by the target at different times.  If the client requires higher
 accuracy for individual data items, the `Subscribe` RPC is recommended to
 request a telemetry stream (see [Section
 3.5.2](#352-sending-telemetry-updates)).
+
+### 3.3.4 GetResponse Behavior Table
+
+The following table clarifies the target behaviors for `Get` for certain scenarios:
+
+| GetRequest Scenario                                                                                                      | Target Behavior |
+| ------------------------------------------------------------------------------------------------------------------------ | ---------------- |
+| Requested paths exist or a YANG default value is [in use](https://datatracker.ietf.org/doc/html/rfc7950#section-7.6.1).  | Value(s) are returned |
+| Requested paths are syntactically correct but one or more paths neither exist (yet) nor has a YANG default value in use. | Return `NOT_FOUND` |
+| Requested paths are syntactically correct but one or more paths is not implemented by the server.                        | Return `UNIMPLEMENTED` |
+| One or more requested paths is syntactically incorrect.                                                                  | Return `INVALID_ARGUMENT` |
 
 ## 3.4 Modifying State
 
@@ -1550,6 +1563,17 @@ by any updates representing subsequent changes to current state. For a `POLL` or
 `updates_only` field allows a client to only watch for changes, e.g. an update
 to configuration.
 
+#### 3.5.2.4 SubscribeResponse Behavior Table
+
+The following table clarifies the target behaviors for `Subscribe` for certain scenarios:
+
+| Subscription Scenario                                                                                                     | ONCE/POLL                                | STREAM |
+| ------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- | ------ |
+| Subscribed paths exist or a YANG default value is [in use](https://datatracker.ietf.org/doc/html/rfc7950#section-7.6.1).  | Value(s) are returned                    | Value(s) are returned |
+| Subscribed paths are syntactically correct but one or more paths neither exist (yet) nor has a YANG default value in use. | No value returned for non-existent paths | nothing is sent for non-existent paths (yet), RPC is not closed |
+| Subscribed paths are syntactically correct but one or more paths is not implemented by the server.                        | Return `UNIMPLEMENTED`                   | Return `UNIMPLEMENTED` |
+| One or more subscribed paths is syntactically incorrect.                                                                  | Return `INVALID_ARGUMENT`                | Return `INVALID_ARGUMENT` |
+
 # 4 Appendix: Current Protobuf Message and Service Specification
 
 The latest Protobuf IDL gNMI specification is found in GitHub at
@@ -1586,6 +1610,7 @@ limitations under the License
     leaf must use `update` rather than just a `delete`.
   * Clarify that for `Set`, deleting configuration using `replace(nil)` is
     prohibited.
+  * Clarify target behavior for certain scenarios for `Get` and `Subscribe`.
 
 * v0.8.0: April 28, 2022
   * Add 'double_val' in TypedValue message to replace both 'float_val' and
