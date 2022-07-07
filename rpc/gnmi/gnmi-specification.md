@@ -1610,6 +1610,7 @@ limitations under the License
     leaf must use `update` rather than just a `delete`.
   * Clarify that for `Set`, deleting configuration using `replace(nil)` is
     prohibited.
+  * Clarify target behavior for certain scenarios for `Get` and `Subscribe`.
 
 * v0.8.0: April 28, 2022
   * Add 'double_val' in TypedValue message to replace both 'float_val' and
