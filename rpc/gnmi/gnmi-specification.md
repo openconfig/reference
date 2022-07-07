@@ -1484,18 +1484,21 @@ that fewer messages are sent to the client. The advantage of such bundling is
 clearly to reduce the number of bytes on the wire (caused by message overhead);
 however, since only `Notification` messages contain the timestamp at which an
 event occurred, or a sample was taken, such bundling assigns a single timestamp
-for all bundled `Update` values. As such, it has the downside of negatively
-affecting the sample accuracy and freshness to the client, and as a result, on
-the client's ability to react to events on the target.
+for all bundled `Update` values. As such, bundling is primarily useful for
+datasets where a group of leaves are meaningfully conjoined, such as a group
+of leaves atomically applied as a configuration update via a `Set` call, system
+properties that are effectively static after boot and component inventory data
+including part, model and serial numbers.
 
-Since it is not possible for the target to infer whether its clients are
-sensitive to the latency introduced by bundling, if a target implements
-optimizations such that multiple `Update` messages are bundled together,
-it MUST provide an ability to disable this functionality within the
-configuration of the gNMI service. Additionally, a target SHOULD provide means
-by which the operator can control the maximum number of updates that are to be
-bundled into a single message,  This configuration is expected to be implemented
-out-of-band to the gNMI protocol itself.
+For counter and event data where hardware provides precise timestamps, a
+gNMI implementation MUST NOT obscure access to these timestamps in an
+attempt to provide bundling. In cases where a leaf's value is derived
+from two or more hardware values with distinct timestamps, an implementation
+SHOULD attempt to provide a consistent and meaningful timestamp that
+introduces minimal error.  This could include approaches such as attempting to synchronize collection
+of the values, retaining a consistent sample period and having a robust
+mechanism to ensure that sampling artifacts are not introduced (e.g. a constant
+rate byte flow over an interface appearing to have adjacent spikes and dips).
 
 #### 3.5.2.3 Sending Telemetry Updates
 
@@ -1508,7 +1511,9 @@ associated with the subscription. The `update` field of the message contains a
 that is being updated was collected from the underlying data source, or the
 event being reported on (in the case of `ON_CHANGE` occurred).
 
-Where a leaf node's value has changed, or a new node has been created, an `Update` message specifying the path and value for the updated data item MUST be appended to the `update` field of the message.
+Where a leaf node's value has changed, or a new node has been created, an
+`Update` message specifying the path and value for the updated data item MUST be
+appended to the `update` field of the message.
 
 Where a node within the subscribed paths has been removed, the `delete` field of
 the `Notification` message MUST have the path of the node that has been removed
