@@ -237,7 +237,7 @@ gNMI paths are encoded as an ordered list (slice, array, etc.) of `gnmi.PathElem
 *   Wildcards should not appear in paths returned by a device in
     telemetry notifications.
 
-*   A single path element, including keyed fields, maybe be replaced by
+*   A single path element, including keyed fields, may be replaced by
     `...` to select all matching descendents.  This is semantically equivalent
     to the empty element notation, `//`, in XPATH.
 
