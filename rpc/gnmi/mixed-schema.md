@@ -99,6 +99,24 @@ constrained to the specified origin. Particularly:
   the specified `origin`. To delete contents from multiple origins, a client
   MUST specify multiple paths within the `delete` of the `SetRequest`.
 
+### Special considerations for the use of Origin CLI
+* If a `Set` RPC contains `origin` CLI, the CLI origin MUST be given precedence
+  over the OpenConfig origin.  This precedence is independent of the order in
+  which origin CLI appears.  This overrides the gNMI specification requirement
+  of ordered path based precedence within a `SetRequest`.  The goal of this
+  precedence is to create deterministic behavior for resolving overlapping
+  configuration.
+* The `update` operation MUST be supported for `origin` CLI.  The `update`
+  operation is compatible with the requirement for `origin` CLI to take
+  precedence.
+  
+* Because there is no explicit expectation of CLI to use a path based
+  structure, use of the `replace` operation is not recommended unless the
+  intent is to replace the entire configuration with the contents of the origin CLI message.  Replacing
+  the entire configuration with CLI content in a mixed origin `SetRequest`
+  where origin CLI takes precedence means the other origin messages will have
+  no effect.
+
 ### Transactionality of Sets with multiple Origins
 
 Where a `SetRequest` specifies more than one `origin` - i.e., two or more
@@ -112,7 +130,7 @@ an error status returned upon responding to the `Set` RPC.
 
 ### Example: OpenConfig and CLI Data
 
-If a client wishes to replace both OpenConfig and CLI-modelled data
+If a client wishes to replace OpenConfig and update CLI-modelled data
 concurrently, it can send the following `SetRequest`:
 
 ```
@@ -138,7 +156,7 @@ replace: <
     `
   >
 >
-replace: <
+update: <
   path: <
     origin: "cli"
   >
@@ -148,10 +166,14 @@ replace: <
 >
 ```
 
-This transaction replaces the contents of both the "openconfig" and "cli"
-origins.  The first `replace` message replaces the OpenConfig origin at the root
-(as specified by the zero-length array of `PathElem` messages) to the specified
-JSON. The second `replace` replaces the CLI configuration of the device is
-replaced with the string specified in the `ascii_val` field. Per the gNMI
-specification, both `replace` operations MUST successfully be applied, otherwise
-the configuration change should be rolled back.
+This transaction replaces the contents of the "openconfig" origins and then
+updates the configuration with CLI content.  The first `replace` message
+replaces the OpenConfig origin at the root (as specified by the zero-length
+array of `PathElem` messages) to the specified JSON. The `update` operation
+adds the CLI configuration of the device with with the string specified in the
+`ascii_val` field. Per the gNMI specification, both operations MUST
+successfully be applied, otherwise the configuration change should be rolled
+back.
+
+The expected resulting configuration will contain an enabled interface and a
+router bgp 15169 statement.
