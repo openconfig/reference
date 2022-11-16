@@ -1040,7 +1040,7 @@ entries that are not supplied in the value provided in the `SetRequest`. An
 update operation MUST be considered to add new entries to the collection if they
 do not exist.
 
-For replace operations:
+For `replace` operations:
 
  * If a particular path-value is specified in the client-supplied data, it is
  replaced with the client-specified value.
