@@ -1034,7 +1034,13 @@ updates within the `SetRequest` method, return the data tree to the state prior
 to any changes, and return a `SetResponse` status indicating the error
 encountered.
 
-For replace operations:
+Where the path specified refers to a node which itself represents the collection
+of objects (list, map, or array), a replace operation MUST remove all collection
+entries that are not supplied in the value provided in the `SetRequest`. An
+update operation MUST be considered to add new entries to the collection if they
+do not exist.
+
+For `replace` operations:
 
  * If a particular path-value is specified in the client-supplied data, it is
  replaced with the client-specified value.
@@ -1072,8 +1078,55 @@ specified by being supplied with a null or invalid value. For example, if the
 boolean `b` is provided a `nil` value instead of a boolean value, the target
 MUST reject this operation by returning `INVALID_ARGUMENT`.
 
-For `update` operations, only the value of those data elements that are
-specified explicitly should be treated as changed.
+For `update` operations:
+
+ * Only the value of those data elements that are specified explicitly should be
+   treated as changed.
+ * It is only possible to update or create new leaf elements, and not possible
+   to delete leaf elements using an `update` operation.
+
+For example, if an `update` operation to the root element `/` is done on the
+following data tree, where `f[k=20]` and `f[k=30]` are the elements that are in
+the `SetRequest`, then list element `f[k=10]` is untouched.
+
+Before:
+```
+root +
+     |
+     + a --+
+             |
+             +-- f[k=10] --+
+             |             |
+             |             +-- k = 10
+             |             +-- v = hello
+             |
+             +-- f[k=20] --+
+                           |
+                           +-- k = 20
+                           +-- v = world
+```
+
+After:
+```
+root +
+     |
+     + a --+
+             |
+             +-- f[k=10] --+
+             |             |
+             |             +-- k = 10
+             |             +-- v = hello
+             |
+             +-- f[k=20] --+
+             |             |
+             |             +-- k = 20
+             |             +-- v = solar
+             |
+             +-- f[k=30] --+
+                           |
+                           +-- k = 30
+                           +-- v = system
+```
 
 ### 3.4.5 Modifying Paths Identified by Attributes
 
@@ -1089,11 +1142,6 @@ array), the following considerations apply:
     operation's path specifies  a subset of the attributes (e.g., `/a/f[k1=10]`)
     then this MUST be considered an error by the target system - and an status
     code of` InvalidArgument (3)` specified.
-*   Where the path specified refers to a node which itself represents the
-    collection of objects (list, map, or array) a replace operation MUST remove
-    all collection entries that are not supplied in the value provided in the
-    `SetRequest`. An update operation MUST be considered to add new entries to
-    the collection if they do not exist.
 *   In the case that key values are specified both as attributes of a node, and
     as their own elements within the data tree, update or replace operations
     that modify instances of the key in conflicting ways MUST be considered an
