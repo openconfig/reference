@@ -1,10 +1,7 @@
 # Mixing Schemas in gNMI
-**Contributors**: aashaikh, hines, robjs, csl  
-October 2016, Updated May 2018  
-*Implementation Status*: Merged
-
 
 ## Problem Statement
+
 Today's network devices support multiple schema representations of their
 underlying configuration and telemetry databases. Particularly, devices
 typically support:
@@ -44,14 +41,14 @@ within the message is uniquely identified by the tuple of `<origin, path>`.
 The `origin` field is valid in any context of a `Path` message. Typically it is
 used:
 
- * In a `SetRequest` to indicate a particular schema is being used to modify
-   the target configuration.
- * In a `GetRequest` to retrieve the contents of a particular schema, or in
-   a `GetResponse` to indicate that the payload contains data from a
-   particular `<origin, path>` schema.
- * In a `SubscribeRequest` to subscribe to paths within a particular schema,
-   or `SubscribeResponse` to indicate an update corresponds to a particular
-   `<origin, path>` tuple.
+* In a `SetRequest` to indicate a particular schema is being used to modify
+  the target configuration.
+* In a `GetRequest` to retrieve the contents of a particular schema, or in
+  a `GetResponse` to indicate that the payload contains data from a
+  particular `<origin, path>` schema.
+* In a `SubscribeRequest` to subscribe to paths within a particular schema,
+  or `SubscribeResponse` to indicate an update corresponds to a particular
+  `<origin, path>` tuple.
 
 If more than one `origin` is to be used within any message, a path in the
 `prefix` MUST NOT be specified, since a prefix applies to all paths within the
@@ -100,22 +97,27 @@ constrained to the specified origin. Particularly:
   MUST specify multiple paths within the `delete` of the `SetRequest`.
 
 ### Special considerations for the use of Origin CLI
-* If a `Set` RPC contains `origin` CLI, the CLI origin MUST be given precedence
-  over the OpenConfig origin.  This precedence is independent of the order in
-  which origin CLI appears.  This overrides the gNMI specification requirement
-  of ordered path based precedence within a `SetRequest`.  The goal of this
-  precedence is to create deterministic behavior for resolving overlapping
-  configuration.
-* The `update` operation MUST be supported for `origin` CLI.  The `update`
-  operation is compatible with the requirement for `origin` CLI to take
-  precedence.
-  
-* Because there is no explicit expectation of CLI to use a path based
-  structure, use of the `replace` operation is not recommended unless the
-  intent is to replace the entire configuration with the contents of the origin CLI message.  Replacing
-  the entire configuration with CLI content in a mixed origin `SetRequest`
-  where origin CLI takes precedence means the other origin messages will have
-  no effect.
+
+The following rules apply to a setRequest containing `origin` CLI.  TODO:
+Special considerations for mixing native schema are currently undefined.
+
+* If a `SetRequest` contains `origin` `cli` and `origin` `openconfig`, the CLI
+  MUST be given precedence over the OpenConfig origin.  This precedence is
+  independent of the order in which origin CLI appears.  This overrides the
+  gNMI specification requirement of ordered path based precedence within a
+  `SetRequest`.  The goal of this precedence is to create deterministic
+  behavior for resolving overlapping configuration.  For setRequests without
+  `origin` CLI, order based precedence still applies.
+* The `update` operation MUST be supported for setRequests containing `origin`
+  `cli` and `origin` `openconfig`.  The `update` operation is compatible with
+  the requirements for `origin` `cli` to take precedence.
+* The `replace` operation for a setRequest containing only `origin` `cli` MUST
+  be treated as a full device configuration replacement.
+* The `replace` operation for a setRequest containing both CLI and OpenConfig,
+  the OpenConfig and CLI should be merged, with precedence to CLI for any
+  overlapping configuration, and then the replace operation performed.  The
+  goal is to allow configuration replacement to occur at a sub-tree level using
+  both OpenConfig and the CLI configuration data.
 
 ### Transactionality of Sets with multiple Origins
 
