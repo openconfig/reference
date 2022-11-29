@@ -4,10 +4,13 @@
 Paul Borman, Marcus Hines, Carl Lebsack, Chris Morrow, Anees Shaikh, Rob Shakir
 
 **Date:**
-July 7, 2022
+November 28, 2022
 
 **Version:**
-0.8.1
+0.8.2
+
+**[gNMI service](https://github.com/openconfig/gnmi/blob/master/proto/gnmi/gnmi.proto) compatibility:**
+0.8.x
 
 # Table of Contents
 
@@ -1652,6 +1655,11 @@ limitations under the License
 ```
 
 # 7 Revision History
+
+* v0.8.2: November 28, 2022
+  * Clarify difference between `SetRequest` `update` vs. `replace` when updating
+    a keyed list.
+  * Add gNMI service compatibility version.
 
 * v0.8.1: July 7, 2022
   * Clarify that for `Subscribe`, a transition to a YANG default value for a
