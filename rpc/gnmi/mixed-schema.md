@@ -98,7 +98,7 @@ constrained to the specified origin. Particularly:
 
 ### Special considerations for the use of Origin CLI
 
-The following rules apply to a setRequest containing `origin` CLI.  TODO:
+The following rules apply to a `SetRequest` containing `origin` CLI.  TODO:
 Special considerations for mixing native schema are currently undefined.
 
 * If a `SetRequest` contains `origin` `cli` and `origin` `openconfig`, the CLI
