@@ -120,7 +120,7 @@ Special considerations for mixing native schema are currently undefined.
   interpreted as a full configuration replacement, the result of this
   setRequest should be a full configuration replacement with the merged
   content of the CLI and OpenConfig paths.
-* A `replace` operation for `origin` `openconfig`, followed by a `update`
+* A `replace` operation for `origin` `openconfig`, followed by an `update`
   operation for `origin` `cli` in a single setRequest SHOULD be supported.
   The goal is to allow configuration replacement to occur at a sub-tree level
   using both OpenConfig and the CLI configuration data.
