@@ -113,8 +113,8 @@ Special considerations for mixing native schema are currently undefined.
   the requirements for `origin` `cli` to take precedence.
 * The `replace` operation for a setRequest containing only `origin` `cli` MUST
   be treated as a full device configuration replacement.
-* The `replace` operation for a setRequest containing both CLI and OpenConfig,
-  the OpenConfig and CLI SHOULD be supported.  The content of the two origins
+* The `replace` operation for a setRequest containing both CLI and OpenConfig
+  SHOULD be supported.  The content of the two origins
   SHOULD be be merged, with precedence to CLI for any overlapping
   configuration, and then the replace operation performed.  Since the CLI is
   interpreted as a full configuration replacement, the result of this
