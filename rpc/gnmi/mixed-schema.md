@@ -1,10 +1,11 @@
 # Mixing Schemas in gNMI
-**Contributors**: aashaikh, hines, robjs, csl  
-October 2016, Updated May 2018  
+
+**Contributors**: aashaikh, hines, robjs, csl, dloher
+October 2016, Updated December 2022  
 *Implementation Status*: Merged
 
-
 ## Problem Statement
+
 Today's network devices support multiple schema representations of their
 underlying configuration and telemetry databases. Particularly, devices
 typically support:
@@ -108,50 +109,187 @@ if all transactions succeed should the `SetResponse` indicate success. If any
 of the transactions fail, the contents of all origins MUST be rolled back, and
 an error status returned upon responding to the `Set` RPC.
 
-## Example
+## Special considerations for a setRequest with openconfig and cli origins
 
-### Example: OpenConfig and CLI Data
+### Use cases
+The operational use cases for a setRequest `replace` operation containing both OC and CLI origins include:
+
+1. The ability to support incremental transition from CLI based configuration to OpenConfig configuration.
+2. A device may implement configuration items which are only defined in CLI while other configuration items are supported with OpenConfig.
+3. The desire to use a full configuration replacement strategy.
+
+To support these use cases a special meaning to a setRequest with replace origin `cli` and replace origin `openconfig` is defined.
+
+### SetRequest behavior
+
+A `SetRequest` message using the `replace` operation for both `cli` and `openconfig` origins SHOULD be performed as follows:
+
+1. `origin` `cli` SHOULD appear first.  
+2. The entire contents of the `ascii` encoded `cli` data SHOULD appear in a single update.
+3. The `replace` operation for origin `cli` SHOULD be interpeted as a full configuration replacement.  In other words, the target device SHOULD erase the `cli` configuration and replace it with the contents of the `cli` update message.
+4. `origin` `openconfig` should appear second.  
+5. The target device should merge the `cli` and `openconfig` and apply the merged configuration as a single replace operation, replacing the combined `cli` and `openconfig` configuration of the device.
+6. If an error occurs in merging or applying the merged configuration the device should behave as specified in [Transactionality of Sets with multiple Origins](#transactionality-of-sets-with-multiple-origins).
+
+## Examples
+
+### Example: OpenConfig and CLI origin `replace` operation
 
 If a client wishes to replace both OpenConfig and CLI-modelled data
 concurrently, it can send the following `SetRequest`:
 
-```
+```json
+replace: <
+  path: <
+    origin: "cli"
+  >
+  val: <
+    ascii_val: "
+    qos traffic-class 0 name target-group-BE0
+    qos tx-queue 0 name BE0"
+  >
+>
 replace: <
   path: <
     origin: "openconfig"
   >
   val: <
     json_val: `
-      {
-        "interfaces": {
-          "interface": [
-            {
-              "name": "eth0",
-              "config": {
-                "name": "eth0",
-                "admin-status": "UP"
+      {  
+        "qos": {
+          "classifiers": {
+            "classifier": [
+              {
+                "config": {
+                  "name": "dscp_based_classifier_ipv4",
+                  "type": "IPV4"
+                },
+                "name": "dscp_based_classifier_ipv4",
+                "terms": {
+                  "term": [
+                    {
+                      "actions": {
+                        "config": {
+                          "target-group": "target-group-BE0"
+                        }
+                      },
+                      "conditions": {
+                        "ipv4": {
+                          "config": {
+                            "dscp-set": [
+                              4, 5, 6, 7
+                            ]
+                          }
+                        }
+                      },
+                      "config": {
+                        "id": "1"
+                      },
+                      "id": "1"
+                    },
+                  ]
+                }
               }
-            }
-          ]
+            ]
+          },
+          "forwarding-groups": {
+            "forwarding-group": [
+              {
+                "config": {
+                  "fabric-priority": 5,
+                  "name": "target-group-BE0",
+                  "output-queue": "BE0"
+                },
+                "name": "target-group-BE0"
+              }
+            ]
+          },
+          "interfaces": {
+            "interface": [
+              {
+                "interface-id": "Port-Channel6",
+                "output": {
+                  "queues": {
+                    "queue": [
+                      {
+                        "config": {
+                          "name": "BE0",
+                        },
+                        "name": "BE0"
+                      }
+                    ]
+                  },
+                  "scheduler-policy": {
+                    "config": {
+                      "name": "scheduler"
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          "queues": {
+            "queue": [
+              {
+                "config": {
+                  "name": "BE0"
+                },
+                "name": "BE0"
+              }
+            ]
+          },
+          "scheduler-policies": {
+            "scheduler-policy": [
+              {
+                "config": {
+                  "name": "scheduler"
+                },
+                "name": "scheduler",
+                "schedulers": {
+                  "scheduler": [
+                    {
+                      "config": {
+                        "sequence": 1
+                      },
+                      "inputs": {
+                        "input": [
+                          {
+                            "config": {
+                              "id": "BE0",
+                              "input-type": "QUEUE",
+                              "queue": "BE0"
+                            },
+                            "id": "BE0"
+                          }
+                        ]
+                      },
+                      "sequence": 1
+                    }
+                  ]
+                }
+              }
+            ]
+          }
         }
       }
     `
   >
 >
-replace: <
-  path: <
-    origin: "cli"
-  >
-  val: <
-    ascii_val: "router bgp 15169"
-  >
->
 ```
 
-This transaction replaces the contents of both the "openconfig" and "cli"
-origins.  The first `replace` message replaces the OpenConfig origin at the root
-(as specified by the zero-length array of `PathElem` messages) to the specified
-JSON. The second `replace` replaces the CLI configuration of the device is
-replaced with the string specified in the `ascii_val` field. Per the gNMI
-specification, both `replace` operations MUST successfully be applied, otherwise
-the configuration change should be rolled back.
+This transaction replaces the entire contents of the device configuration with
+a merger of the `openconfig` and `cli` origin data.  Both the `openconfig` and
+`cli` data are intentionally simplified in this example, leaving out parts
+required for real operation such as management network and interface
+configuration necessary to maintain a connection to the device.
+
+The `cli` `replace` operation replaces the full device configuration with the
+string specified in the `ascii_val` field.  The `openconfig` `replace`
+operation is performed at the root of the OpenConfig origin (as specified by
+the zero-length array of `PathElem` messages) to the specified JSON.
+
+The result is the BE0 queue is created in by `cli` and referenced by the
+`openconfig` configuration.  
+
+Per the gNMI specification, both `replace` operations MUST successfully be
+applied, otherwise the entire configuration change should be rolled back.
