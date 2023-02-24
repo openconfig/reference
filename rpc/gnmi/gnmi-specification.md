@@ -1,7 +1,7 @@
 # gRPC Network Management Interface (gNMI)
 
 **Contributors:**
-Paul Borman, Marcus Hines, Carl Lebsack, Chris Morrow, Anees Shaikh, Rob Shakir
+Paul Borman, Marcus Hines, Carl Lebsack, Chris Morrow, Anees Shaikh, Rob Shakir, Wen Bo Li
 
 **Date:**
 November 28, 2022
