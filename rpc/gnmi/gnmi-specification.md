@@ -4,10 +4,10 @@
 Paul Borman, Marcus Hines, Carl Lebsack, Chris Morrow, Anees Shaikh, Rob Shakir, Wen Bo Li
 
 **Date:**
-November 28, 2022
+April 18, 2023
 
 **Version:**
-0.8.2
+0.8.3
 
 **[gNMI service](https://github.com/openconfig/gnmi/blob/master/proto/gnmi/gnmi.proto) compatibility:**
 0.8.x
@@ -1658,6 +1658,9 @@ limitations under the License
 ```
 
 # 7 Revision History
+
+* v0.8.3: April 18, 2023
+  * Clarify that `SetRequest` `replace` on a list element with `{}` is invalid.
 
 * v0.8.2: November 28, 2022
   * Clarify difference between `SetRequest` `update` vs. `replace` when updating
