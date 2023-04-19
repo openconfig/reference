@@ -4,10 +4,10 @@
 Paul Borman, Marcus Hines, Carl Lebsack, Chris Morrow, Anees Shaikh, Rob Shakir, Wen Bo Li
 
 **Date:**
-November 28, 2022
+April 18, 2023
 
 **Version:**
-0.8.2
+0.8.3
 
 **[gNMI service](https://github.com/openconfig/gnmi/blob/master/proto/gnmi/gnmi.proto) compatibility:**
 0.8.x
@@ -1077,9 +1077,12 @@ setting of True and the configuration of `c` MUST be deleted from the tree,
 and returned to its original un-configured setting.
 
 `replace` MUST not be used as a way to delete configuration at the path
-specified by being supplied with a null or invalid value. For example, if the
-boolean `b` is provided a `nil` value instead of a boolean value, the target
-MUST reject this operation by returning `INVALID_ARGUMENT`.
+specified by being supplied with a null or invalid value. For example, it is
+invalid to replace a keyed list element (e.g. `/a/f[k=10]`) with an empty JSON
+object `{}`, which implicitly deletes the list's keys and renders the list
+element keyless. It is also invalid to replace a leaf value (e.g. the boolean
+`b`) with a `nil` value instead of a boolean value. In both of the above cases,
+the target MUST reject the operation by returning `INVALID_ARGUMENT`.
 
 For `update` operations:
 
@@ -1655,6 +1658,9 @@ limitations under the License
 ```
 
 # 7 Revision History
+
+* v0.8.3: April 18, 2023
+  * Clarify that `SetRequest` `replace` on a list element with `{}` is invalid.
 
 * v0.8.2: November 28, 2022
   * Clarify difference between `SetRequest` `update` vs. `replace` when updating
