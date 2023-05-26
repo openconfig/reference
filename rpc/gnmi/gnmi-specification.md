@@ -10,7 +10,7 @@ May 25, 2023
 0.10.0
 
 **[gNMI service](https://github.com/openconfig/gnmi/blob/master/proto/gnmi/gnmi.proto) compatibility:**
-0.8.x
+0.10.x
 
 # Table of Contents
 
@@ -1670,7 +1670,7 @@ limitations under the License
 # 7 Revision History
 
 * v0.10.0: May 25, 2023
-  * Add union_replace operation.  Sync revision  to gNMI proto revision.
+  * Add union_replace operation.  Sync revision to gNMI proto revision.
 
 * v0.8.3: April 18, 2023
   * Clarify that `SetRequest` `replace` on a list element with `{}` is invalid.
