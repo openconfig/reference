@@ -881,7 +881,9 @@ The `GetResponse` message consists of:
     and hence MUST NOT collapse data from multiple paths into a single
     `Notification` within the response. The `timestamp` field of the
     `Notification` message MUST be set to the time at which the target's
-    snapshot of the relevant path was taken.
+    snapshot of the relevant path was taken. If the path is syntactically valid
+    but does not (yet) exist, then the `update` field of the `Notification` MUST
+    be empty.
 *   `extension` - a repeated field used to carry gNMI extensions, as per the
     description in [Section 2.7](#27-extensions-to-gnmi).
 
@@ -1423,8 +1425,10 @@ the current data tree on the server. While the path within the subscription
 SHOULD be a valid path within the set of schema modules that the target
 supports, subscribing to any syntactically valid path within such modules MUST
 be allowed. In the case that a particular path does not (yet) exist, the target
-MUST NOT close the RPC, and instead should continue to monitor for the existence
-of the path, and transmit telemetry updates should it exist in the future.
+would send a `sync_response` as the very first message to indicate this, and in
+the case of `STREAM` subscriptions, MUST NOT close the RPC, and instead should
+continue to monitor for the existence of the path, and transmit telemetry
+updates should it exist in the future.
 
 <!-- TODO(robjs): Need a way to be able to send this information. Previously
 said:
