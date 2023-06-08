@@ -35,7 +35,12 @@ May 25, 2023
   - [2.5 Error handling](#25-error-handling)
   - [2.6 Schema Definition Models](#26-schema-definition-models)
     - [2.6.1 The ModelData message](#261-the-modeldata-message)
-  - [2.7 Extensions to gNMI](#27-extensions-to-gnmi)
+  - [2.7 gNMI Origin  in `Path`](#27-gnmi-origin--in-path)
+    - [2.7.1 Special Values of `origin`](#271-special-values-of-origin)
+    - [2.7.2 Definition of `origin` for YANG-modelled Data](#272-definition-of-origin-for-yang-modelled-data)
+    - [2.7.3 Partial Specifications of Origin in Set](#273-partial-specifications-of-origin-in-set)
+    - [2.7.4 Transactionality of Sets with multiple Origins](#274-transactionality-of-sets-with-multiple-origins)
+  - [2.8 Extensions to gNMI](#28-extensions-to-gnmi)
 - [3 Service Definition](#3-service-definition)
   - [3.1 Session Security, Authentication and RPC Authorization](#31-session-security-authentication-and-rpc-authorization)
   - [3.2 Capability Discovery](#32-capability-discovery)
@@ -50,7 +55,7 @@ May 25, 2023
     - [3.4.1 The SetRequest Message](#341-the-setrequest-message)
     - [3.4.2 The SetResponse Message](#342-the-setresponse-message)
     - [3.4.3 Transactions](#343-transactions)
-    - [3.4.4 Modes of Update: union\_replace, Replace and Update](#344-modes-of-update-union_replace-replace-and-update)
+    - [3.4.4 Modes of Update: Union replace, Replace and Update](#344-modes-of-update-union-replace-replace-and-update)
     - [3.4.5 Modifying Paths Identified by Attributes](#345-modifying-paths-identified-by-attributes)
     - [3.4.6 Deleting Configuration](#346-deleting-configuration)
     - [3.4.7 Error Handling](#347-error-handling)
@@ -189,13 +194,13 @@ encoded as a string.
 
 A path is represented by the `Path` message with the following fields:
 
-* `origin` - a field which MAY be used to disambiguate the path if necessary.
-    For example, the origin may be used to indicate which organization defined
-    the schema to which the path belongs.
+* `origin` - a field which MAY be used to assert the schema the path belongs to.
+    A detailed description of origin is provided in
+    [2.7](#27-origin-specification-in-path).
 * `elem` - an array of `PathElem` messages, each containing the name of the
     element, and any associated keys.
-* `target` - the name of the target for which the path is a member. Only set
-    in `prefix` for a path. Elaboration of this field is in
+* `target` - the name of the target for which the path is a member. Only set in
+    `prefix` for a path. Elaboration of this field is in
     [2.2.2.1](#2221-path-target).
 
 Each `Path` element should correspond to a node in the data tree. For example,
@@ -693,7 +698,88 @@ Each `ModelData` message contains the following fields:
 
 The combination of `name`, `organization`, and `version` uniquely identifies an entry in the model catalog.
 
-## 2.7 Extensions to gNMI
+## 2.7 gNMI Origin  in `Path`
+
+The `origin` field in the `Path` message identifies a schema that the path
+belongs to. `origin` is encoded as a string. The path specified within the
+message is uniquely identified by the tuple of `<origin, path>`.
+
+The `origin` field is valid in any context of a `Path` message. Typically it is
+used:
+
+ * In a `SetRequest` to indicate a particular schema is being used to modify
+   the target configuration.
+ * In a `GetRequest` to retrieve the contents of a particular schema, or in
+   a `GetResponse` to indicate that the payload contains data from a
+   particular `<origin, path>` schema.
+ * In a `SubscribeRequest` to subscribe to paths within a particular schema,
+   or `SubscribeResponse` to indicate an update corresponds to a particular
+   `<origin, path>` tuple.
+
+If more than one `origin` is to be used within any message, a path in the
+`prefix` MUST NOT be specified, since a prefix applies to all paths within the
+message. In the case that a `prefix` is specified, it MUST specify any required
+`origin`. A single request MUST NOT specify `origin` in both `prefix` and `path`
+fields in any RPC payload messages.
+
+### 2.7.1 Special Values of `origin`
+
+Origin values are agreed out of band to the gNMI protocol. Currently, special
+values are registered within this section of this document. Should additional
+origins be defined, a registry will be defined.
+
+Where the `origin` field is unspecified, its value should default to
+`openconfig`. It is RECOMMENDED that the origin is explictly set.
+
+Where the `origin` field is set to a command line interface format, the path
+should be ignored and the value specified within the `Update` considered as CLI
+input.
+
+CLI configuration is defined as the command line interface text used for
+configuration.  In gNMI, this is encoded as ASCII text.  The format of the ASCII
+text is agreed to out of band from  gNMI.  The string used to identify the CLI
+origin must be formatted as `origin:<nos_cli>`.  Example values might include:
+`xros_cli`, `junos_cli`, `srlinux_cli` or any string which indicates the NOS
+name and the CLI designation.
+
+### 2.7.2 Definition of `origin` for YANG-modelled Data
+
+The `openconfig-extensions:origin` field MAY be utilised to determine the
+origin within which a particular module is instantiated. The specification of
+this extension is within
+[openconfig-extensions.yang](https://github.com/openconfig/public/blob/master/release/models/openconfig-extensions.yang).
+
+It should be noted that `origin` is distinct from `namespace`. Whilst a YANG
+namespace is defined at any depth within the schema tree, an `origin` is
+only used to disambiguate entire schema trees. That is to say, any element
+that is not at the root inherits its `origin` from its root entity, regardless
+of the YANG schema modules that make up that root.
+
+### 2.7.3 Partial Specifications of Origin in Set
+
+If a `Set` RPC specifies `delete`, `update`, or `replace` fields which include
+an `origin` within their `Path` messages, the corresponding change MUST be
+constrained to the specified origin. Particularly:
+
+* `replace` operations MUST only replace the contents of the specified `origin`
+  at the specified path. Origins that are not specified within the `SetRequest`
+  MUST NOT have their contents replaced. In order for a `replace` operation to
+  replace any contents of an `origin` it must be explicitly specified in the
+  `SetRequest`.
+* `delete` operations MUST delete only the contents at the specified path within
+  the specified `origin`. To delete contents from multiple origins, a client
+  MUST specify multiple paths within the `delete` of the `SetRequest`.
+
+### 2.7.4 Transactionality of Sets with multiple Origins
+
+Where a `SetRequest` specifies more than one `origin` - i.e., two or more
+operations whose path include more than one origin - manipulations to all
+affected trees MUST be considered as a single transaction. That is to say, only
+if all transactions succeed should the `SetResponse` indicate success. If any
+of the transactions fail, the contents of all origins MUST be rolled back, and
+an error status returned upon responding to the `Set` RPC.
+
+## 2.8 Extensions to gNMI
 
 Each top-level RPC message (e.g., `SubscribeRequest` and `SubscribeResponse` for
 the `Subscribe` RPC) defines an `extensions` field which can be used to carry
@@ -922,9 +1008,10 @@ within it - which are treated as a transaction (see [Section
 3.4.3](#343-transactions)). The server MUST process paths in the following order:
 
 1. deleted paths (within the`delete` field of the `SetRequest`)
-2. union_replaced paths (within the `union_replace` field)
-3. replaced paths (within the `replace` field)
-4. updated paths (within the `update` field)
+2. replaced paths (within the `replace` field)
+3. updated paths (within the `update` field)
+or as a single set of union_replace operations.  That is, union_replace is not
+mixed with other operations in a SetRequest.
 
 The order of the fields MUST be treated as significant within a
 single `SetRequest` message.  If a single path is specified multiple times for a
@@ -1028,7 +1115,7 @@ As the scope of a "transaction" is a single `SetRequest` message, a client
 desiring a set of changes to be applied together MUST ensure that they are
 encapsulated within a single `SetRequest` message.
 
-### 3.4.4 Modes of Update: union_replace, Replace and Update
+### 3.4.4 Modes of Update: Union replace, Replace and Update
 
 Changes to read-write values on the target are applied based on the
 `union_replace`, `replace` and `update` fields of the `SetRequest` message.
@@ -1047,7 +1134,9 @@ entries that are not supplied in the value provided in the `SetRequest`. An
 update operation MUST be considered to add new entries to the collection if they
 do not exist.
 
-For `union_replace` operations, see the [gNMI union_replace specification](https://github.com/openconfig/reference/blob/master/rpc/gnmi/gnmi-union_replace.md).
+For `union_replace` operations, the contents contents shall be merged (unioned)
+and then applied as a replacement of the configuration.  See the
+[gNMI union_replace specification](https://github.com/openconfig/reference/blob/master/rpc/gnmi/gnmi-union_replace.md).
 
 For `replace` operations:
 
