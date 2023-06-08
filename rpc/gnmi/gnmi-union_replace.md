@@ -36,8 +36,8 @@
         - [5.3.3.2 Overlapping values in CLI and OC](#5332-overlapping-values-in-cli-and-oc)
         - [Option 1: Resolving issues with union of CLI and OC values with error](#option-1-resolving-issues-with-union-of-cli-and-oc-values-with-error)
         - [Option 2: Resolving issues with merging CLI and OC by overwriting](#option-2-resolving-issues-with-merging-cli-and-oc-by-overwriting)
-      - [5.3.6 Overlapping values in NY and OC](#536-overlapping-values-in-ny-and-oc)
-      - [5.3.7 Example of resolving default values](#537-example-of-resolving-default-values)
+      - [5.3.4 Overlapping values in NY and OC](#534-overlapping-values-in-ny-and-oc)
+      - [5.3.5 Example of resolving default values](#535-example-of-resolving-default-values)
         - [Scenario A](#scenario-a)
         - [Scenario B](#scenario-b)
   - [6 Examples](#6-examples)
@@ -407,13 +407,13 @@ provide CLI and OC which are not in conflict.
 When applying CLI or NY data to the candidate configuration, overwrite any
 configuration item already present following the order of merge precedence.
 
-#### 5.3.6 Overlapping values in NY and OC
+#### 5.3.4 Overlapping values in NY and OC
 
 Where a pathed, NY origin configuration item overlaps with OC, the target MUST
 return an `INVALID_ARGUMENT` error.  It is up to the client to provide the
 native schema and OC which are not in conflict.
 
-#### 5.3.7 Example of resolving default values
+#### 5.3.5 Example of resolving default values
 
 Here are two examples of when to use OC or CLI defaults in a  `SetRequest`.
 
