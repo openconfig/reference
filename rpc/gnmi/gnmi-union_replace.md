@@ -29,8 +29,8 @@
     - [5.2 Requirements for `SetRequest` with 2 origins](#52-requirements-for-setrequest-with-2-origins)
       - [5.2.2 union\_replace operation containing a native origin and origin OpenConfig](#522-union_replace-operation-containing-a-native-origin-and-origin-openconfig)
     - [5.3 Union behavior options](#53-union-behavior-options)
-      - [5.3.1 union behavior for CLI and OpenConfig](#531-union-behavior-for-cli-and-openconfig)
-      - [5.3.2 union behavior for Native and OpenConfig](#532-union-behavior-for-native-and-openconfig)
+      - [5.3.1 Union behavior for CLI and OpenConfig](#531-union-behavior-for-cli-and-openconfig)
+      - [5.3.2 Union behavior for Native and OpenConfig](#532-union-behavior-for-native-and-openconfig)
       - [5.3.3 Resolving issues with union between the origins](#533-resolving-issues-with-union-between-the-origins)
         - [5.3.3.1 Default values](#5331-default-values)
         - [5.3.3.2 Overlapping values in CLI and OC](#5332-overlapping-values-in-cli-and-oc)
@@ -310,7 +310,7 @@ which portion of the tree should be replaced, including the entire NY tree.
    the error details with sufficient information for the union operation’s
    failure to be debugged.
 
-1. Replace the running configuration with the candidate configuration
+1. Replace the running configuration with the candidate configuration.
 
 1. If an error occurs when performing the configuration replacement the existing
    gNMI specification 3.4.3 applies.  The target rolls back all configuration
@@ -326,7 +326,7 @@ OpenConfig. In addition, there are two options for handling errors in the union
 process. A NOS must assert which error handling option is implemented in its
 documentation.
 
-#### 5.3.1 union behavior for CLI and OpenConfig
+#### 5.3.1 Union behavior for CLI and OpenConfig
 
 As the origins are joined together, the precedence specified (per origin) should
 be followed to determine the order in which they are applied. The concept of
@@ -348,7 +348,7 @@ should be performed as follows:
    resolution is defined in
    [5.3.3](5.3.3-Resolving-issues-with-union-between-the-origins).
 
-#### 5.3.2 union behavior for Native and OpenConfig
+#### 5.3.2 Union behavior for Native and OpenConfig
 
 We define a native origin to be precedence 100, and `origin: openconfig` to be
 precedence 110.  A Set operation specifying `union_replace` operation for both
