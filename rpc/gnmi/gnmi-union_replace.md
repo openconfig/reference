@@ -446,7 +446,7 @@ Figure 1 - union_replace state machine
 
 ### 6.3 union_replace example
 
-```json
+```textproto
 union_replace: {
   path: {
     origin: "acme_cli"
