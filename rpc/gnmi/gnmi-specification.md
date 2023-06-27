@@ -1252,22 +1252,22 @@ identify an element (i.e., the path within the schema represents a list, map,
 or array), the following considerations apply:
 
 - In the case that multiple attribute values are required to uniquely address
-    an element - e.g., `/a/f[k1=10][k2=20]`- and a replace or update
-    operation's path specifies  a subset of the attributes (e.g., `/a/f[k1=10]`)
-    then this MUST be considered an error by the target system - and an status
-    code of` InvalidArgument (3)` specified.
-*   In the case that key values are specified both as attributes of a node in the
-    path, and as their own elements within the value, then this MUST be considered
-    an error by the target system - and a status code of `InvalidArgument (3)`
-    specified.  Targeting a list member with update or replace operations that
-    modify it's own keys in either conflicting or identical fashion is not
-    permitted thus they must be omitted from the value payload.  This holds true
-    for the direct descendant list key nodes as well as the ultimate leafref'd
-    nodes per OpenConfig [style guidelines](https://github.com/openconfig/public/blob/master/doc/openconfig_style_guide.md#list).
+  an element - e.g., `/a/f[k1=10][k2=20]`- and a replace or update
+  operation's path specifies  a subset of the attributes (e.g., `/a/f[k1=10]`)
+  then this MUST be considered an error by the target system - and an status
+  code of` InvalidArgument (3)` specified.
+- In the case that key values are specified both as attributes of a node in the
+  path, and as their own elements within the value, then this MUST be considered
+  an error by the target system - and a status code of `InvalidArgument (3)`
+  specified.  Targeting a list member with update or replace operations that
+  modify it's own keys in either conflicting or identical fashion is not
+  permitted thus they must be omitted from the value payload.  This holds true
+  for the direct descendant list key nodes as well as the ultimate leafref'd
+  nodes per OpenConfig [style guidelines](https://github.com/openconfig/public/blob/master/doc/openconfig_style_guide.md#list).
 - In the case that key values are specified both as attributes of a node, and
-    as their own elements within the data tree, update or replace operations
-    that modify instances of the key in conflicting ways MUST be considered an
-    error. The target MUST return a status code of `InvalidArgument (3)`.
+  as their own elements within the data tree, update or replace operations
+  that modify instances of the key in conflicting ways MUST be considered an
+  error. The target MUST return a status code of `InvalidArgument (3)`.
 
 For example, consider a tree corresponding to the examples above, as illustrated
 below.
