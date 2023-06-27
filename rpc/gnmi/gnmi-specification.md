@@ -1255,7 +1255,6 @@ or array), the following considerations apply:
     an element - e.g., `/a/f[k1=10][k2=20]`- and a replace or update
     operation's path specifies  a subset of the attributes (e.g., `/a/f[k1=10]`)
     then this MUST be considered an error by the target system - and an status
-<<<<<<< HEAD
     code of` InvalidArgument (3)` specified.
 *   In the case that key values are specified both as attributes of a node in the
     path, and as their own elements within the value, then this MUST be considered
@@ -1265,13 +1264,10 @@ or array), the following considerations apply:
     permitted thus they must be omitted from the value payload.  This holds true
     for the direct descendant list key nodes as well as the ultimate leafref'd
     nodes per OpenConfig [style guidelines](https://github.com/openconfig/public/blob/master/doc/openconfig_style_guide.md#list).
-=======
-    code of`InvalidArgument (3)` specified.
 - In the case that key values are specified both as attributes of a node, and
     as their own elements within the data tree, update or replace operations
     that modify instances of the key in conflicting ways MUST be considered an
     error. The target MUST return a status code of `InvalidArgument (3)`.
->>>>>>> master
 
 For example, consider a tree corresponding to the examples above, as illustrated
 below.
@@ -1779,14 +1775,10 @@ limitations under the License
 
 # 7 Revision History
 
-<<<<<<< HEAD
-* v0.9.0: Nov 18, 2022
-  * Clarify that for `Set`, that if targeting a path by list keys that the
+- v0.10.1: June 27, 2023
+  - Clarify that for `Set`, that if targeting a path by list keys that the
     list keys cannot be included within the value payload
 
-* v0.8.1: July 7, 2022
-  * Clarify that for `Subscribe`, a transition to a YANG default value for a
-=======
 - v0.10.0: May 25, 2023
   - Add `union_replace` operation.  Sync revision to gNMI proto revision.
 
@@ -1800,7 +1792,6 @@ limitations under the License
 
 - v0.8.1: July 7, 2022
   - Clarify that for `Subscribe`, a transition to a YANG default value for a
->>>>>>> master
     leaf must use `update` rather than just a `delete`.
   - Clarify that for `Set`, deleting configuration using `replace(nil)` is
     prohibited.
