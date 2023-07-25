@@ -204,8 +204,8 @@ section.
 
 Thus, mixed schema must handle two combinations: 
 
-- OC
-- CLI OC and NY
+- OC and CLI
+- OC and NY
 
 Note, it is assumed that both the native schema and CLI model the entire
 configuration surface area of the device. There is no requirement to support OC,
