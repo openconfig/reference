@@ -291,13 +291,13 @@ are:
    management port and that protocols like BGP and ISIS are not instantiated and
    therefore are also not enabled.
 
-When using union_replace, the user is expecting to assert all configuration
+    When using union_replace, the user is expecting to assert all configuration
 items needed to ensure the device has the intended state. For example, if a
 device factory default configuration includes an admin account and the user
 wants this removed, the user must include the negation of that user in the
-union_replace.
+union_replace.  
 
-If using NY origin, create a candidate configuration using the current running
+    If using NY origin, create a candidate configuration using the current running
 configuration.  Because a NY origin has a path structure, the user can control
 which portion of the tree should be replaced, including the entire NY tree.
 
