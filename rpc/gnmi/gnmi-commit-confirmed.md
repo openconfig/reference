@@ -1,6 +1,6 @@
 # gNMI Commit Confirmed Extension
 
-**Contributors:** Gautham V Kidiyoor, Rob Shakir, Vinit Kanvinde, Priyadeep Bangalore Lokesh
+**Contributors:** Gautham V Kidiyoor, Roman Dodin, Rob Shakir, Vinit Kanvinde, Priyadeep Bangalore Lokesh
 
 **Date:** September 20, 2023
 
@@ -35,50 +35,54 @@ A `Commit` message is embedded the Extension message of the SetRequest proto.
 ## 3.1 Proto
 
 ```
-// Commit confirmed extension allows automated revert of a configuration after
-// certain duration if an explicit confirmation is not issued. This duration can
-// be used to verify the configuration.
-// It also allows explicit cancellation of the commit during the time window of rollback
-// duration if client determine that the configuration needs to be reverted.
+// Commit confirmed extension allows automated revert of the configuration after
+// certain duration if an explicit confirmation is not issued. It allows explicit
+// cancellation of the commit during the rollback window. There cannot be more
+// than one commit active at a given time.
 // The document about gNMI commit confirmed can be found at
 // https://github.com/openconfig/reference/blob/master/rpc/gnmi/gnmi-commit-confirmed.md
 message Commit {
+  // ID is provided by the client during the commit request. During confirm and cancel
+  // actions the provided ID should match the ID provided during commit.
+  // If ID is not passed in any actions server shall return error.
+  // Required.
+  string id = 1;
   oneof action {
-    CommitRequest commit = 1;
-    CommitConfirm confirm = 2;
-    CommitCancel cancel = 3;
+    // commit action creates a new commit. If a commit is on-going, server returns error.
+    CommitRequest commit = 2;
+    // confirm action will confirm an on-going commit, the ID provided during confirm
+    // should match the on-going commit ID.
+    CommitConfirm confirm = 3;
+    // cancel action will cancel an on-going commit, the ID provided during cancel
+    // should match the on-going commit ID.
+    CommitCancel cancel = 4;
   }
 }
 
-// Create a new commit confirmed request.
+// CommitRequest is used to create a new confirmed commit. It hold additional
+// parameter requried for commit action.
 message CommitRequest {
-  // Commit id for the request. ID must be generated at the client side, it can be used
-  // to confirm or cancel the request without the rollback_duration interval.
-  string id = 1;
   // Maximum duration to wait for a confirmaton before reverting the commit.
-  google.protobuf.Duration rollback_duration = 2;
+  google.protobuf.Duration rollback_duration = 1;
 }
 
-// Confirm an on-going commit.
-message CommitConfirm {
-  // Commit id of the on-going commit that requires confirmation.
-  string id = 1;
-}
+// CommitConfirm is used to confirm an on-going commit. It hold additional
+// parameter requried for confirm action.
+message CommitConfirm {}
 
-// Cancel an on-going commit.
-message CommitCancel {
-  // Commit id of the on-going commit that requires cancellation.
-  string id = 1;
-}
+// CommitCancel is used to cancel an on-going commit. It hold additional
+// parameter requried for cancel action.
+message CommitCancel {}
 ```
 
 ## 3.2 SetRequest handling                                                        
 
 ### 3.2.1 Commit
-A commit can be initiated by setting `CommitRequest` as action in the extension. A commit `id` needs 
-to be provided which will be used during confirmation or cancellation. `rollback_duration` can be used
-to override the default rollback duration which is 10min. If a confirmation call is not received before
-the rollback duration then the configuration is reverted.
+A commit can be initiated by providing `CommitRequest` as action in the extension. A `id` must to be
+provided by the client. The server shall associate the commit with the provided `id`.
+During confirm or cancel action the provided `id` must match the `id` of the on-going commit.
+`rollback_duration` can be used to override the default rollback duration which is 10min.
+If a confirmation call is not received before the rollback duration then the configuration is reverted.
 
 If a commit is issued whilst an existing rollback counter is running then the server returns with
 FAILED_PRECONDITION error.
@@ -88,15 +92,15 @@ FAILED PRECONDITION error is returned.
 
 ### 3.2.2 Confirm
 
-Confirmation can be issued by setting `ConfirmRequest` as action in the extension. The value of `id`
-should be equivalent to the commit id of the on-going commit which needs confirmation.
+Confirmation can be issued by providing `ConfirmRequest` as action in the extension. The value of `id`
+should be equivalent to the `id` of the on-going commit.
 
-If the server is not waiting for a confirmation or if the value doesn’t match the on-going commit then
+If the server is not waiting for confirmation or if the value doesn’t match the on-going commit then
 FAILED_PRECONDITION or INVALID_ARGUMENT error is returned respectively.
 
 ### 3.2.3 Cancel
-Cancellation can be issued by setting `CancelRequest` as action in the extension. The value of `id`
-should be equivalent to the commit id of the on-going commit which needs cancellation.
+Cancellation can be issued by providing `CancelRequest` as action in the extension. The value of `id`
+should be equivalent to the id of the on-going commit.
 
-If the server is not waiting for a cancellation or if the value doesn’t match the on-going commit
+If the server is not waiting for cancellation or if the value doesn’t match the on-going commit
 then FAILED_PRECONDITION or INVALID_ARGUMENT error is returned respectively.
