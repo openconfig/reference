@@ -1682,13 +1682,6 @@ rate byte flow over an interface appearing to have adjacent spikes and dips).
 
 #### 3.5.2.3 Sending Telemetry Updates
 
-'Notification' is a reuseable message that is used to encode data from the target to the client.
-A 'Notification' carries two types of data from the data tree:
-- Deleted values (delete) - a set of paths that have been removed from the
-data tree.
-- Updated values (update) - a set of path-value pairs indicating the path
-whose value has changed in the data tree.
-
 When an update for a subscribed telemetry path is to be sent, a
 `SubscribeResponse` message is sent from the target to the client, on the RPC
 associated with the subscription. The `update` field of the message contains a
@@ -1709,6 +1702,7 @@ appended to it.
 Explicit deletion is always required to signify the removal of a leaf that is no longer
 present on a target device regardless of subscription mode.  Otherwise, the existence
 could be ambiguous and indistinguishable from other types of faults.
+
 Additionally, deletes are not required to be per-leaf and can be at an intermediate
 branch that applies to a multitude of leaves, e.g. when removing a logical interface
 in a configuration, deletes could be issued at container level branches that apply to
