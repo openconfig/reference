@@ -84,8 +84,9 @@ During confirm or cancel action the provided `id` must match the `id` of the on-
 
 `rollback_duration` can be used to override the default rollback duration. In JSON format, the Duration
 type is encoded as a string rather than an object where the string ends in the suffix "s" (indicating
-seconds) Eg. "10s". object Server should maintain a default 10 minutes duration when `rollback_duration` is not present in the request. If a confirmation
-call is not received before the rollback duration then the configuration is reverted.
+seconds) Eg. "10s". object Server should maintain a default 10 minutes duration when `rollback_duration`
+is not present in the request. If a confirmation call is not received before the rollback duration then
+the configuration is reverted.
 
 If a `CommitRequest` is issued whilst an existing rollback counter is running then the server returns with
 FAILED_PRECONDITION error.
