@@ -126,8 +126,9 @@ then FAILED_PRECONDITION or INVALID_ARGUMENT error is returned respectively.
 
 ### 3.2.4 Set Rollback Duration
 
-When a commit is on-going, a new rollback duration can be set by providing `SetRollbackDurationRequest`
-as action in the extension. The value of `id` should be equivalent to the id of the on-going commit.
+When a commit is on-going, the existing rollback duration can be reset to a new value
+by providing `SetRollbackDurationRequest` as action in the extension. The value of `id` should
+be equivalent to the id of the on-going commit.
 
 The value of `rollback_duration` should be provided and be greater than 0. If the value is 0 or not
 provided then INVALID_ARGUMENT error is returned.
