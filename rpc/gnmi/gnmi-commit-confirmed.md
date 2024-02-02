@@ -130,6 +130,10 @@ When a commit is on-going, the existing rollback duration can be reset to a new 
 by providing `SetRollbackDurationRequest` as action in the extension. The value of `id` should
 be equivalent to the id of the on-going commit.
 
+Note, that the rollback duration value provided in the `SetRollbackDurationRequest` action
+will effectively overwrite the existing rollback duration timer. It will not append to the
+existing rollback duration time but set it to the new value provided.
+
 The value of `rollback_duration` should be provided and be greater than 0. If the value is 0 or not
 provided then INVALID_ARGUMENT error is returned.
 
