@@ -1699,9 +1699,8 @@ Where a node within the subscribed paths has been removed, the `delete` field of
 the `Notification` message MUST have the path of the node that has been removed
 appended to it.
 
-Explicit deletion is always required to signify the removal of a leaf that is no longer
-present on a target device regardless of subscription mode.  Otherwise, the existence
-could be ambiguous and indistinguishable from other types of faults.
+Explicit deletion is required to signify the removal of a leaf that is no longer
+present on a target device in ON-CHANGE subscription mode, and optional in SAMPLE subscription mode.
 
 Additionally, deletes are not required to be per-leaf and can be at an intermediate
 branch that applies to a multitude of leaves, e.g. when removing a logical interface
