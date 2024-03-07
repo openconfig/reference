@@ -8,15 +8,17 @@
 
 # 1. Purpose
 
-In certain deployments, client and server is seperated by a complex network,
+In certain deployments, client and server is separated by a complex network,
 hence we cannot assume
+
 - The pushed configuration will not break connectivity to the network device.
 - The network device have out-of-band access.
 
 This feature provides a way to auto rollback the applied configuration after a
-centain duration if a bad configuration was pushed.
+certain duration if a bad configuration was pushed.
 
 # 2. Summary
+
 The proposed proto has a subset of confirmed commit functionality as defined in
 NETCONF protocol([RFC6241](https://datatracker.ietf.org/doc/html/rfc6241#section-8.4)). The proposal has a healthy disregard to few functionality
 defined in the RFC with the intention that most of the gRPC API clients are going to
@@ -34,7 +36,7 @@ A `Commit` message is embedded the Extension message of the SetRequest proto.
 
 ## 3.1 Proto
 
-```
+```proto
 // Commit confirmed extension allows automated revert of the configuration after
 // certain duration if an explicit confirmation is not issued. It allows explicit
 // cancellation of the commit during the rollback window. There cannot be more
@@ -56,6 +58,10 @@ message Commit {
     // cancel action will cancel an on-going commit, the ID provided during cancel
     // should match the on-going commit ID.
     CommitCancel cancel = 4;
+    // set rollback duration action sets the rollback duration of an on-going commit
+    // to a new value.
+    // The ID provided with the Commit message should match the on-going commit ID.
+    CommitSetRollbackDuration set_rollback_duration = 5;
   }
 }
 
@@ -73,11 +79,19 @@ message CommitConfirm {}
 // CommitCancel is used to cancel an on-going commit. It hold additional
 // parameter requried for cancel action.
 message CommitCancel {}
+
+// CommitSetRollbackDuration is used to set the existing rollback duration value
+// of an on-going commit to a new desired value.
+message CommitSetRollbackDuration {
+  // Maximum duration to wait for a confirmaton before reverting the commit.
+  google.protobuf.Duration rollback_duration = 1;
+}
 ```
 
-## 3.2 SetRequest handling                                                        
+## 3.2 SetRequest handling
 
 ### 3.2.1 Commit
+
 A commit can be initiated by providing `CommitRequest` as action in the extension. A `id` must to be
 provided by the client. The server shall associate the commit with the provided `id`.
 During confirm or cancel action the provided `id` must match the `id` of the on-going commit.
@@ -103,8 +117,25 @@ If the server is not waiting for confirmation or if the value doesn’t match th
 FAILED_PRECONDITION or INVALID_ARGUMENT error is returned respectively.
 
 ### 3.2.3 Cancel
+
 Cancellation can be issued by providing `CancelRequest` as action in the extension. The value of `id`
 should be equivalent to the id of the on-going commit.
 
 If the server is not waiting for cancellation or if the value doesn’t match the on-going commit
 then FAILED_PRECONDITION or INVALID_ARGUMENT error is returned respectively.
+
+### 3.2.4 Set Rollback Duration
+
+When a commit is on-going, the existing rollback duration can be reset to a new value
+by providing `SetRollbackDurationRequest` as action in the extension. The value of `id` should
+be equivalent to the id of the on-going commit.
+
+Note, that the rollback duration value provided in the `SetRollbackDurationRequest` action
+will effectively overwrite the existing rollback duration timer. It will not append to the
+existing rollback duration time but set it to the new value provided.
+
+The value of `rollback_duration` should be provided and be greater than 0. If the value is 0 or not
+provided then INVALID_ARGUMENT error is returned.
+
+If the server doesn't have an on-going commit with confirmation or if the value doesn’t match the on-going commit then
+FAILED_PRECONDITION or INVALID_ARGUMENT error is returned respectively.
