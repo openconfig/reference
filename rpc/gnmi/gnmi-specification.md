@@ -1699,6 +1699,14 @@ Where a node within the subscribed paths has been removed, the `delete` field of
 the `Notification` message MUST have the path of the node that has been removed
 appended to it.
 
+Explicit deletion is required to signify the removal of a leaf that is no longer
+present on a target device in ON-CHANGE subscription mode, and optional in SAMPLE subscription mode.
+
+Additionally, deletes are not required to be per-leaf and can be at an intermediate
+branch that applies to a multitude of leaves, e.g. when removing a logical interface
+in a configuration, deletes could be issued at container level branches that apply to
+that interface, rather than all the individual leaves.
+
 To replace the contents of an entire node within the tree, the target populates
 the `delete` field with the path of the node being removed, along with the new
 contents within the `update` field.
