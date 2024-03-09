@@ -96,7 +96,7 @@ module: app
 
 We populate this data schema with the following values:
 
-```json
+```
     basket {
         contents [
             fruits
