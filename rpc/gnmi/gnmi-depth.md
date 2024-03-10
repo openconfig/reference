@@ -269,22 +269,3 @@ Here is what happens:
 
 The 1st level elements are returned, since depth level is 2.
 On the 2nd level we return only leafs and leaf-lists, hence the `.fruits.origin` is not present.
-
-## 5 Prior art
-
-Netconf standardized `max-depth` in [RFC 85226](https://datatracker.ietf.org/doc/html/rfc8526#section-3.1.1):
-
-> The "max-depth" parameter can be used by the client to limit the
-> number of subtree levels that are returned in the reply.
-
-The NETCONF way of using the max-depth differs in a sense that `depth=1` returns the element pointed by the path, but not its children. depth=2 returns children of the element pointed by the path.
-
-I find this behavior strange, as I don't see an operational reason to return the element itself when depth is 1.
-
-## 6 Summary
-
-We believe that the Depth extension has a generic applicability whilst not bein a burden for the implementation (henceforth no subtree filtering with XPath or anything of sorts).
-
-Yet it delivers important quality of life improvements for consuming systems that may get the required data nodes faster and with less processing time spent.
-
-This is assuming that cumulative time of fetching only leaf/leaf-lists values by the server is smaller than the recursive data retrieval combined with payload unmarshalling on the client side.
