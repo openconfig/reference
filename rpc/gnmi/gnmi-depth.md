@@ -10,7 +10,7 @@
 
 The implicit recursive data fetching used by the gNMI servers makes the implementations simple. Whilst the implementation simplicity is important, the lack of server-side filtering for the data requested in gNMI RPCs may be considered a limitation for some gNMI users and systems.
 
-The gNMI Depth Extension allows a client to control the depth of the recursion when the server evaluates a group of paths in the Subscribe or Get RPC.
+The gNMI Depth Extension allows a client to control the depth of the recursion when the server evaluates a group of paths in the `Subscribe` or `Get` RPC.
 
 Orchestration, Network Management and Monitoring Systems can benefit from this extension as it:
 
