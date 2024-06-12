@@ -4,10 +4,10 @@
 Paul Borman, Marcus Hines, Carl Lebsack, Chris Morrow, Anees Shaikh, Rob Shakir, Wen Bo Li, Darren Loher
 
 **Date:**
-May 25, 2023
+June 12, 2024
 
 **Version:**
-0.10.0
+0.10.1
 
 **[gNMI service](https://github.com/openconfig/gnmi/blob/master/proto/gnmi/gnmi.proto) compatibility:**
 0.10.x
@@ -1768,6 +1768,9 @@ limitations under the License
 ```
 
 # 7 Revision History
+
+- v0.10.1: June 12, 2024
+  - Clarify that updating a `leaflist_val` is semantically equivalent to replace.
 
 - v0.10.0: May 25, 2023
   - Add `union_replace` operation.  Sync revision to gNMI proto revision.
