@@ -1059,7 +1059,9 @@ A `SetRequest` message consists of the following fields:
 - `replace`  - A set of `Update` messages indicating elements of the data tree
     whose content is to be replaced.
 - `update` - A set of `Update` messages indicating elements of the data tree
-    whose content is to be updated.
+    whose content is to be updated. Note that `leaflist_val` acts as a single,
+    cohesive ordered list of values; therefore, updates to it MUST replace,
+    rather than append, to the list.
 - `extension` - a repeated field used to carry gNMI extensions, as per the
     description in [Section 2.7](#27-extensions-to-gnmi).
 
