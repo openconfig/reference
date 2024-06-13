@@ -7,10 +7,10 @@ Paul Borman, Marcus Hines, Carl Lebsack, Chris Morrow, Anees Shaikh, Rob Shakir,
 June 12, 2024
 
 **Version:**
-0.10.1
+0.11.0
 
 **[gNMI service](https://github.com/openconfig/gnmi/blob/master/proto/gnmi/gnmi.proto) compatibility:**
-0.10.x
+0.11.x
 
 # Table of Contents
 
@@ -1769,7 +1769,7 @@ limitations under the License
 
 # 7 Revision History
 
-- v0.10.1: June 12, 2024
+- v0.11.0: June 12, 2024
   - Clarify that updating a `leaflist_val` is semantically equivalent to replace.
 
 - v0.10.0: May 25, 2023
