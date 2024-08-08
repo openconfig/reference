@@ -1143,7 +1143,7 @@ entries that are not supplied in the value provided in the `SetRequest`. An
 update operation MUST be considered to add new entries to the collection if they
 do not exist.
 
-For `union_replace` operations, the contents contents shall be merged (unioned)
+For `union_replace` operations, the contents shall be merged (unioned)
 and then applied as a replacement of the configuration.  See the
 [gNMI union_replace specification](https://github.com/openconfig/reference/blob/master/rpc/gnmi/gnmi-union_replace.md).
 
