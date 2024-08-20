@@ -44,9 +44,9 @@ wants to start a ConfigSubscription. The target must return notifications
 pertaining to data leaves that the target considers to be writable.
 If the subscription type is `ON_CHANGE`, the target must separate the
 notifications triggered by different commits using a
-`ConfigSubscriptionSyncDone` in a a `SubscribeResponse` message.
-On the other hand, if it is embedded in a `SubscribeResponse`, the action
-field must be a `ConfigSubscriptionSyncDone`. This action is used by a
+`ConfigSubscriptionSyncDone` in a `SubscribeResponse` message.
+On the other hand, if the extension is embedded in a `SubscribeResponse`, the 
+action field must be a `ConfigSubscriptionSyncDone`. This action is used by a
 target to indicate a commit boundary to the client.
 
 ## 2.1 Proto
@@ -92,8 +92,14 @@ A `ConfigSubscriptionStart` message is used by a gNMI client in a
 `SubscribeRequest` to indicate that it wants to start a ConfigSubscription.
 The target must respond exclusively with configuration data relevant to the
 created subscription.
+The target must respond with an initial set of updates followed by a
+`SubscribeResponse` where the `sync_update` field is set to `true`.
+However, if the `updates_only` field in the `SubscribeRequest` was set to
+`true`, the target should skip sending the initial updates and only send
+a `SubscribeResponse` with `sync_update` set to `true` as per the base gNMI
+specification.
 
-### 2.2.1 ConfigSubscriptionSyncDone
+### 2.2.2 ConfigSubscriptionSyncDone
 
 A `ConfigSubscriptionSyncDone` message is used by a gNMI target in a
 `SubscribeResponse` to indicate a commit boundary to the client.
@@ -129,7 +135,7 @@ updates for the configuration schema nodes under the path P1.
 **without** the `CommitConfirm` extension.
 4) The server processes the Set RPC as usual and sends the updates for the
 configuration schema nodes under the path P1.
-5) As all the configuration updates are sent, the server sends the
+5) After all the configuration updates are sent, the server sends the
 `ConfigSubscriptionSyncDone` message to the client in a SubscribeResponse
 message.
 This message does not contain a `commit_confirmed_id` and may contain a
@@ -164,7 +170,7 @@ updates for the configuration schema nodes under the path P1.
 and **with** the `CommitConfirm` extension present.
 4) The server processes the Set RPC as usual and sends the updates for the
 configuration schema nodes under the path P1.
-5) As all the configuration updates are sent, the server sends the
+5) After all the configuration updates are sent, the server sends the
 `ConfigSubscriptionSyncDone` message to the client in a SubscribeResponse
 message.
 This message must contain the the value of the `commit_confirmed_id` received
