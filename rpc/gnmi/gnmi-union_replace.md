@@ -494,7 +494,7 @@ union_replace: {
 ## 7. gNSI, bootz and gNMI interoperation
 
 Configuration affected by a gNMI `SetRequest` is defined to be Dynamic
-Configuration.  THe term ‘Dynamic’ is used because this configuration is
+Configuration.  The term ‘Dynamic’ is used because this configuration is
 expected to be modified while the NOS is running.   Security configuration is a
 special case of dynamic configuration and is managed by gNSI.  Configuration
 necessary to boot and make a factory default NOS manageable by gNMI is defined
@@ -502,8 +502,15 @@ as bootz configuration.
 
 bootz configuration items can be expressed as OC, NY and CLI. Bootz defines an
 order (or precedence) to apply the configuration name spaces to the NOS.  The
-order is dynamic configuration, followed by bootz configuration, followed by
-gNSI configuration.
+order is dynamic configuration, followed by [boot_config](https://github.com/openconfig/bootz/blob/e0eb604d8e7e089ecf0d4553cce79de769328173/server/entitymanager/proto/entity.proto#L55)
+configuration, followed by gNSI configuration.  That is, first apply dynamic
+configuration, then apply the boot_config (set by bootz) which may override
+dynamic configuration. Finally, apply gNSI configuration which may override
+dynamic and boot_config.
+
+Note that bootz may [configure gNSI values](https://github.com/openconfig/bootz/blob/e0eb604d8e7e089ecf0d4553cce79de769328173/server/entitymanager/proto/entity.proto#L32).
+This is treated as gNSI config, using the gNSI interface.  The order of
+config application still follows the dynamic -> boot_config -> gnsi order.
 
 When enabled, gNSI and bootz each reserve exclusive write access to the
 configuration items they manage.  gNSI pathz may also be used to restrict read
