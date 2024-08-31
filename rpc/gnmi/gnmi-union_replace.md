@@ -500,24 +500,32 @@ special case of dynamic configuration and is managed by gNSI.  Configuration
 necessary to boot and make a factory default NOS manageable by gNMI is defined
 as bootz configuration.
 
-bootz [boot_config](https://github.com/openconfig/bootz/blob/e0eb604d8e7e089ecf0d4553cce79de769328173/server/entitymanager/proto/entity.proto#L55)
+bootz [boot_config](https://github.com/openconfig/bootz/blob/e0eb604d8e7e089ecf0d4553cce79de769328173/proto/bootz.proto#L130)
 can be expressed as OC, NY and CLI. Bootz defines an order (or precedence)
 to apply the configuration name spaces to the NOS.  The order is dynamic
-configuration, followed by [boot_config](https://github.com/openconfig/bootz/blob/e0eb604d8e7e089ecf0d4553cce79de769328173/server/entitymanager/proto/entity.proto#L55)
+configuration, followed by [boot_config](https://github.com/openconfig/bootz/blob/e0eb604d8e7e089ecf0d4553cce79de769328173/proto/bootz.proto#L130)
 configuration, followed by gNSI configuration.  That is, first apply dynamic
 configuration, then apply the boot_config (set by bootz) which may override
 dynamic configuration. Finally, apply gNSI configuration which may override
 dynamic and boot_config.
 
-Note that bootz may [configure gNSI values](https://github.com/openconfig/bootz/blob/e0eb604d8e7e089ecf0d4553cce79de769328173/server/entitymanager/proto/entity.proto#L32).
+Note that bootz may [configure gNSI values](https://github.com/openconfig/bootz/blob/e0eb604d8e7e089ecf0d4553cce79de769328173/proto/bootz.proto#L132-L134).
 This is treated as gNSI config, using the gNSI interface.  The order of
 config application still follows the dynamic -> boot_config -> gnsi order.
 
+A common operational scenario is to update the bootconfig of an otherwise
+fully operational device that contains dynamic, boot_config and gnsi
+configuration.  In this example, gnoi.BootConfig.SetBootConfig contains a
+boot_config which replaces the boot_config on the device.  The preexisting
+dynamic and gnsi configurations are untouched.  When the device reboots,
+the order of config application follows the dynamic -> boot_config -> gnsi
+order.
+
 When enabled, gNSI and bootz each reserve exclusive write access to the
-configuration items they manage.  gNSI pathz may also be used to restrict read
-access.  Since bootz specifies the use of native configuration, the target MUST
-define, out of band, which configuration items are in scope of bootz which will
-no longer be accessible to gNMI, regardless of origin.
+configuration items they manage.  gNSI pathz may also be used to restrict
+read access.  Since bootz specifies boot_config uses native configuration,
+the target MUST define, out of band, which configuration items are in scope
+of bootz which will no longer be accessible to gNMI, regardless of origin.
 
 When a gNMI replace or union_replace operation is performed, the gNSI and bootz
 configuration items MUST not be affected.  If an openconfig path or `cli`
