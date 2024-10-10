@@ -867,7 +867,7 @@ MUST send JSON encoded values (the default encoding).
 The `CapabilityRequest` message is sent by the client to request capability
 information from the target.  The `CapabilityRequest` message carries a single
 repeated `extension` field, which is used as per the definition in [Section
-2.7](#27-extensions-to-gnmi).
+2.8](#28-extensions-to-gnmi).
 
 ### 3.2.2 The CapabilityResponse message
 
@@ -883,7 +883,7 @@ The `CapabilityResponse` message has the following fields:
     target, specified as a string. The version should be interpreted as per
     [[OPENCONFIG-SEMVER](http://www.openconfig.net/documentation/semantic-versioning/)].
 - `extension` - a repeated field to carry gNMI extensions, which is used as
-    per the definition in [Section 2.7](#27-extensions-to-gnmi).
+    per the definition in [Section 2.8](#28-extensions-to-gnmi).
 
 ## 3.3 Retrieving Snapshots of State Information
 
@@ -936,7 +936,7 @@ The `GetRequest` message contains the following fields:
     RPC call. The semantics of the `use_models` field are defined in [Section
     2.6](#26-schema-definition-models).
 - `extension` - a repeated field to carry gNMI extensions, used as per the
-    definition in [Section 2.7](#27-extensions-to-gnmi).
+    definition in [Section 2.8](#28-extensions-to-gnmi).
 
 Since the data tree stored by the target may consist of different types of data
 (e.g., values that are operational in nature, such as protocol statistics) - the
@@ -972,7 +972,7 @@ The `GetResponse` message consists of:
     `Notification` message MUST be set to the time at which the target's
     snapshot of the relevant path was taken.
 - `extension` - a repeated field used to carry gNMI extensions, as per the
-    description in [Section 2.7](#27-extensions-to-gnmi).
+    description in [Section 2.8](#28-extensions-to-gnmi).
 
 ### 3.3.3 Considerations for using Get
 
@@ -1061,7 +1061,7 @@ A `SetRequest` message consists of the following fields:
 - `update` - A set of `Update` messages indicating elements of the data tree
     whose content is to be updated.
 - `extension` - a repeated field used to carry gNMI extensions, as per the
-    description in [Section 2.7](#27-extensions-to-gnmi).
+    description in [Section 2.8](#28-extensions-to-gnmi).
 
 The semantics of "updating" versus "replacing" content are defined in [Section
 3.4.4.](#344-modes-of-update-replace-versus-update)
@@ -1103,7 +1103,7 @@ A `SetResponse` consists of the following fields:
         2.5](#25-error-handling)). This field follows the same rules as the
         status field returned with the `SetResponse` message specified above.
 - `extension` - a repeated field used to carry gNMI extensions, as per the
-    description in [Section 2.7](#27-extensions-to-gnmi).
+    description in [Section 2.8](#28-extensions-to-gnmi).
 
 ### 3.4.3 Transactions
 
@@ -1445,7 +1445,7 @@ The fields of the `SubscribeRequest` are as follows:
         the subscription.  The semantics of the `Poll` message are described in
         [Section 3.5.1.5.3](#35153-poll-subscriptions).
 - `extension` - a repeated field used to carry gNMI extensions, as per the
-    description in [Section 2.7](#27-extensions-to-gnmi).
+    description in [Section 2.8](#28-extensions-to-gnmi).
 
 In order to create a new subscription a client MUST initiate a `Subscribe` RPC
 with a `SubscribeRequest` message specifying the `subscribe` field. The
@@ -1514,7 +1514,7 @@ subscription behavior are required. The fields of the message are:
     before proceeding to process poll requests (in the case of `POLL`) or
     closing the RPC (in the case of `ONCE`)."
 - `extension` - a repeated field used to carry gNMI extensions, as per the
-    description in [Section 2.7](#27-extensions-to-gnmi).
+    description in [Section 2.8](#28-extensions-to-gnmi).
 
 A client generating a `SubscriptionList` message MUST include the `subscription`
 field - which MUST be a non-empty set of `Subscription` messages, all other
@@ -1560,7 +1560,7 @@ established `Subscribe` RPC. The message contains the following fields:
         been transmitted at least once, used for `ONCE`, `POLL` and `STREAM`
         subscriptions.
 - `extension` - a repeated field used to carry gNMI extensions, as per the
-    description in [Section 2.7](#27-extensions-to-gnmi).
+    description in [Section 2.8](#28-extensions-to-gnmi).
 
 `SubscribeResponse` messages with the `update` field set to a `Notification` are
 not required to be sent by the target in timestamp order, and client
