@@ -92,6 +92,7 @@ A `ConfigSubscriptionStart` message is used by a gNMI client in a
 `SubscribeRequest` to indicate that it wants to start a ConfigSubscription.
 The target must respond exclusively with configuration data relevant to the
 created subscription.
+
 The target must respond with an initial set of updates followed by a
 `SubscribeResponse` where the `sync_update` field is set to `true`.
 However, if the `updates_only` field in the `SubscribeRequest` was set to
