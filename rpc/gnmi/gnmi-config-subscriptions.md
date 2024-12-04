@@ -16,7 +16,7 @@ and focus on effective retrieval and push of the configuration values.
 Thus, having a synchronized configuration view between the management
 system and the network elements is key to enabling robust and near real-time
 configuration management.
-To enable this synchronization of configuration data, gNMI Subscribe RPC
+To enable this synchronization of configuration data, the gNMI Subscribe RPC
 can be used. The bidirectional streaming nature of this RPC enables fast
 and reliable sync between the management system and the devices it manages.
 
