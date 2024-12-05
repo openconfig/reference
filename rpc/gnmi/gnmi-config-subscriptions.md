@@ -8,10 +8,16 @@
 
 ## 1. Purpose
 
-Performing configuration management and handling configuration drift is
-one of the main features of a higher-level management system or orchestrator.
-The configuration management tasks are not concerned about the state data
-and focus on effective retrieval and push of the configuration values.
+Performing configuration management and handling configuration drift is one of
+the main features of a higher-level management system or orchestrator.
+Configuration drift occurs when a device's configuration changes independently
+of the expected configuration defined by the management system. Such changes
+may arise from manual interventions, automated processes outside the management
+system, or unexpected behavior. When drift is detected, the management system
+can either revert the configuration back to the expected configuration or
+incorporate the change by updating its records to include the new configuration
+as the expected configuration. The configuration management tasks focus on the
+effective retrieval and push of configuration values.
 
 Thus, having a synchronized configuration view between the management
 system and the network elements is key to enabling robust and near real-time
@@ -93,20 +99,21 @@ A `ConfigSubscriptionStart` message is used by a gNMI client in a
 The target must respond exclusively with configuration data relevant to the
 created subscription.
 
-The target must respond with an initial set of updates followed by a
-`SubscribeResponse` where the `sync_update` field is set to `true`.
-However, if the `updates_only` field in the `SubscribeRequest` was set to
-`true`, the target should skip sending the initial updates and only send
-a `SubscribeResponse` with `sync_update` set to `true` as per the base gNMI
-specification.
+The base behavior of the `Subscribe` RPC remains unchanged: the target must
+respond with an initial set of updates, followed by a `SubscribeResponse`
+with the `sync_response` field set to true. However, if the updates_only
+field in the SubscribeRequest is set to true, the target should omit the
+initial updates and instead send only a SubscribeResponse with `sync_response`
+set to true, in accordance with the gNMI specification.
 
 ### 2.2.2 ConfigSubscriptionSyncDone
 
 A `ConfigSubscriptionSyncDone` message is used by a gNMI target in a
 `SubscribeResponse` to indicate a commit boundary to the client.
-A commit boundary marks the completion point of a specific set of
-configuration changes.
-It indicates that all changes within that set have been committed and
+A commit boundary marks the completion point of a single set of changes
+associated with a commit.
+It indicates that all changes within that set have been committed -- meaning
+the mechanism used to apply the changes reported no errors -- and
 that all notifications triggered by the commit have been streamed to
 the client.
 
@@ -119,10 +126,10 @@ NETCONF, or any other management interface. Applicable only if the commit
 confirmed option is used.
 * `server_commit_id`: An optional internal ID assigned by the target.
 
-In the case a commit happens before the `sync_response: true` and the server
-may include the committed changes together with the initial updates but has
-to send the related `ConfigSubscriptionSyncDone` after sending the
-`sync_response: true` response.
+In the case a commit happens before the `sync_response: true` the server
+cannot send a `ConfigSubscriptionSyncDone` until the `sync_response: true` has
+been sent. The server may send the committed changes updates before the
+`sync_response: true`.
 
 ## 3. Configuration changes scenarios
 
