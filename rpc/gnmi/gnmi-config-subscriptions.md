@@ -87,6 +87,9 @@ message ConfigSubscriptionSyncDone {
   // ID of a commit as might be assigned by the server
   // when registering a commit operation.
   string server_commit_id = 2;
+  // If true indicates that the server is done processing the updates related to the
+  // commit_confirm_id and/or server_commit_id.
+  bool done = 3;
 }
 ```
 
@@ -117,7 +120,7 @@ the mechanism used to apply the changes reported no errors -- and
 that all notifications triggered by the commit have been streamed to
 the client.
 
-The `ConfigSubscriptionSyncDone` message includes two optional fields:
+The `ConfigSubscriptionSyncDone` message includes three fields:
 
 * `commit_confirm_id`: A commit confirm ID assigned by the client which
 initiated the commit.
@@ -125,6 +128,8 @@ The commit can be initiated via gNMI (using the CommitConfirmed Extension),
 NETCONF, or any other management interface. Applicable only if the commit
 confirmed option is used.
 * `server_commit_id`: An optional internal ID assigned by the target.
+* `done`: If true, indicates that the server is done processing the updates
+related to the commit_confirm_id and/or server_commit_id.
 
 In the case a commit happens before the `sync_response: true` the server
 cannot send a `ConfigSubscriptionSyncDone` until the `sync_response: true` has
