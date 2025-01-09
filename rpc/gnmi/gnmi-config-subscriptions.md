@@ -111,14 +111,13 @@ set to true, in accordance with the gNMI specification.
 
 ### 2.2.2 ConfigSubscriptionSyncDone
 
-A `ConfigSubscriptionSyncDone` message is used by a gNMI target in a
-`SubscribeResponse` to indicate a commit boundary to the client.
-A commit boundary marks the completion point of a single set of changes
-associated with a commit.
-It indicates that all changes within that set have been committed -- meaning
-the mechanism used to apply the changes reported no errors -- and
-that all notifications triggered by the commit have been streamed to
-the client.
+The `ConfigSubscriptionSyncDone` message is included in a `SubscribeResponse`
+by a gNMI target to signify a commit boundary to the client.
+A commit boundary represents the completion of a specific set of changes
+associated with a commit. It confirms that all changes in the set have been
+successfully committed, with no errors reported by the interface used for the
+commit, such as gNMI, NETCONF, CLI, etc.
+[See Appendix - concurrent commits handling](#appendix-concurrent-commits-handling)
 
 The `ConfigSubscriptionSyncDone` message includes three fields:
 
@@ -198,3 +197,50 @@ is received, the server:
   `SubscribeResponse` message.
   This message must contain the the value of the `commit_confirmed_id`
   received in the Set RPC in step 4 and may contain a `server_commit_id`.
+
+## Appendix: Concurrent commits handling
+
+### Overlapping Update Streams
+
+In scenarios where updates from multiple configuration changes overlap during 
+streaming, it is important to note that the `ConfigSubscriptionSyncDone` 
+message does not guarantee that the state reflected by received updates 
+corresponds exclusively to the commit referenced by the 
+`ConfigSubscriptionSyncDone` message. For example:
+
+1. Timeline:
+
+t = 0: Configuration change 1 is committed.
+t = 1: Streaming updates for configuration change 1 begins.
+t = Y (Y < N): Configuration change 2 is committed.
+t = Y + 1: Streaming updates for configuration change 2 begins.
+t = N: Streaming updates for configuration change 1 ends.
+t = Y + N: Streaming updates for configuration change 2 ends.
+
+2. Implications:
+
+* Updates for paths impacted by configuration change 2 may be sent 
+to the client before all updates for configuration change 1 are 
+fully streamed.
+* When the client receives a `ConfigSubscriptionSyncDone` message 
+for configuration change 1, it might already have received updates
+reflecting changes introduced by configuration change 2.
+* Coalescing updates (e.g., combining overlapping changes to a path like `/foo/bar`)
+If both configuration changes 1 and 2 modify `/foo/bar`, and the update for 
+`/foo/bar` is delayed, the server may send only the final state of `/foo/bar` 
+after configuration change 2. This approach optimizes performance but results
+in the client never receiving the updates for change 1.
+
+### Guarantees
+
+The `ConfigSubscriptionSyncDone` message indicates that the server has completed 
+processing all changes associated with the referenced commit. 
+It does not guarantee that the client has received updates exclusively for that commit.
+
+If a client requires strict state guarantees, it must implement its own 
+mechanisms to lock configuration changes between commits. For example:
+
+* Pausing further commits until the client confirms that all updates for the 
+current commit are processed. 
+* Implementing a client-side commit locking mechanism 
+to avoid overlapping streams.
