@@ -1602,7 +1602,7 @@ with one of the following `modes`:
   - For all `ON_CHANGE` subscriptions, the target MUST first generate updates
       for all paths that match the subscription path(s), and transmit them.
       Following this initial set of updates, updated values SHOULD only be
-      transmitted when their value changes.
+      transmitted when their value changes with the exception of rapidly changing counter types.  Counter type values SHOULD be transmitted upon the initial subscription update and at each heartbeat_interval if one is specified.
   - A heartbeat interval MAY be specified along with an "on change"
       subscription - in this case, the value of the data item(s) MUST be re-sent
       once per heartbeat interval regardless of whether the value has changed or
