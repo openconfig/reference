@@ -55,6 +55,19 @@ performant solution.
 Subscribe and Get RPCs do not make configuration changes to a device and thus should be allowed for users with Read-Only or
 Read-Write permissions.
 
+#### Metadata standards
+<ul>
+gRPC specifies <a href="https://grpc.io/docs/what-is-grpc/core-concepts/#metadata">metadata</a> as a list of arbitrary key/value pairs.<br>
+The following metadata key/value pairs are therefore standardised across gNMI/gNOI for cases where metadata is involved in authentication:
+
+| Key          | Value           |
+|--------------|-----------------|
+| `"username"` | client username |
+| `"password"` | client password |
+</ul>
+
+
+
 **Contributors**: Alex Bogdanov, Josh George, Carl Lebsack, Chris Morrow, Anees Shaikh, Rob Shakir
 
 ## Appendix - gRPC Authentication Flow Diagram
