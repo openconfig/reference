@@ -196,7 +196,7 @@ A path is represented by the `Path` message with the following fields:
 
 - `origin` - a field which MAY be used to assert the schema the path belongs to.
     A detailed description of origin is provided in
-    [2.7](#27-origin-specification-in-path).
+    [2.7](#27-gnmi-origin-in-path).
 - `elem` - an array of `PathElem` messages, each containing the name of the
     element, and any associated keys.
 - `target` - the name of the target for which the path is a member. Only set in
@@ -698,7 +698,7 @@ Each `ModelData` message contains the following fields:
 
 The combination of `name`, `organization`, and `version` uniquely identifies an entry in the model catalog.
 
-## 2.7 gNMI Origin  in `Path`
+## 2.7 gNMI Origin in `Path`
 
 The `origin` field in the `Path` message identifies a schema that the path
 belongs to. `origin` is encoded as a string. The path specified within the
@@ -1708,7 +1708,7 @@ in a configuration, deletes could be issued at container level branches that app
 that interface, rather than all the individual leaves.
 
 Explicit deletion also applies to TARGET-DEFINED subscription mode.  
-Whereas, if the TARGET-DEFINED subscription determines the best type of delivery to be ON-CHANGE, 
+Whereas, if the TARGET-DEFINED subscription determines the best type of delivery to be ON-CHANGE,
 explicit deletion is required and if decided to be SAMPLE, deletion will be optional.
 
 To replace the contents of an entire node within the tree, the target populates
