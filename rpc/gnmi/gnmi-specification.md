@@ -4,13 +4,13 @@
 Paul Borman, Marcus Hines, Carl Lebsack, Chris Morrow, Anees Shaikh, Rob Shakir, Wen Bo Li, Darren Loher
 
 **Date:**
-May 25, 2023
+June 12, 2024
 
 **Version:**
-0.10.0
+0.11.0
 
 **[gNMI service](https://github.com/openconfig/gnmi/blob/master/proto/gnmi/gnmi.proto) compatibility:**
-0.10.x
+0.11.x
 
 # Table of Contents
 
@@ -1059,7 +1059,9 @@ A `SetRequest` message consists of the following fields:
 - `replace`  - A set of `Update` messages indicating elements of the data tree
     whose content is to be replaced.
 - `update` - A set of `Update` messages indicating elements of the data tree
-    whose content is to be updated.
+    whose content is to be updated. Note that `leaflist_val` acts as a single,
+    cohesive ordered list of values; therefore, updates to it MUST replace,
+    rather than append, to the list.
 - `extension` - a repeated field used to carry gNMI extensions, as per the
     description in [Section 2.8](#28-extensions-to-gnmi).
 
@@ -1778,6 +1780,9 @@ limitations under the License
 ```
 
 # 7 Revision History
+
+- v0.11.0: June 12, 2024
+  - Clarify that updating a `leaflist_val` is semantically equivalent to replace.
 
 - v0.10.0: May 25, 2023
   - Add `union_replace` operation.  Sync revision to gNMI proto revision.
