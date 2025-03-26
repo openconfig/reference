@@ -4,10 +4,10 @@
 Paul Borman, Marcus Hines, Carl Lebsack, Chris Morrow, Anees Shaikh, Rob Shakir, Wen Bo Li, Darren Loher
 
 **Date:**
-May 25, 2023
+June 27, 2023
 
 **Version:**
-0.10.0
+0.10.1
 
 **[gNMI service](https://github.com/openconfig/gnmi/blob/master/proto/gnmi/gnmi.proto) compatibility:**
 0.10.x
@@ -1247,19 +1247,27 @@ root +
 The path convention defined in [Section 2.2.2](#222-paths) allows nodes in the
 data tree to be identified by a unique set of node names (e.g.,`/a/b/c/d`) or
 paths that consist of node names coupled with attributes (e.g., `/a/e[key=10]`).
-In the case where where a node name plus attribute name is required to uniquely
-identify an element (i.e., the path within the schema represents a list, map, or
-array), the following considerations apply:
+In the case where a node name plus attribute name is required to uniquely
+identify an element (i.e., the path within the schema represents a list, map,
+or array), the following considerations apply:
 
 - In the case that multiple attribute values are required to uniquely address
-    an element - e.g., `/a/f[k1=10][k2=20]`- and a replace or update
-    operation's path specifies  a subset of the attributes (e.g., `/a/f[k1=10]`)
-    then this MUST be considered an error by the target system - and an status
-    code of`InvalidArgument (3)` specified.
+  an element - e.g., `/a/f[k1=10][k2=20]`- and a replace or update
+  operation's path specifies  a subset of the attributes (e.g., `/a/f[k1=10]`)
+  then this MUST be considered an error by the target system - and an status
+  code of` InvalidArgument (3)` specified.
+- In the case that key values are specified both as attributes of a node in the
+  path, and as their own elements within the value, then this MUST be considered
+  an error by the target system - and a status code of `InvalidArgument (3)`
+  specified.  Targeting a list member with update or replace operations that
+  modify it's own keys in either conflicting or identical fashion is not
+  permitted thus they must be omitted from the value payload.  This holds true
+  for the direct descendant list key nodes as well as the ultimate leafref'd
+  nodes per OpenConfig [style guidelines](https://github.com/openconfig/public/blob/master/doc/openconfig_style_guide.md#list).
 - In the case that key values are specified both as attributes of a node, and
-    as their own elements within the data tree, update or replace operations
-    that modify instances of the key in conflicting ways MUST be considered an
-    error. The target MUST return a status code of `InvalidArgument (3)`.
+  as their own elements within the data tree, update or replace operations
+  that modify instances of the key in conflicting ways MUST be considered an
+  error. The target MUST return a status code of `InvalidArgument (3)`.
 
 For example, consider a tree corresponding to the examples above, as illustrated
 below.
@@ -1283,8 +1291,8 @@ root +
 In this case, nodes `k1` and `k2` are standalone nodes within the schema, but
 also correspond to attribute values for the node "`f`". In this case, an update
 or replace message specifying a path of `/a/f[k1=10][k2=20]` setting the value
-of `k1` to 100 MUST be considered erroneous, and a status code of
-`InvalidArgument (3)` specified.
+of `k1` to either the same value (10) or an alternate value (100) MUST be
+considered erroneous, and a status code of `InvalidArgument (3)` specified.
 
 ### 3.4.6 Deleting Configuration
 
@@ -1778,6 +1786,10 @@ limitations under the License
 ```
 
 # 7 Revision History
+
+- v0.10.1: June 27, 2023
+  - Clarify that for `Set`, that if targeting a path by list keys that the
+    list keys cannot be included within the value payload
 
 - v0.10.0: May 25, 2023
   - Add `union_replace` operation.  Sync revision to gNMI proto revision.
