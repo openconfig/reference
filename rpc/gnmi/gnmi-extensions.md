@@ -3,9 +3,9 @@
 **Contributors**: Rob Shakir (robjs@google.com), Carl Lebsack (csl@google.com),
 Nick Ethier (nethier@jive.com), Anees Shaikh (aashaikh@google.com)
 
-**Updated**: January 25th, 2018
+**Updated**: April 7, 2025
 
-**Version**: 0.1.0
+**Version**: 0.2.0
 
 ## Extending gNMI
 
