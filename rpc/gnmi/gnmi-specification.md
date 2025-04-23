@@ -1626,6 +1626,11 @@ with one of the following `modes`:
         `d` branching from the `b` node - if the value of `c` has changed, but
         `d` remains unchanged, an update for `d` MUST NOT be generated, whereas
         an update for `c` MUST be generated.
+        - Note that when the `suppress_redundant` flag is enabled, delete
+        notifications **must** be transmitted by the server. This is a
+        consequence of the fact that a client is unable to invalidate outdated
+        messages, as it is not possible to differentiate between a suppressed
+        value and an invalid value.
   - A `heartbeat_interval` MAY be specified to modify the behavior of
         `suppress_redundant` in a sampled subscription.  In this case, the
         target MUST generate one telemetry update  per heartbeat interval,
