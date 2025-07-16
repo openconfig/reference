@@ -978,7 +978,7 @@ The `GetResponse` message consists of:
 
 The `Get` RPC is intended for clients to retrieve relatively small sets of data
 as complete objects, for example a part of the configuration. Such requests are
-not expected to put a signifit resource burden on the target. Since the
+not expected to put a significant resource burden on the target. Since the
 target is expected to return the entire snapshot in the `GetResponse` message,
 `Get` is not well-suited for retrieving very large data sets, such as the full
 contents of the routing table, or the entire component inventory. For such
@@ -1022,7 +1022,7 @@ A SetRequest containing
 [union_replace](https://github.com/openconfig/reference/blob/master/rpc/gnmi/gnmi-union_replace.md)
 operations MUST NOT contain delete, replace and update operations.
 
-The order of the fields MUST be treated as signifit within a
+The order of the fields MUST be treated as significant within a
 single `SetRequest` message.  If a single path is specified multiple times for a
 single operation (i.e., within `update` or `replace`), then the state of the
 target MUST reflect the application of all of the operations in order, even if
@@ -1034,7 +1034,7 @@ In response to a `SetRequest`, the target MUST respond with a `SetResponse`
 message. For each operation specified in the `SetRequest` message, an
 `UpdateResult` message MUST be included in the response field of the
 `SetResponse`. The order in which the operations are applied MUST be maintained
-such that `UpdateResult` messages  be correlated to the `SetRequest`
+such that `UpdateResult` messages can be correlated to the `SetRequest`
 operations. In the case of a failure of an operation, the status of the
 `UpdateResult` message MUST be populated with error information as per the
 specification in [Section 3.4.7](#347-error-handling). In addition, the status
@@ -1327,14 +1327,14 @@ operation within the `SetRequest` the target MUST set the `message` field of the
 For the operation that the target is unable to process, the code indicated in
 the status message returned within the RPC response MUST be set to a specific
 error code indicating the reason for failure based on the following mappings to
-onical gRPC error codes:
+canonical gRPC error codes:
 
 - When the client has specified metadata requiring authentication (see [Section
     3.1](#31-session-security-authentication-and-rpc-authorization)), and the
     authentication fails -  `Unauthenticated (16)`.
 - When the client does not have permission to modify the path specified by the
     operation - `PermissionDenied (7)`.
-- When the operation specifies a path that not be parsed by the target -
+- When the operation specifies a path that cannot be parsed by the target -
     `InvalidArgument (3)`. In this case, the `message` field of the returned
     status specified SHOULD specify human-readable text indicating that the path
     could not be parsed.
@@ -1370,8 +1370,8 @@ The target generates messages according to the type of subscription that has
 been created, at the frequency requested by the client. The methods to create
 subscriptions are described in [Section 3.5.1](#351-managing-subscriptions).
 
-Subscriptions are created for a set of paths - which not be modified
-throughout the lifetime of the subscription. In order to cel a subscription,
+Subscriptions are created for a set of paths - which cannot be modified
+throughout the lifetime of the subscription. In order to cancel a subscription,
 the client cancels the `Subscribe` RPC associated with the subscription, or
 terminates the entire gRPC session.
 
