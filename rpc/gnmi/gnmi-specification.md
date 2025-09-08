@@ -1638,9 +1638,12 @@ with one of the following `modes`:
     driven (e.g., the changing of state of an entity based on an external
     trigger) then an `ON_CHANGE` subscription may be created, whereas if other
     data represents counter values, a `SAMPLE` subscription may be created.
-    In addition to this, the target MAY decide the `sample_interval` for a
-    `SAMPLE` type of subscription under this mode, on a per-leaf basis. The target
-    MAY change the `sample_interval` dynamically without notifying the client.
+    When the target chooses a `SAMPLE` type of subscription for a leaf and the
+    client does not specify the `sample_interval` then target must choose a
+    `sample_interval` too. In this scenario, The target MAY change the
+    `sample_interval` dynamically without notifying the client. If the client does
+    include a `sample_interval` in the subscription request, then the same rules
+    for processing a `SAMPLE` mode of subscription applies.
 
 ##### 3.5.1.5.3 POLL Subscriptions
 
