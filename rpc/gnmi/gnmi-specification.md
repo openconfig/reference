@@ -4,10 +4,10 @@
 Paul Borman, Marcus Hines, Carl Lebsack, Chris Morrow, Anees Shaikh, Rob Shakir, Wen Bo Li, Darren Loher
 
 **Date:**
-May 25, 2023
+Oct 1, 2025
 
 **Version:**
-0.10.0
+0.11.0
 
 **[gNMI service](https://github.com/openconfig/gnmi/blob/master/proto/gnmi/gnmi.proto) compatibility:**
 0.10.x
@@ -1679,6 +1679,44 @@ introduces minimal error.  This could include approaches such as attempting to s
 of the values, retaining a consistent sample period and having a robust
 mechanism to ensure that sampling artifacts are not introduced (e.g. a constant
 rate byte flow over an interface appearing to have adjacent spikes and dips).
+
+##### 3.5.2.1.1 Atomic Datasets
+
+When multiple datapoints (e.g. Update messages) are bundled within a single
+Notification message and the intent is that the dataset must be delivered as a
+single PDU (e.g. in order to make sense of relational data), the `atomic` field
+in the Notification message structure MUST be set to `true` and all datapoints
+will share the same Notification timestamp.
+
+If the data content is modeled in the YANG language, a YANG extension SHOULD be
+annotated on a corresponding structure to be delivered atomically.  Valid YANG
+structures are: `[ list, container ]` and scale MUST be taken into
+consideration with respect to atomic annotations.
+
+Example `oc-ext:telemetry-atomic` annotation from OpenConfig YANG modeling:
+
+```
+list next-hop {
+  key "index";
+
+  oc-ext:telemetry-atomic;
+  description
+    "A next-hop associated with the forwarding instance.";
+
+  leaf index {
+     ...
+  }
+  ...
+}
+```
+
+For non-OpenConfig YANG modeled data, custom extensions MAY be used for similar
+intent.  This YANG extension then directly correlates to the usage of the gNMI
+Notification `atomic` field being set to `true`.
+
+If the data content is NOT modeled in the YANG language, an implementation MAY
+choose when to set or not set the `atomic` field to true when sending atomic
+datasets out of the scope of the specification.
 
 #### 3.5.2.3 Sending Telemetry Updates
 
