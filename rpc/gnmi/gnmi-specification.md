@@ -7,10 +7,10 @@ Paul Borman, Marcus Hines, Carl Lebsack, Chris Morrow, Anees Shaikh, Rob Shakir,
 May 25, 2023
 
 **Version:**
-0.10.0
+0.11.0
 
 **[gNMI service](https://github.com/openconfig/gnmi/blob/master/proto/gnmi/gnmi.proto) compatibility:**
-0.10.x
+0.11.x
 
 # Table of Contents
 
@@ -1616,21 +1616,6 @@ with one of the following `modes`:
     (3)` error code. If the `sample_interval` is set to 0, the target MUST
     create the subscription and send the data with the lowest interval possible
     for the target.
-  - Optionally, the `suppress_redundant` field of the `Subscription` message
-        may be set for a sampled subscription. In the case that it is set to
-        `true`, the target SHOULD NOT generate a telemetry update message unless
-        the value of the path being reported on has changed since the last
-        update was generated. Updates MUST only be generated for those
-        individual leaf nodes in the subscription that have changed. That is to
-        say that for a subscription to `/a/b` - where there are leaves `c` and
-        `d` branching from the `b` node - if the value of `c` has changed, but
-        `d` remains unchanged, an update for `d` MUST NOT be generated, whereas
-        an update for `c` MUST be generated.
-  - A `heartbeat_interval` MAY be specified to modify the behavior of
-        `suppress_redundant` in a sampled subscription.  In this case, the
-        target MUST generate one telemetry update  per heartbeat interval,
-        regardless of whether the `suppress_redundant` flag is set to `true`.
-        This value is specified as an unsigned 64-bit integer in nanoseconds.
 - **Target Defined `(TARGET_DEFINED)`** - when a client creates a subscription
     specifying the target defined mode, the target MUST determine the best type
     of subscription to be created on a per-leaf basis. That is to say, if the
@@ -1778,6 +1763,10 @@ limitations under the License
 ```
 
 # 7 Revision History
+
+- v0.11.0: Oct 2, 2025
+  - Remove `suppress_redundant` documentation references as the field is
+    deprecated in gNMI service version `0.11.0`
 
 - v0.10.0: May 25, 2023
   - Add `union_replace` operation.  Sync revision to gNMI proto revision.
