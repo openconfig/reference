@@ -1,13 +1,13 @@
 # gRPC Network Management Interface (gNMI)
 
 **Contributors:**
-Paul Borman, Marcus Hines, Carl Lebsack, Chris Morrow, Anees Shaikh, Rob Shakir, Wen Bo Li, Darren Loher
+Paul Borman, Marcus Hines, Carl Lebsack, Chris Morrow, Anees Shaikh, Rob Shakir, Wen Bo Li, Darren Loher, Ebben Aries
 
 **Date:**
-May 25, 2023
+Oct 2, 2025
 
 **Version:**
-0.10.0
+0.10.1
 
 **[gNMI service](https://github.com/openconfig/gnmi/blob/master/proto/gnmi/gnmi.proto) compatibility:**
 0.10.x
@@ -1699,17 +1699,19 @@ Where a node within the subscribed paths has been removed, the `delete` field of
 the `Notification` message MUST have the path of the node that has been removed
 appended to it.
 
-Explicit deletion is required to signify the removal of a leaf that is no longer
-present on a target device in ON-CHANGE subscription mode, and optional in SAMPLE subscription mode.
+Explicit deletion MUST be sent to signify the removal of a leaf that is no longer
+present on a target device in `ON-CHANGE` subscription mode. Note that delete
+messages are disallowed within Notification messages in `SAMPLE` subscription
+mode.
 
 Additionally, deletes are not required to be per-leaf and can be at an intermediate
 branch that applies to a multitude of leaves, e.g. when removing a logical interface
 in a configuration, deletes could be issued at container level branches that apply to
 that interface, rather than all the individual leaves.
 
-Explicit deletion also applies to TARGET-DEFINED subscription mode.  
-Whereas, if the TARGET-DEFINED subscription determines the best type of delivery to be ON-CHANGE,
-explicit deletion is required and if decided to be SAMPLE, deletion will be optional.
+Explicit deletion also applies to TARGET-DEFINED subscription mode. Whereas, if
+the TARGET-DEFINED subscription determines the best type of delivery to be
+ON-CHANGE, explicit deletion is required.
 
 To replace the contents of an entire node within the tree, the target populates
 the `delete` field with the path of the node being removed, along with the new
@@ -1778,6 +1780,10 @@ limitations under the License
 ```
 
 # 7 Revision History
+
+- v0.10.1: Oct 2, 2025
+  - Clarify that delete messages are not permitted for SAMPLE subscription
+    mode.
 
 - v0.10.0: May 25, 2023
   - Add `union_replace` operation.  Sync revision to gNMI proto revision.
