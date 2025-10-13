@@ -11,10 +11,19 @@ The repository contents are as follows:
 
 
    * Specification for gNMI - [gnmi-specification.md](gnmi-specification.md).
-   * Authentication Specification for gNMI - [gnmi-authentication.md](gnmi-authentication.md)
-   * Path Conventions for gNMI - [gnmi-path-conventions.md](gnmi-path-conventions.md)
-   * gNMI Support for Multiple Client Roles and Master Arbitration - [gnmi-master-arbitration.md](gnmi-master-arbitration.md)
-   * gNMI/gNOI/SSH Dial-out via gRPC Tunnel - [gnmignoissh-dialout-grpctunnel.md](gnmignoissh-dialout-grpctunnel.md)
+   * Authentication Specification for gNMI - [gnmi-authentication.md](gnmi-authentication.md).
+   * Deprecation of Decimal64 in gNMI - [decimal64-deprecation.md](decimal64-deprecation.md).
+   * gNMI Commit Confirmed Extension - [gnmi-commit-confirmed.md](gnmi-commit-confirmed.md).
+   * gNMI Config Subscription Extension - [gnmi-config-subscriptions.md](gnmi-config-subscriptions.md).
+   * gNMI Depth Extension - [gnmi-depth.md](gnmi-depth.md).
+   * Extensions to gNMI - [gnmi-extensions.md](gnmi-extensions.md).
+   * gNMI History Extension - [gnmi-history.md](gnmi-history.md).
+   * gNMI Support for Multiple Client Roles and Master Arbitration - [gnmi-master-arbitration.md](gnmi-master-arbitration.md).
+   * Schema path encoding conventions for gNMI - [gnmi-path-conventions.md](gnmi-path-conventions.md).
+   * Representing gNMI Paths as Strings - [gnmi-path-strings.md](gnmi-path-strings.md).
+   * union\_replace gNMI method - [gnmi-union_replace.md](gnmi-union_replace.md).
+   * gNMI/gNOI/SSH Dial-out via gRPC Tunnel - [gnmignoissh-dialout-grpctunnel.md](gnmignoissh-dialout-grpctunnel.md).
+   * Carrying Binary Wire Format Protobuf Messages in gNMI - [protobuf-vals.md](protobuf-vals.md).
 
 **Note:** This is not an official Google product.
 

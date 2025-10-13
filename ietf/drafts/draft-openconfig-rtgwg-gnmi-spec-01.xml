@@ -269,11 +269,86 @@
           <date month="January" year="2018" />
         </front>
       </reference>
+      <reference anchor="GNMI-CONFIG-SUBS" target="https://github.com/openconfig/reference/blob/master/rpc/gnmi/gnmi-config-subscriptions.md">
+        <front>
+          <title>gNMI Config Subscription Extension</title>
+          <author><organization>OpenConfig operator working group</organization></author>
+          <date month="July" year="2024" />
+        </front>
+      </reference>
+      <reference anchor="GNMI-DEPTH" target="https://github.com/openconfig/reference/blob/master/rpc/gnmi/gnmi-depth.md">
+        <front>
+          <title>gNMI Depth Extension</title>
+          <author><organization>OpenConfig operator working group</organization></author>
+          <date month="March" year="2024" />
+        </front>
+      </reference>
       <reference anchor="GNMI-SECURITY" target="https://github.com/openconfig/reference/blob/master/rpc/gnmi/gnmi-authentication.md">
         <front>
           <title>gNMI Authentication and Encryption</title>
           <author><organization>OpenConfig operator working group</organization></author>
           <date month="October" year="2016" />
+        </front>
+      </reference>
+      <reference anchor="GNMI-DECIMAL64" target="https://github.com/openconfig/reference/blob/master/rpc/gnmi/decimal64-deprecation.md">
+        <front>
+          <title>Deprecation of Decimal64 in gNMI</title>
+          <author><organization>OpenConfig operator working group</organization></author>
+          <date month="April" year="2022" />
+        </front>
+      </reference>
+      <reference anchor="GNMI-HISTORY" target="https://github.com/openconfig/reference/blob/master/rpc/gnmi/gnmi-history.md">
+        <front>
+          <title>gNMI History Extension</title>
+          <author><organization>OpenConfig operator working group</organization></author>
+          <date month="August" year="2020" />
+        </front>
+      </reference>
+      <reference anchor="GNMI-MASTER-ARBITRATION" target="https://github.com/openconfig/reference/blob/master/rpc/gnmi/gnmi-master-arbitration.md">
+        <front>
+          <title>gNMI Support for Multiple Client Roles and Master Arbitration</title>
+          <author><organization>OpenConfig operator working group</organization></author>
+          <date month="October" year="2016" />
+        </front>
+      </reference>
+      <reference anchor="GNMI-PATH-CONVENTIONS" target="https://github.com/openconfig/reference/blob/master/rpc/gnmi/gnmi-path-conventions.md">
+        <front>
+          <title>Schema path encoding conventions for gNMI</title>
+          <author><organization>OpenConfig operator working group</organization></author>
+          <date month="June" year="2017" />
+        </front>
+      </reference>
+      <reference anchor="GNMI-PATH-STRINGS" target="https://github.com/openconfig/reference/blob/master/rpc/gnmi/gnmi-path-strings.md">
+        <front>
+          <title>Representing gNMI Paths as Strings</title>
+          <author><organization>OpenConfig operator working group</organization></author>
+          <date month="October" year="2018" />
+        </front>
+      </reference>
+      <reference anchor="GNMI-UNION-REPLACE" target="https://github.com/openconfig/reference/blob/master/rpc/gnmi/gnmi-union_replace.md">
+        <front>
+          <title>union_replace gNMI method</title>
+          <author><organization>OpenConfig operator working group</organization></author>
+        </front>
+      </reference>
+      <reference anchor="GNMI-COMMIT-CONFIRMED" target="https://github.com/openconfig/reference/blob/master/rpc/gnmi/gnmi-commit-confirmed.md">
+        <front>
+          <title>gNMI Commit Confirmed Extension</title>
+          <author><organization>OpenConfig operator working group</organization></author>
+          <date month="September" year="2023" />
+        </front>
+      </reference>
+      <reference anchor="GNMI-GRPCTUNNEL" target="https://github.com/openconfig/reference/blob/master/rpc/gnmi/gnmignoissh-dialout-grpctunnel.md">
+        <front>
+          <title>gNMI/gNOI/SSH Dial-out via gRPC Tunnel</title>
+          <author><organization>OpenConfig operator working group</organization></author>
+        </front>
+      </reference>
+      <reference anchor="GNMI-PROTOBUF-VALS" target="https://github.com/openconfig/reference/blob/master/rpc/gnmi/protobuf-vals.md">
+        <front>
+          <title>Carrying Binary Wire Format Protobuf Messages in gNMI</title>
+          <author><organization>OpenConfig operator working group</organization></author>
+          <date month="May" year="2018" />
         </front>
       </reference>
       <reference anchor="OPENCONFIG" target="http://www.openconfig.net/">
