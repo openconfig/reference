@@ -142,7 +142,7 @@ The fields of the Notification message are as follows:
   definition in [2.2.1](#221-timestamps).
 - `prefix` - a prefix which is applied to all path fields (encoded as per
   [2.2.2](#222-paths)) included in the `Notification` message. The paths
-  expressed within the message are formed by the concatenation of `prefix +   path`. The `prefix` always precedes the `path` elements. Further semantics
+  expressed within the message are formed by the concatenation of `prefix + path`. The `prefix` always precedes the `path` elements. Further semantics
   of prefixes are described in [2.4.1](#241-path-prefixes).
 - `update` - a list of update messages that indicate changes in the underlying
   data of the target. Both modification and creation of data is expressed
@@ -1611,7 +1611,7 @@ with one of the following `modes`:
   integer representing nanoseconds between samples. The value of the data
   item(s) MUST be sent once per sample interval to the client. If the target
   is unable to support the desired `sample_interval` it MUST reject the
-  subscription by closing the `Subscribe` RPC specifying an `InvalidArgument   (3)` error code. If the `sample_interval` is set to 0, the target MUST
+  subscription by closing the `Subscribe` RPC specifying an `InvalidArgument (3)` error code. If the `sample_interval` is set to 0, the target MUST
   create the subscription and send the data with the lowest interval possible
   for the target.
   - Optionally, the `suppress_redundant` field of the `Subscription` message
@@ -1852,6 +1852,6 @@ limitations under the License
 
 ## Notes
 
-\[^1\]:
+[^1]:
 This matches the types that Go UnixNano and Java TimeUnit toNanos return,
 and hence is used rather than an unsigned integer.
