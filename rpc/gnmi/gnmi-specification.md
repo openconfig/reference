@@ -680,7 +680,7 @@ NOT include such values in data instances sent to the client.
 The `ModelData` message describes a specific model that is supported by the
 target and used by the client. The fields of the `ModelData` message identify a
 data model registered in a model catalog, as described in
-[[MODEL_CATALOG_DOC]](https://datatracker.ietf.org/doc/draft-openconfig-netmod-model-catalog/)
+[\[MODEL_CATALOG_DOC\]](https://datatracker.ietf.org/doc/draft-openconfig-netmod-model-catalog/)
 (the schema of the catalog itself - expressed in YANG - is described in
 \[[MODEL_CATALOG_YANG](https://github.com/openconfig/public/tree/master/release/models/catalog)\]).
 Each model specified by a `ModelData` message may refer to a specific schema
@@ -789,7 +789,7 @@ an error status returned upon responding to the `Set` RPC.
 Each top-level RPC message (e.g., `SubscribeRequest` and `SubscribeResponse` for
 the `Subscribe` RPC) defines an `extensions` field which can be used to carry
 additional parameters for a gNMI RPC.
-[[GNMI-EXT]](https://github.com/openconfig/reference/blob/master/rpc/gnmi/gnmi-extensions.md)
+[\[GNMI-EXT\]](https://github.com/openconfig/reference/blob/master/rpc/gnmi/gnmi-extensions.md)
 defines the mechanisms to define such extensions. It must be noted that the base
 operation of the RPCs as described in this specification MUST NOT be modified by
 an extension.
@@ -843,7 +843,7 @@ the username, the target MUST authorize the RPC request.
 
 A more detailed discussion of the requirements for authentication and encryption
 used for gNMI is in
-[[GNMI-AUTH]](https://github.com/openconfig/reference/blob/master/rpc/gnmi/gnmi-authentication.md).
+[\[GNMI-AUTH\]](https://github.com/openconfig/reference/blob/master/rpc/gnmi/gnmi-authentication.md).
 
 ## 3.2 Capability Discovery
 
@@ -1852,4 +1852,4 @@ limitations under the License
 
 ## Notes
 
-\[^1\]: This matches the types that Go UnixNano and Java TimeUnit toNanos return, and hence is used rather than an unsigned integer.
+[^1]: This matches the types that Go UnixNano and Java TimeUnit toNanos return, and hence is used rather than an unsigned integer.
