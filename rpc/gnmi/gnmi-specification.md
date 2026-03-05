@@ -319,13 +319,13 @@ type. It should be noted that the target never utilises the `Encoding`
 enumeration to declare to the client the type of encoding utilised, hence the
 client must infer the encoding from the populated `TypedValue` field.
 
-| Name | Description | `TypedValue` field | `Encoding` Value |
+| Name      | Description                                                                                                                                        | `TypedValue` field                                                                        | `Encoding` Value |
 | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- | ---------------- |
-| JSON | A JSON encoded string as per [2.3.1](#231-json-and-json_ietf). | `json_val` | 0 |
-| Bytes | An arbitrary sequence of bytes as per [2.3.2](#232-bytes). | `bytes_val` | 1 |
-| Proto | A [Protobuf](https://developers.google.com/protocol-buffers/) encoded message using scalar values as per [Section 2.3.3](#233-protobuf). | `string_val`, `int_val`, `uint_val`, `bool_val`, `bytes_val`, `float_val`, `leaflist_val` | 2 |
-| ASCII | An ASCII encoded string representing text formatted according to a target-defined convention (described in [Section 2.3.4](#234-ascii)). | `ascii_val` | 3 |
-| JSON_IETF | A JSON encoded string as per [2.3.1](#231-json-and-json_ietf) using JSON encoding compatible with [RFC 7951](https://tools.ietf.org/html/rfc7951). | `json_ietf_val` | 4 |
+| JSON      | A JSON encoded string as per [2.3.1](#231-json-and-json_ietf).                                                                                     | `json_val`                                                                                | 0                |
+| Bytes     | An arbitrary sequence of bytes as per [2.3.2](#232-bytes).                                                                                         | `bytes_val`                                                                               | 1                |
+| Proto     | A [Protobuf](https://developers.google.com/protocol-buffers/) encoded message using scalar values as per [Section 2.3.3](#233-protobuf).           | `string_val`, `int_val`, `uint_val`, `bool_val`, `bytes_val`, `float_val`, `leaflist_val` | 2                |
+| ASCII     | An ASCII encoded string representing text formatted according to a target-defined convention (described in [Section 2.3.4](#234-ascii)).           | `ascii_val`                                                                               | 3                |
+| JSON_IETF | A JSON encoded string as per [2.3.1](#231-json-and-json_ietf) using JSON encoding compatible with [RFC 7951](https://tools.ietf.org/html/rfc7951). | `json_ietf_val`                                                                           | 4                |
 
 ### 2.3.1 JSON and JSON_IETF
 
@@ -995,12 +995,12 @@ request a telemetry stream (see [Section
 
 The following table clarifies the target behaviors for `Get` for certain scenarios:
 
-| GetRequest Scenario | Target Behavior |
+| GetRequest Scenario                                                                                                      | Target Behavior           |
 | ------------------------------------------------------------------------------------------------------------------------ | ------------------------- |
-| Requested paths exist or a YANG default value is [in use](https://datatracker.ietf.org/doc/html/rfc7950#section-7.6.1). | Value(s) are returned |
-| Requested paths are syntactically correct but one or more paths neither exist (yet) nor has a YANG default value in use. | Return `NOT_FOUND` |
-| Requested paths are syntactically correct but one or more paths is not implemented by the server. | Return `UNIMPLEMENTED` |
-| One or more requested paths is syntactically incorrect. | Return `INVALID_ARGUMENT` |
+| Requested paths exist or a YANG default value is [in use](https://datatracker.ietf.org/doc/html/rfc7950#section-7.6.1).  | Value(s) are returned     |
+| Requested paths are syntactically correct but one or more paths neither exist (yet) nor has a YANG default value in use. | Return `NOT_FOUND`        |
+| Requested paths are syntactically correct but one or more paths is not implemented by the server.                        | Return `UNIMPLEMENTED`    |
+| One or more requested paths is syntactically incorrect.                                                                  | Return `INVALID_ARGUMENT` |
 
 ## 3.4 Modifying State
 
@@ -1739,12 +1739,12 @@ to configuration.
 
 The following table clarifies the target behaviors for `Subscribe` for certain scenarios:
 
-| Subscription Scenario | ONCE/POLL | STREAM |
+| Subscription Scenario                                                                                                     | ONCE/POLL                                | STREAM                                                          |
 | ------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- | --------------------------------------------------------------- |
-| Subscribed paths exist or a YANG default value is [in use](https://datatracker.ietf.org/doc/html/rfc7950#section-7.6.1). | Value(s) are returned | Value(s) are returned |
+| Subscribed paths exist or a YANG default value is [in use](https://datatracker.ietf.org/doc/html/rfc7950#section-7.6.1).  | Value(s) are returned                    | Value(s) are returned                                           |
 | Subscribed paths are syntactically correct but one or more paths neither exist (yet) nor has a YANG default value in use. | No value returned for non-existent paths | nothing is sent for non-existent paths (yet), RPC is not closed |
-| Subscribed paths are syntactically correct but one or more paths is not implemented by the server. | Return `UNIMPLEMENTED` | Return `UNIMPLEMENTED` |
-| One or more subscribed paths is syntactically incorrect. | Return `INVALID_ARGUMENT` | Return `INVALID_ARGUMENT` |
+| Subscribed paths are syntactically correct but one or more paths is not implemented by the server.                        | Return `UNIMPLEMENTED`                   | Return `UNIMPLEMENTED`                                          |
+| One or more subscribed paths is syntactically incorrect.                                                                  | Return `INVALID_ARGUMENT`                | Return `INVALID_ARGUMENT`                                       |
 
 # 4 Appendix: Current Protobuf Message and Service Specification
 
