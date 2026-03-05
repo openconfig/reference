@@ -1852,5 +1852,4 @@ limitations under the License
 
 ## Notes
 
-\[^1\]: This matches the types that Go UnixNano and Java TimeUnit toNanos return,
-and hence is used rather than an unsigned integer.
+\[^1\]: This matches the types that Go UnixNano and Java TimeUnit toNanos return, and hence is used rather than an unsigned integer.
