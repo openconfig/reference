@@ -35,7 +35,7 @@ May 25, 2023
   - [2.5 Error handling](#25-error-handling)
   - [2.6 Schema Definition Models](#26-schema-definition-models)
     - [2.6.1 The ModelData message](#261-the-modeldata-message)
-  - [2.7 gNMI Origin in `Path`](#27-gnmi-origin--in-path)
+  - [2.7 gNMI Origin in `Path`](#27-gnmi-origin-in-path)
     - [2.7.1 Special Values of `origin`](#271-special-values-of-origin)
     - [2.7.2 Definition of `origin` for YANG-modelled Data](#272-definition-of-origin-for-yang-modelled-data)
     - [2.7.3 Partial Specifications of Origin in Set](#273-partial-specifications-of-origin-in-set)
