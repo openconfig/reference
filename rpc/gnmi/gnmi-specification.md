@@ -479,7 +479,9 @@ used. This results in quoted string values, and unquoted number values.
 described in [RFC7951](https://tools.ietf.org/html/rfc7951). Data specified with
 a type of JSON MUST be valid JSON, but no additional constraints are placed upon
 it. An implementation MUST NOT serialise data with mixed `JSON` and `JSON_IETF`
-encodings.
+encodings. Also note, data must be encoded using namespace
+qualified names where required per 
+[RFC7951 Section 4]([https://tools.ietf.org/html/rfc7951](https://datatracker.ietf.org/doc/html/rfc7951#section-6.8)).
 
 Both the client and target MUST support the `JSON` encoding as a minimum.
 
