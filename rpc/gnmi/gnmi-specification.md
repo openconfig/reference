@@ -200,6 +200,28 @@ This message explicitly declares: *"These are all the existing leaves currently 
 
 Because an atomic notification represents the complete state of a prefix at a given timestamp, it **implicitly deletes and invalidates** all previously gathered information under that prefix. Any leaves explicitly omitted from the latest atomic notification are rendered invalid.
 
+A simple illustration of implicit deletion: given two sequential atomic notifications for the same prefix —
+
+```yaml
+# Notification 1
+Prefix: a/b
+Update: c/d
+Update: c/e
+atomic: True
+time: 1
+```
+
+```yaml
+# Notification 2
+Prefix: a/b
+Update: c/e
+atomic: True
+time: 2
+```
+
+— the result is that `a/b/c/d` is **deleted**, because it is absent from the notification at `time: 2`.
+
+This behavior can delete more than a single leaf.
 For instance, the arrival of the notification at `time: 123` (above) would immediately invalidate the following previously received notifications:
 
 **1. Prior Atomic Notifications**
@@ -252,6 +274,16 @@ When the notification at `time: 124` is received, the atomic snapshot establishe
 
 In practice, it is not recommended to mix atomic and non-atomic notifications for the same prefix, as it can lead to unexpected behavior, as noted above.
 
+This behavior of mixing atomic / non-atomic notifications is unpleasant enough that in OpenConfig, it is explicitly disallowed: if a path is marked atomic in the OpenConfig schema (via `oc-ext:telemetry-atomic`), the server MUST always send atomic updates for that path and MUST NOT send non-atomic updates that would break the atomic baseline.
+
+Since gNMI is schema-agnostic, mixing atomic and non-atomic notifications for the same prefix may be acceptable under other schemas, but implementors should be aware of the client-side complexity this creates.
+
+#### Delete Notifications and Atomic Flag
+
+A `Notification` that contains `delete` entries MAY be marked as atomic, though it has no affect on the handling of deletes, which should proceed as normal.
+If a notification deletes leaves that were previously sent atomically, then the entire atomic container is deleted.
+As such, when the server sends deletes it SHOULD send them with the same prefix as the atomic container to avoid unexpected behavior.
+
 #### The Importance of Prefix Scope
 
 Because implicit deletion is bound strictly to the declared prefix, the structural choice of the prefix fundamentally changes the parsing behavior.
@@ -268,6 +300,18 @@ time: 123
 ```
 
 Unlike the previous example (scoped to `a/b`), this notification implicitly invalidates **all** previously received data under the entire `a/` tree, not just the `a/b/` subtree.
+
+Additionally, a subsequent atomic notification scoped to a *sub*-prefix also invalidates a previously received atomic notification.
+For example:
+
+```yaml
+Prefix: a/b
+Update: c/d
+atomic: True
+time: 124
+```
+
+When this notification is received, it invalidates the entire notification previously received at time `123`, following the principle of complete state.
 
 #### A Note on `oc-ext:telemetry-atomic`
 
@@ -1856,7 +1900,7 @@ The following table clarifies the target behaviors for `Subscribe` for certain s
 
 An edge case arises when a client subscribes to a specific subset of leaves within a container, but the target device treats that parent container as atomic. (Perhaps it is marked by the `oc-ext:atomic` extension in the schema the server implements.)
 
-In these cases, the "complete state" principle of the atomic notification is constrained by the scope of the client's subscription. The device MUST send an atomic update using the atomic container's prefix, but the payload MUST ONLY contain the specific leaves requested in the subscription.
+In these cases, the "complete state" principle of the atomic notification is constrained by the scope of the client's subscription. The device SHOULD send an atomic update using the atomic container's prefix, but the payload MUST ONLY contain the specific leaves requested in the subscription.
 
 Assume a device has an atomic container `a/b` containing three leaves: `c/d`, `c/e`, and `f/g`.
 
@@ -1872,7 +1916,12 @@ time: 126
 
 The client must understand that the `atomic: True` flag in this context means *"Here are all the leaves under `a/b` **that you are currently subscribed to**."* The client must not assume that the omitted leaves (`c/e` and `f/g`) have been deleted from the device. From the client's perspective, the atomic cache for `a/b` simply consists only of the subscribed paths.
 
-This applies also to `Get` requests, where the target device MUST return an atomic response for the atomic container's prefix, but the payload MUST ONLY contain the specific leaves requested in the subscription.
+This applies also to `Get` requests, where the target device SHOULD return an atomic response for the atomic container's prefix, but when doing so, the payload MUST ONLY contain the specific leaves requested in the subscription.
+
+Alternatively, if a device does not support partial-leaf subscriptions within an atomic container, it MAY return a gRPC `INVALID_ARGUMENT` error to indicate that subscribing to a subset of an atomic container is not supported.
+In such cases, Clients are expected to explicitly subscribe to the prefix of the atomic container.
+
+**Best practice:** Atomic containers should not contain frequently-changing leaves such as counters or high-frequency telemetry values. Because every change to any leaf within an atomic container requires a full atomic re-send of the entire container's state (scoped to the subscription), placing rapidly-updating leaves inside atomic containers can result in significant bandwidth overhead.
 
 # 4 Appendix: Current Protobuf Message and Service Specification
 
