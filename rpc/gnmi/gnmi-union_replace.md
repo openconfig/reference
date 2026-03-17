@@ -396,11 +396,13 @@ an acceptable alternative if option 1 cannot be supported.
 ##### Option 1: Resolving issues with union of CLI and OC values with error
 
 If a configuration item is explicitly set in CLI and OC using different values,
-the target MUST return an `INVALID_ARGUMENT` error.  It may be necessary to set
-the same values in both CLI and OC to conform to constraints, such as list keys,
-which will need to be specified in both models if they are both targeting
-configuration towards the same logical list entries.  It is up to the client to
-provide CLI and OC which are not in conflict.
+the target MUST return an `INVALID_ARGUMENT` error.  The gRPC error string
+SHOULD indicate the OC path and CLI which are in conflict for human consumption.  
+Note that it may be necessary to set the same values in both CLI and OC to
+conform to constraints, such as list keys, which will need to be specified in
+both models if they are both targeting configuration towards the same logical
+list entries.  It is up to the client to provide CLI and OC which are not in
+conflict.
 
 ##### Option 2: Resolving issues with merging CLI and OC by overwriting
 
