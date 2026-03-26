@@ -1636,7 +1636,7 @@ with one of the following `modes`:
   driven (e.g., the changing of state of an entity based on an external
   trigger) then an `ON_CHANGE` subscription may be created, whereas if other
   data represents counter values, a `SAMPLE` subscription may be created.
-  The target is expected to choose and change a `sample_interval` dynamically.
+  The target is expected to choose a `sample_interval` and `MAY` change it dynamically.
   If `sample_interval` is specified in the subscribe request, the target
   `SHOULD` reject the subscription by closing the Subscribe RPC specifying an
   `InvalidArgument (3)` error code.
