@@ -19,6 +19,7 @@ May 25, 2023
 - [1 Introduction](#1-introduction)
 - [2 Common Message Types and Encodings](#2-common-message-types-and-encodings)
   - [2.1 Reusable Notification Message Format](#21-reusable-notification-message-format)
+    - [2.1.1 Parsing Atomic gNMI Notifications](#211-parsing-atomic-gnmi-notifications)
   - [2.2 Common Data Types](#22-common-data-types)
     - [2.2.1 Timestamps](#221-timestamps)
     - [2.2.2 Paths](#222-paths)
@@ -73,6 +74,7 @@ May 25, 2023
       - [3.5.2.1 Bundling of Telemetry Updates](#3521-bundling-of-telemetry-updates)
       - [3.5.2.3 Sending Telemetry Updates](#3523-sending-telemetry-updates)
       - [3.5.2.4 SubscribeResponse Behavior Table](#3524-subscriberesponse-behavior-table)
+      - [3.5.2.5 Atomic Containers in Subscribe and Get Requests](#3525-atomic-containers-in-subscribe-and-get-requests)
 - [4 Appendix: Current Protobuf Message and Service Specification](#4-appendix-current-protobuf-message-and-service-specification)
 - [5 Appendix: Current Outstanding Issues/Future Features](#5-appendix-current-outstanding-issuesfuture-features)
 - [6 Copyright](#6-copyright)
@@ -165,9 +167,157 @@ The fields of the Notification message are as follows:
     the receiving entity.
 - `delete` - a list of paths (encoded as per [2.2.2](#222-paths)) that
   indicate the deletion of data nodes on the target.
+- `atomic` - a boolean option that indicates that the notification constitutes
+  an atomic update.
 
 The creator of a Notification message MUST include the `timestamp` field. All
 other fields are optional.
+
+### 2.1.1 Parsing Atomic gNMI Notifications
+
+Handling atomic notifications in gNMI is strictly **schema-independent**. The scope of an atomic update is determined entirely by the globally unique `prefix` included in the message (see [relevant gNMI discussion](https://github.com/openconfig/gnmi/issues/111#issuecomment-921072341)).
+
+Parsing logic MUST NOT rely on external schema definitions to determine which container is being updated atomically; the parser only needs to evaluate the provided prefix.
+
+#### Complete State
+
+When a notification is marked `atomic: True`, it indicates that the payload contains the complete and absolute state of all leaves under the specified `prefix`.
+
+For example, consider the following notification:
+
+```yaml
+Prefix: a/b
+Update: c/d
+Update: c/e
+Update: f/g
+atomic: True
+time: 123
+```
+
+This message explicitly declares: *"These are all the existing leaves currently residing under `a/b`."*
+
+#### Implicit Deletion of Prior State
+
+Because an atomic notification represents the complete state of a prefix at a given timestamp, it **implicitly deletes and invalidates** all previously gathered information under that prefix. Any leaves explicitly omitted from the latest atomic notification are rendered invalid.
+
+A simple illustration of implicit deletion: given two sequential atomic notifications for the same prefix —
+
+```yaml
+# Notification 1
+Prefix: a/b
+Update: c/d
+Update: c/e
+atomic: True
+time: 1
+```
+
+```yaml
+# Notification 2
+Prefix: a/b
+Update: c/e
+atomic: True
+time: 2
+```
+
+— the result is that `a/b/c/d` is **deleted**, because it is absent from the notification at `time: 2`.
+
+This behavior can delete more than a single leaf.
+For instance, the arrival of the notification at `time: 123` (above) would immediately invalidate the following previously received notifications:
+
+**1. Prior Atomic Notifications**
+
+```yaml
+Prefix: a/b
+Update: x/y
+Update: x/z
+Update: v/w
+atomic: True
+time: 122  # Disregarded: Overridden by the notification at time 123
+```
+
+**2. Prior Non-Atomic Notifications**
+
+```yaml
+Prefix: a/b
+Update: some_counter
+time: 121  # Disregarded: Overridden by the atomic notification at time 123
+```
+
+#### Invalidating Atomic State with Non-Atomic Updates
+
+The "complete state" guarantee of an atomic notification is strictly bound to its specific timestamp. If a client subsequently receives a **non-atomic** notification for a path, which has a prefix that was previously established by an atomic notification, the prior atomic baseline is broken.
+
+Because the state has now mutated incrementally, the client can no longer guarantee that it holds the complete and accurate state of the entire prefix tree. Therefore, the previous atomic notification MUST be invalidated.
+
+Consider the following sequence:
+
+**1. Establishing the Atomic Baseline**
+
+```yaml
+Prefix: a/b
+Update: c/d
+Update: c/e
+atomic: True
+time: 123  # Establishes complete state for a/b
+```
+
+**2. Subsequent Non-Atomic Update**
+
+```yaml
+Prefix: a/b
+Update: f/g
+atomic: False # (or omitted)
+time: 124 
+```
+
+When the notification at `time: 124` is received, the atomic snapshot established at `time: 123` is invalidated. The parser must treat the tree under `a/b` as an evolving, non-atomic dataset from this point forward, until a new `atomic: True` notification is received for that prefix.
+
+In practice, it is not recommended to mix atomic and non-atomic notifications for the same prefix, as it can lead to unexpected behavior, as noted above.
+
+This behavior of mixing atomic / non-atomic notifications is unpleasant enough that in OpenConfig, it is explicitly disallowed: if a path is marked atomic in the OpenConfig schema (via `oc-ext:telemetry-atomic`), the server MUST always send atomic updates for that path and MUST NOT send non-atomic updates that would break the atomic baseline.
+
+Since gNMI is schema-agnostic, mixing atomic and non-atomic notifications for the same prefix may be acceptable under other schemas, but implementors should be aware of the client-side complexity this creates.
+
+#### Delete Notifications and Atomic Flag
+
+A `Notification` that contains `delete` entries MAY be marked as atomic, though it has no affect on the handling of deletes, which should proceed as normal.
+If a notification deletes leaves that were previously sent atomically, then the entire atomic container is deleted.
+As such, when the server sends deletes it SHOULD send them with the same prefix as the atomic container to avoid unexpected behavior.
+
+#### The Importance of Prefix Scope
+
+Because implicit deletion is bound strictly to the declared prefix, the structural choice of the prefix fundamentally changes the parsing behavior.
+
+Even if the resulting data leaves are identical, an atomic notification scoped to a parent prefix has a much wider blast radius for invalidation. Consider this notification:
+
+```yaml
+Prefix: a
+Update: b/c/d
+Update: b/c/e
+Update: b/f/g
+atomic: True
+time: 123
+```
+
+Unlike the previous example (scoped to `a/b`), this notification implicitly invalidates **all** previously received data under the entire `a/` tree, not just the `a/b/` subtree.
+
+Additionally, a subsequent atomic notification scoped to a *sub*-prefix also invalidates a previously received atomic notification.
+For example:
+
+```yaml
+Prefix: a/b
+Update: c/d
+atomic: True
+time: 124
+```
+
+When this notification is received, it invalidates the entire notification previously received at time `123`, following the principle of complete state.
+
+#### A Note on `oc-ext:telemetry-atomic`
+
+It is important to distinguish between gNMI protocol behavior and YANG schema definitions.
+
+The `oc-ext:telemetry-atomic` extension (defined in OpenConfig's [openconfig-extensions.yang](https://github.com/openconfig/public/blob/master/release/models/openconfig-extensions.yang)) governs telemetry *generation*, not parsing. It simply enforces a rule on the publisher: *"Updates containing a path within this schema container must use a prefix that matches this container and be transmitted as an atomic notification."* Once the notification is generated and sent, the standard gNMI atomic parsing rules described above apply.
 
 ## 2.2 Common Data Types
 
@@ -1746,6 +1896,33 @@ The following table clarifies the target behaviors for `Subscribe` for certain s
 | Subscribed paths are syntactically correct but one or more paths is not implemented by the server.                        | Return `UNIMPLEMENTED`                   | Return `UNIMPLEMENTED`                                          |
 | One or more subscribed paths is syntactically incorrect.                                                                  | Return `INVALID_ARGUMENT`                | Return `INVALID_ARGUMENT`                                       |
 
+#### 3.5.2.5 Atomic Containers in Subscribe and Get Requests
+
+An edge case arises when a client subscribes to a specific subset of leaves within a container, but the target device treats that parent container as atomic. (Perhaps it is marked by the `oc-ext:atomic` extension in the schema the server implements.)
+
+In these cases, the "complete state" principle of the atomic notification is constrained by the scope of the client's subscription. The device SHOULD send an atomic update using the atomic container's prefix, but the payload MUST ONLY contain the specific leaves requested in the subscription.
+
+Assume a device has an atomic container `a/b` containing three leaves: `c/d`, `c/e`, and `f/g`.
+
+If the client subscribes strictly to `a/b/c/d`, the device should generate the following notification:
+
+```yaml
+Prefix: a/b
+Update: c/d
+# c/e and f/g are omitted because they are outside the subscription scope
+atomic: True
+time: 126
+```
+
+The client must understand that the `atomic: True` flag in this context means *"Here are all the leaves under `a/b` **that you are currently subscribed to**."* The client must not assume that the omitted leaves (`c/e` and `f/g`) have been deleted from the device. From the client's perspective, the atomic cache for `a/b` simply consists only of the subscribed paths.
+
+This applies also to `Get` requests, where the target device SHOULD return an atomic response for the atomic container's prefix, but when doing so, the payload MUST ONLY contain the specific leaves requested in the subscription.
+
+Alternatively, if a device does not support partial-leaf subscriptions within an atomic container, it MAY return a gRPC `INVALID_ARGUMENT` error to indicate that subscribing to a subset of an atomic container is not supported.
+In such cases, Clients are expected to explicitly subscribe to the prefix of the atomic container.
+
+**Best practice:** Atomic containers should not contain frequently-changing leaves such as counters or high-frequency telemetry values. Because every change to any leaf within an atomic container requires a full atomic re-send of the entire container's state (scoped to the subscription), placing rapidly-updating leaves inside atomic containers can result in significant bandwidth overhead.
+
 # 4 Appendix: Current Protobuf Message and Service Specification
 
 The latest Protobuf IDL gNMI specification is found in GitHub at
@@ -1776,6 +1953,10 @@ limitations under the License
 ```
 
 # 7 Revision History
+
+- v0.11.0: March 5, 2026
+
+  - Define parsing semantics for `atomic` flag in `Notification` message.
 
 - v0.10.0: May 25, 2023
 
