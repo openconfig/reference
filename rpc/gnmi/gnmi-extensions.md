@@ -3,9 +3,9 @@
 **Contributors**: Rob Shakir (robjs@google.com), Carl Lebsack (csl@google.com),
 Nick Ethier (nethier@jive.com), Anees Shaikh (aashaikh@google.com)
 
-**Updated**: January 25th, 2018
+**Updated**: April 7, 2025
 
-**Version**: 0.1.0
+**Version**: 0.2.0
 
 ## Extending gNMI
 
@@ -70,3 +70,14 @@ The `Extension` message consists of a single `oneof` which may contain:
      registered extension.
    * A `bytes` field which stores the binary-marshalled protobuf for the
      extension.
+
+## Error handling
+
+New extensions may be added by a client that are unknown to a server, and
+vice versa. For this reason, unknown extensions being present in a message
+capable of carrying extensions MUST NOT be treated as an error.
+
+In the case that a known extension is received within an RPC the receiving
+entity (client or server) and that extension contains invalid contents
+(based on syntax of semantics) then the receiver MAY treat this as an error,
+and MAY choose to terminate the corresponding RPC.
