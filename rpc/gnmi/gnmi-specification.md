@@ -1505,7 +1505,9 @@ When a client wishes to receive updates relating to the state of data instances
 on a target, it creates a subscription via the `Subscribe` RPC. A subscription
 consists of one or more paths, with a specified subscription mode. The mode of
 each subscription determines the triggers for updates for data sent from the
-target to the client.
+target to the client. Note that subscription to [NETCONF 
+events](https://datatracker.ietf.org/doc/html/rfc5277) or 
+YANG `notification` nodes is not under consideration at this time.
 
 All requests for new subscriptions are encapsulated within a `SubscribeRequest`
 message - which itself has a mode which describes the longevity of the
