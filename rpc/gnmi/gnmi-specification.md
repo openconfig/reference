@@ -602,7 +602,7 @@ For `/a` :
 update: <
   path: <
     elem: <
-      name: "a'
+      name: "a"
     >
   >
   val: <
